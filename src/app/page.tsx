@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-
+import { getAirQualityLabel } from "../lib/airQuality";
 export default function Home() {
   const [zipCode, setZipCode] = useState("");
   const [searched, setSearched] = useState(false);
@@ -13,6 +13,7 @@ export default function Home() {
   const [lon, setLon] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+
 
   const handleSearch = async () => {
     setError("");
@@ -53,16 +54,16 @@ if (airData.list) {
   }
   }
   };
-
   return (
-    <main className="min-h-screen p-8">
-      <h1 className="text-5xl font-bold">
-        YourLocalHealth
-      </h1>
+    <main className="min-h-screen max-w-6xl mx-auto p-8">
+      <h1 className="text-6xl font-bold">
+  YourLocalHealth
+</h1>
 
-      <p className="mt-4 text-xl">
-        Health risks and public health conditions affecting your community.
-      </p>
+<p className="mt-4 text-xl text-gray-400 max-w-2xl">
+  Understand health risks in your area. Track air quality,
+  respiratory illness activity, and public health alerts.
+</p>
 
       <div className="mt-8">
         <input
@@ -92,12 +93,46 @@ if (airData.list) {
           <h2 className="text-2xl font-bold">
             Results for {zipCode}
           </h2>
+{/*summary card*/}
+<div className="mb-6 mt-4 rounded-xl border p-6">
+      <h3 className="text-gray-400">
+        Overall Health Risk
+      </h3>
 
-          <p>Location: {city}, {state}</p>
-          <p>Respiratory Risk: Moderate</p>
-          <p>Flu Activity: Moderate</p>
-          <p>COVID Activity: Low</p>
-          <p>Air Quality: {aqi}</p>
+      <p className="mt-2 text-5xl font-bold text-yellow-500">
+        MODERATE
+      </p>
+    </div>
+
+{/*GRID*/}
+          <div className="mt-4 grid md:grid-cols-2 gap-4">
+
+  <div className="border rounded p-3">
+    <strong>📍 Location</strong>
+    <p>{city}, {state}</p>
+  </div>
+
+  <div className="border rounded p-3">
+    <strong>🌬️ Air Quality</strong>
+    <p>{aqi} - {getAirQualityLabel(aqi)}</p>
+  </div>
+
+  <div className="border rounded p-3">
+    <strong>😷 Respiratory Risk</strong>
+    <p>Moderate</p>
+  </div>
+
+  <div className="border rounded p-3">
+    <strong>🤒 Flu Activity</strong>
+    <p>Moderate</p>
+  </div>
+
+  <div className="border rounded p-3">
+    <strong>🦠 COVID Activity</strong>
+    <p>Low</p>
+  </div>
+
+</div>
         </div>
       )}
     </main>
