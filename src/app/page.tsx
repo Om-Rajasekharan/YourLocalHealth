@@ -2,6 +2,11 @@
 
 import { useState } from "react";
 import { getAirQualityLabel } from "../lib/airQuality";
+import {
+  calculateHealthRisk,
+  getRiskColor
+} from "../lib/healthRisk";
+
 export default function Home() {
   const [zipCode, setZipCode] = useState("");
   const [searched, setSearched] = useState(false);
@@ -54,6 +59,8 @@ if (airData.list) {
   }
   }
   };
+
+  const healthRisk = calculateHealthRisk(aqi);
   return (
     <main className="min-h-screen max-w-6xl mx-auto p-8">
       <h1 className="text-6xl font-bold">
@@ -99,9 +106,13 @@ if (airData.list) {
         Overall Health Risk
       </h3>
 
-      <p className="mt-2 text-5xl font-bold text-yellow-500">
-        MODERATE
-      </p>
+      <p
+  className={`mt-2 text-5xl font-bold ${getRiskColor(
+    healthRisk
+  )}`}
+>
+  {healthRisk.toUpperCase()}
+</p>
     </div>
 
 {/*GRID*/}
