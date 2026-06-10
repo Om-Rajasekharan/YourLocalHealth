@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { FormEvent, useState } from "react";
+import { FormEvent, useEffect, useRef, useState } from "react";
 import { getAirQualityLabel } from "../lib/airQuality";
 import {
   calculateHealthRisk,
@@ -19,14 +19,14 @@ function riskBadgeClass(risk: string) {
   switch (risk) {
     case "Low":
     case "Very Low":
-      return "border-emerald-200 bg-emerald-50 text-emerald-700";
+      return "border-cyan-400/40 bg-cyan-400/10 text-cyan-200";
     case "Moderate":
-      return "border-amber-200 bg-amber-50 text-amber-700";
+      return "border-violet-300/40 bg-violet-400/10 text-violet-200";
     case "High":
     case "Very High":
-      return "border-rose-200 bg-rose-50 text-rose-700";
+      return "border-fuchsia-300/40 bg-fuchsia-500/10 text-fuchsia-200";
     default:
-      return "border-slate-200 bg-slate-50 text-slate-600";
+      return "border-white/15 bg-white/10 text-slate-200";
   }
 }
 
@@ -58,25 +58,25 @@ function SignalCard({
   return (
     <Link
       href={href}
-      className="group block rounded-lg outline-none transition focus:ring-4 focus:ring-teal-100"
+      className="group block rounded-lg outline-none transition focus:ring-4 focus:ring-cyan-400/20"
     >
-    <article className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm transition group-hover:-translate-y-0.5 group-hover:border-teal-300 group-hover:shadow-md">
+    <article className="rounded-lg border border-white/10 bg-[#111a33]/85 p-5 shadow-lg shadow-black/20 transition group-hover:-translate-y-0.5 group-hover:border-cyan-300/50 group-hover:bg-[#16213f] group-hover:shadow-cyan-950/40">
       <div className="flex min-h-24 flex-col justify-between gap-4">
         <div>
-          <h3 className="text-sm font-semibold uppercase tracking-wide text-slate-500 transition group-hover:text-teal-700">
+          <h3 className="text-sm font-semibold uppercase tracking-wide text-slate-400 transition group-hover:text-cyan-200">
             {title}
           </h3>
           <div className="mt-3">
             <RiskBadge value={value} />
           </div>
-          <p className="mt-3 text-sm leading-6 text-slate-600">
+          <p className="mt-3 text-sm leading-6 text-slate-300">
             {detail}
           </p>
         </div>
-        <p className="border-t border-slate-100 pt-3 text-xs text-slate-500">
+        <p className="border-t border-white/10 pt-3 text-xs text-slate-400">
           {source}
         </p>
-        <p className="text-xs font-semibold text-teal-700">
+        <p className="text-xs font-semibold text-cyan-200">
           View details
         </p>
       </div>
@@ -86,6 +86,7 @@ function SignalCard({
 }
 
 export default function Home() {
+  const restoredZipRef = useRef("");
   const [zipCode, setZipCode] = useState("");
   const [searched, setSearched] = useState(false);
 
@@ -128,6 +129,7 @@ export default function Home() {
       zipCode,
       city,
       state,
+      stateAbbreviation: state,
       aqi: aqi?.toString() ?? "",
       airQuality: airQualityLabel,
       fluActivity,
@@ -144,14 +146,13 @@ export default function Home() {
     return `/details/${topic}?${params.toString()}`;
   };
 
-  const handleSearch = async (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
+  const searchZipCode = async (zipToSearch: string) => {
     setError("");
     setSearched(false);
     setLoading(true);
 
     try {
-      const location = await getLocation(zipCode);
+      const location = await getLocation(zipToSearch);
 
       setCity(location.city);
       setState(location.state);
@@ -183,18 +184,37 @@ export default function Home() {
     }
   };
 
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const restoredZipCode = params.get("zipCode");
+
+    if (
+      restoredZipCode &&
+      restoredZipCode !== restoredZipRef.current
+    ) {
+      restoredZipRef.current = restoredZipCode;
+      setZipCode(restoredZipCode);
+      void searchZipCode(restoredZipCode);
+    }
+  }, []);
+
+  const handleSearch = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    await searchZipCode(zipCode);
+  };
+
   return (
-    <main className="min-h-screen bg-slate-50 text-slate-950">
+    <main className="min-h-screen bg-[#070b1d] text-white">
       <section className="mx-auto flex min-h-screen w-full max-w-6xl flex-col px-5 py-8 sm:px-8 lg:px-10">
-        <header className="flex flex-col gap-6 border-b border-slate-200 pb-8 md:flex-row md:items-end md:justify-between">
+        <header className="flex flex-col gap-6 border-b border-white/10 pb-8 md:flex-row md:items-end md:justify-between">
           <div>
-            <p className="text-sm font-semibold uppercase tracking-wide text-teal-700">
+            <p className="text-sm font-semibold uppercase tracking-wide text-cyan-300">
               Local public health dashboard
             </p>
-            <h1 className="mt-3 text-4xl font-bold text-slate-950 sm:text-5xl">
+            <h1 className="mt-3 text-4xl font-bold text-white sm:text-5xl">
               YourLocalHealth
             </h1>
-            <p className="mt-4 max-w-2xl text-base leading-7 text-slate-600">
+            <p className="mt-4 max-w-2xl text-base leading-7 text-slate-300">
               Enter a ZIP code to view local respiratory and environmental
               health signals from public data sources.
             </p>
@@ -214,13 +234,13 @@ export default function Home() {
               placeholder="Enter ZIP code"
               value={zipCode}
               onChange={(event) => setZipCode(event.target.value)}
-              className="h-12 min-w-0 flex-1 rounded-lg border border-slate-300 bg-white px-4 text-base text-slate-950 shadow-sm outline-none transition focus:border-teal-600 focus:ring-4 focus:ring-teal-100"
+              className="h-12 min-w-0 flex-1 rounded-lg border border-white/15 bg-white/10 px-4 text-base text-white shadow-sm outline-none transition placeholder:text-slate-400 focus:border-cyan-300 focus:ring-4 focus:ring-cyan-400/20"
             />
 
             <button
               type="submit"
               disabled={loading}
-              className="h-12 rounded-lg bg-teal-700 px-6 text-sm font-semibold text-white shadow-sm transition hover:bg-teal-800 disabled:cursor-not-allowed disabled:bg-slate-400"
+              className="h-12 rounded-lg bg-indigo-500 px-6 text-sm font-semibold text-white shadow-lg shadow-indigo-950/30 transition hover:bg-violet-500 disabled:cursor-not-allowed disabled:bg-slate-700 disabled:text-slate-300"
             >
               {loading ? "Searching" : "Search"}
             </button>
@@ -228,7 +248,7 @@ export default function Home() {
         </header>
 
         {error && (
-          <div className="mt-6 rounded-lg border border-rose-200 bg-rose-50 p-4 text-sm font-medium text-rose-700">
+          <div className="mt-6 rounded-lg border border-fuchsia-300/30 bg-fuchsia-500/10 p-4 text-sm font-medium text-fuchsia-100">
             {error}
           </div>
         )}
@@ -236,13 +256,13 @@ export default function Home() {
         {!searched && !error && (
           <section className="grid flex-1 place-items-center py-16">
             <div className="max-w-xl text-center">
-              <p className="text-sm font-semibold uppercase tracking-wide text-slate-500">
+              <p className="text-sm font-semibold uppercase tracking-wide text-cyan-300">
                 Ready when you are
               </p>
-              <h2 className="mt-3 text-2xl font-semibold text-slate-950">
+              <h2 className="mt-3 text-2xl font-semibold text-white">
                 Search any US ZIP code to generate a local health snapshot.
               </h2>
-              <p className="mt-4 text-sm leading-6 text-slate-600">
+              <p className="mt-4 text-sm leading-6 text-slate-300">
                 The dashboard currently combines air quality, CDC respiratory
                 illness activity, and CDC wastewater COVID activity.
               </p>
@@ -254,28 +274,28 @@ export default function Home() {
           <section className="py-8">
             <div className="mb-5 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
               <div>
-                <p className="text-sm font-semibold uppercase tracking-wide text-slate-500">
+                <p className="text-sm font-semibold uppercase tracking-wide text-slate-400">
                   Results for {zipCode}
                 </p>
-                <h2 className="mt-1 text-3xl font-bold text-slate-950">
+                <h2 className="mt-1 text-3xl font-bold text-white">
                   {city}, {state}
                 </h2>
               </div>
-              <p className="text-sm text-slate-500">
+              <p className="text-sm text-slate-400">
                 Informational only, not medical advice.
               </p>
             </div>
 
-            <section className="rounded-lg border border-slate-200 bg-white p-6 shadow-sm">
+            <section className="rounded-lg border border-white/10 bg-[#101934]/90 p-6 shadow-xl shadow-black/25">
               <div className="grid gap-6 lg:grid-cols-[1.1fr_0.9fr] lg:items-center">
                 <div>
-                  <p className="text-sm font-semibold uppercase tracking-wide text-slate-500">
+                  <p className="text-sm font-semibold uppercase tracking-wide text-slate-400">
                     Overall Health Risk
                   </p>
-                  <p className="mt-3 text-5xl font-bold text-slate-950">
+                  <p className="mt-3 text-5xl font-bold text-white">
                     {healthRisk}
                   </p>
-                  <p className="mt-4 max-w-2xl text-sm leading-6 text-slate-600">
+                  <p className="mt-4 max-w-2xl text-sm leading-6 text-slate-300">
                     This score combines air quality, CDC respiratory illness
                     activity, and CDC COVID wastewater activity for a simple
                     local risk snapshot.
@@ -283,19 +303,19 @@ export default function Home() {
                 </div>
                 <Link
                   href={detailHref("respiratory-risk")}
-                  className="group rounded-lg border border-slate-200 bg-slate-50 p-5 outline-none transition hover:-translate-y-0.5 hover:border-teal-300 hover:shadow-md focus:ring-4 focus:ring-teal-100"
+                  className="group rounded-lg border border-white/10 bg-white/5 p-5 outline-none transition hover:-translate-y-0.5 hover:border-cyan-300/50 hover:bg-white/10 hover:shadow-lg hover:shadow-cyan-950/30 focus:ring-4 focus:ring-cyan-400/20"
                 >
-                  <p className="text-sm font-semibold uppercase tracking-wide text-slate-500">
+                  <p className="text-sm font-semibold uppercase tracking-wide text-slate-400">
                     Respiratory Risk
                   </p>
                   <div className="mt-3">
                     <RiskBadge value={respiratoryRisk} />
                   </div>
-                  <p className="mt-3 text-sm leading-6 text-slate-600">
+                  <p className="mt-3 text-sm leading-6 text-slate-300">
                     Based on flu activity, COVID wastewater activity, and air
                     quality conditions that may affect breathing.
                   </p>
-                  <p className="mt-4 text-xs font-semibold text-teal-700">
+                  <p className="mt-4 text-xs font-semibold text-cyan-200">
                     View details
                   </p>
                 </Link>
@@ -303,17 +323,17 @@ export default function Home() {
             </section>
 
             {hasMapLocation && (
-              <section className="mt-5 overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm">
-                <div className="flex flex-col gap-2 border-b border-slate-100 p-5 sm:flex-row sm:items-end sm:justify-between">
+              <section className="mt-5 overflow-hidden rounded-lg border border-white/10 bg-[#101934]/90 shadow-xl shadow-black/25">
+                <div className="flex flex-col gap-2 border-b border-white/10 p-5 sm:flex-row sm:items-end sm:justify-between">
                   <div>
-                    <p className="text-sm font-semibold uppercase tracking-wide text-slate-500">
+                    <p className="text-sm font-semibold uppercase tracking-wide text-slate-400">
                       Search Location
                     </p>
-                    <h3 className="mt-1 text-xl font-semibold text-slate-950">
+                    <h3 className="mt-1 text-xl font-semibold text-white">
                       {city}, {state}
                     </h3>
                   </div>
-                  <p className="text-sm text-slate-500">
+                  <p className="text-sm text-slate-400">
                     ZIP {zipCode} · {latitude}, {longitude}
                   </p>
                 </div>
