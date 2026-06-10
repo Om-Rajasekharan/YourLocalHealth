@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { FormEvent, useEffect, useRef, useState } from "react";
+import type { User } from "@supabase/supabase-js";
 import { getAirQualityLabel } from "../lib/airQuality";
 import {
   calculateHealthRisk,
@@ -18,6 +19,10 @@ import {
   getLocalHealthNews,
   type LocalHealthNewsArticle,
 } from "../services/localNews";
+import {
+  isSupabaseConfigured,
+  supabase,
+} from "../lib/supabaseClient";
 
 function riskBadgeClass(risk: string) {
   switch (risk) {
@@ -89,8 +94,131 @@ function SignalCard({
   );
 }
 
+function AuthPanel({
+  user,
+  onAuthChange,
+}: {
+  user: User | null;
+  onAuthChange: (user: User | null) => void;
+}) {
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [authMessage, setAuthMessage] = useState("");
+  const [authLoading, setAuthLoading] = useState(false);
+
+  const handleAuth = async (mode: "sign-in" | "sign-up") => {
+    setAuthMessage("");
+
+    if (!supabase) {
+      setAuthMessage("Add Supabase environment variables to enable sign in.");
+      return;
+    }
+
+    setAuthLoading(true);
+
+    const result =
+      mode === "sign-in"
+        ? await supabase.auth.signInWithPassword({ email, password })
+        : await supabase.auth.signUp({ email, password });
+
+    if (result.error) {
+      setAuthMessage(result.error.message);
+    } else {
+      onAuthChange(result.data.user);
+      setAuthMessage(
+        mode === "sign-up"
+          ? "Account created. Check your email if confirmation is enabled."
+          : "Signed in."
+      );
+    }
+
+    setAuthLoading(false);
+  };
+
+  const handleSignOut = async () => {
+    if (!supabase) return;
+    await supabase.auth.signOut();
+    onAuthChange(null);
+    setAuthMessage("Signed out.");
+  };
+
+  if (user) {
+    return (
+      <section className="rounded-lg border border-white/10 bg-white/5 p-4">
+        <p className="text-xs font-semibold uppercase tracking-wide text-cyan-300">
+          Account
+        </p>
+        <p className="mt-2 text-sm text-slate-200">{user.email}</p>
+        <button
+          type="button"
+          onClick={handleSignOut}
+          className="mt-3 rounded-lg border border-white/15 px-4 py-2 text-sm font-semibold text-white transition hover:border-cyan-300/50 hover:bg-white/10"
+        >
+          Sign out
+        </button>
+      </section>
+    );
+  }
+
+  return (
+    <section className="rounded-lg border border-white/10 bg-white/5 p-4">
+      <p className="text-xs font-semibold uppercase tracking-wide text-cyan-300">
+        Personalize
+      </p>
+      <p className="mt-2 text-sm leading-5 text-slate-300">
+        Sign in to start saving locations.
+      </p>
+      {!isSupabaseConfigured && (
+        <p className="mt-3 rounded-lg border border-violet-300/30 bg-violet-500/10 p-3 text-xs leading-5 text-violet-100">
+          Supabase is not configured yet.
+        </p>
+      )}
+      <div className="mt-3 grid gap-2">
+        <input
+          type="email"
+          placeholder="Email"
+          value={email}
+          onChange={(event) => setEmail(event.target.value)}
+          className="h-10 rounded-lg border border-white/15 bg-white/10 px-3 text-sm text-white outline-none placeholder:text-slate-400 focus:border-cyan-300"
+        />
+        <input
+          type="password"
+          placeholder="Password"
+          value={password}
+          onChange={(event) => setPassword(event.target.value)}
+          className="h-10 rounded-lg border border-white/15 bg-white/10 px-3 text-sm text-white outline-none placeholder:text-slate-400 focus:border-cyan-300"
+        />
+      </div>
+      <div className="mt-3 flex gap-2">
+        <button
+          type="button"
+          disabled={authLoading}
+          onClick={() => void handleAuth("sign-in")}
+          className="rounded-lg bg-indigo-500 px-4 py-2 text-sm font-semibold text-white transition hover:bg-violet-500 disabled:bg-slate-700"
+        >
+          Sign in
+        </button>
+        <button
+          type="button"
+          disabled={authLoading}
+          onClick={() => void handleAuth("sign-up")}
+          className="rounded-lg border border-white/15 px-4 py-2 text-sm font-semibold text-white transition hover:border-cyan-300/50 hover:bg-white/10 disabled:text-slate-400"
+        >
+          Sign up
+        </button>
+      </div>
+      {authMessage && (
+        <p className="mt-3 text-xs leading-5 text-slate-300">
+          {authMessage}
+        </p>
+      )}
+    </section>
+  );
+}
+
 export default function Home() {
   const restoredZipRef = useRef("");
+  const [user, setUser] = useState<User | null>(null);
   const [zipCode, setZipCode] = useState("");
   const [searched, setSearched] = useState(false);
 
@@ -224,6 +352,24 @@ export default function Home() {
     }
   }, []);
 
+  useEffect(() => {
+    if (!supabase) return;
+
+    void supabase.auth.getUser().then(({ data }) => {
+      setUser(data.user);
+    });
+
+    const { data } = supabase.auth.onAuthStateChange(
+      (_event, session) => {
+        setUser(session?.user ?? null);
+      }
+    );
+
+    return () => {
+      data.subscription.unsubscribe();
+    };
+  }, []);
+
   const handleSearch = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     await searchZipCode(zipCode);
@@ -246,31 +392,34 @@ export default function Home() {
             </p>
           </div>
 
-          <form
-            onSubmit={handleSearch}
-            className="flex w-full flex-col gap-3 sm:max-w-md sm:flex-row"
-          >
-            <label className="sr-only" htmlFor="zip-code">
-              ZIP code
-            </label>
-            <input
-              id="zip-code"
-              type="text"
-              inputMode="numeric"
-              placeholder="Enter ZIP code"
-              value={zipCode}
-              onChange={(event) => setZipCode(event.target.value)}
-              className="h-12 min-w-0 flex-1 rounded-lg border border-white/15 bg-white/10 px-4 text-base text-white shadow-sm outline-none transition placeholder:text-slate-400 focus:border-cyan-300 focus:ring-4 focus:ring-cyan-400/20"
-            />
-
-            <button
-              type="submit"
-              disabled={loading}
-              className="h-12 rounded-lg bg-indigo-500 px-6 text-sm font-semibold text-white shadow-lg shadow-indigo-950/30 transition hover:bg-violet-500 disabled:cursor-not-allowed disabled:bg-slate-700 disabled:text-slate-300"
+          <div className="grid w-full gap-4 sm:max-w-md">
+            <AuthPanel user={user} onAuthChange={setUser} />
+            <form
+              onSubmit={handleSearch}
+              className="flex w-full flex-col gap-3 sm:flex-row"
             >
-              {loading ? "Searching" : "Search"}
-            </button>
-          </form>
+              <label className="sr-only" htmlFor="zip-code">
+                ZIP code
+              </label>
+              <input
+                id="zip-code"
+                type="text"
+                inputMode="numeric"
+                placeholder="Enter ZIP code"
+                value={zipCode}
+                onChange={(event) => setZipCode(event.target.value)}
+                className="h-12 min-w-0 flex-1 rounded-lg border border-white/15 bg-white/10 px-4 text-base text-white shadow-sm outline-none transition placeholder:text-slate-400 focus:border-cyan-300 focus:ring-4 focus:ring-cyan-400/20"
+              />
+
+              <button
+                type="submit"
+                disabled={loading}
+                className="h-12 rounded-lg bg-indigo-500 px-6 text-sm font-semibold text-white shadow-lg shadow-indigo-950/30 transition hover:bg-violet-500 disabled:cursor-not-allowed disabled:bg-slate-700 disabled:text-slate-300"
+              >
+                {loading ? "Searching" : "Search"}
+              </button>
+            </form>
+          </div>
         </header>
 
         {error && (
