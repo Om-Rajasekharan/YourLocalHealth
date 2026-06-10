@@ -3,9 +3,14 @@
 import { useState } from "react";
 import { getAirQualityLabel } from "../lib/airQuality";
 import {
+  calculateRespiratoryRisk,
   calculateHealthRisk,
   getRiskColor
 } from "../lib/healthRisk";
+import { getLocation } from "../services/location";
+import { getAirQuality } from "../services/airsQuality";
+import { getFluData } from "../services/flu";
+import { getCovidData } from "../services/covid";
 
 export default function Home() {
   const [zipCode, setZipCode] = useState("");
@@ -14,53 +19,56 @@ export default function Home() {
   const [city, setCity] = useState("");
   const [state, setState] = useState("");
   const [aqi, setAqi] = useState<number | null>(null);
-  const [lat, setLat] = useState("");
-  const [lon, setLon] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-
+  const [fluActivity, setFluActivity] = useState("Unknown");
+  const [covidActivity, setCovidActivity] = useState("Unknown");
 
   const handleSearch = async () => {
     setError("");
+    setSearched(false);
     setLoading(true);
     try {
-    const response = await fetch(
-      `https://api.zippopotam.us/us/${zipCode}`
-    );
+      const location = await getLocation(zipCode);
 
-    const data = await response.json();
+      setCity(location.city);
+      setState(location.state);
 
-    setCity(data.places[0]["place name"]);
-    setState(data.places[0]["state abbreviation"]);
+      const fluData = await getFluData(location.state);
+      setFluActivity(fluData);
 
-    const latitude = data.places[0]["latitude"];
-    const longitude = data.places[0]["longitude"];
-    setLat(latitude);
-    setLon(longitude);
+      const covidData = await getCovidData(location.state);
+      setCovidActivity(covidData.activity);
 
-    const airResponse = await fetch(
-  `https://api.openweathermap.org/data/2.5/air_pollution?lat=${latitude}&lon=${longitude}&appid=${process.env.NEXT_PUBLIC_OPENWEATHER_API_KEY}`
-);
+      const airData = await getAirQuality(
+        location.latitude,
+        location.longitude
+      );
 
-const airData = await airResponse.json();
-console.log(airData);
-if (airData.list) {
-  setAqi(airData.list[0].main.aqi);
-}
-    setLoading(false);
-    setSearched(true);
-  } catch (error) {
-    console.error(error);
-    setLoading(false);
-    if (error instanceof Error) {
-    setError(error.message);
-  } else {
-    setError("Unable to retrieve health data.");
-  }
-  }
+      setAqi(airData.list?.[0]?.main.aqi ?? null);
+      setSearched(true);
+    } catch (error) {
+      console.error(error);
+      if (error instanceof Error) {
+        setError(error.message);
+      } else {
+        setError("Unable to retrieve health data.");
+      }
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const healthRisk = calculateHealthRisk(aqi);
+  const healthRisk = calculateHealthRisk(
+    aqi,
+    fluActivity,
+    covidActivity
+  );
+  const respiratoryRisk = calculateRespiratoryRisk(
+    aqi,
+    fluActivity,
+    covidActivity
+  );
   return (
     <main className="min-h-screen max-w-6xl mx-auto p-8">
       <h1 className="text-6xl font-bold">
@@ -130,17 +138,19 @@ if (airData.list) {
 
   <div className="border rounded p-3">
     <strong>😷 Respiratory Risk</strong>
-    <p>Moderate</p>
+    <p className={getRiskColor(respiratoryRisk)}>
+      {respiratoryRisk}
+    </p>
   </div>
 
   <div className="border rounded p-3">
     <strong>🤒 Flu Activity</strong>
-    <p>Moderate</p>
+    <p>{fluActivity}</p>
   </div>
 
   <div className="border rounded p-3">
     <strong>🦠 COVID Activity</strong>
-    <p>Low</p>
+    <p>{covidActivity}</p>
   </div>
 
 </div>

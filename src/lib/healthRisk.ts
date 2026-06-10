@@ -1,8 +1,60 @@
-export function calculateHealthRisk(aqi: number | null) {
-  if (aqi === null || aqi === undefined) return "Unknown";
+export function calculateHealthRisk(
+  aqi: number | null,
+  fluActivity: string,
+  covidActivity: string
+) {
+  if (aqi === null || aqi === undefined)
+    return "Unknown";
 
-  if (aqi >= 4) return "High";
-  if (aqi === 3) return "Moderate";
+  // High risk
+  if (
+    aqi >= 4 ||
+    fluActivity === "High" ||
+    fluActivity === "Very High" ||
+    covidActivity === "High" ||
+    covidActivity === "Very High"
+  ) {
+    return "High";
+  }
+
+  // Moderate risk
+  if (
+    aqi === 3 ||
+    fluActivity === "Moderate" ||
+    covidActivity === "Moderate"
+  ) {
+    return "Moderate";
+  }
+
+  return "Low";
+}
+
+export function calculateRespiratoryRisk(
+  aqi: number | null,
+  fluActivity: string,
+  covidActivity: string
+) {
+  if (aqi === null || aqi === undefined)
+    return "Unknown";
+
+  if (
+    aqi >= 4 ||
+    fluActivity === "High" ||
+    fluActivity === "Very High" ||
+    covidActivity === "High" ||
+    covidActivity === "Very High"
+  ) {
+    return "High";
+  }
+
+  if (
+    aqi === 3 ||
+    fluActivity === "Moderate" ||
+    covidActivity === "Moderate"
+  ) {
+    return "Moderate";
+  }
+
   return "Low";
 }
 
