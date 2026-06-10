@@ -20,6 +20,12 @@ import {
   type LocalHealthNewsArticle,
 } from "../services/localNews";
 import {
+  deleteSavedLocation,
+  getSavedLocations,
+  saveLocation,
+  type SavedLocation,
+} from "../services/savedLocations";
+import {
   isSupabaseConfigured,
   supabase,
 } from "../lib/supabaseClient";
@@ -216,6 +222,65 @@ function AuthPanel({
   );
 }
 
+function SavedLocationsPanel({
+  locations,
+  onSelect,
+  onDelete,
+  message,
+}: {
+  locations: SavedLocation[];
+  onSelect: (zipCode: string) => void;
+  onDelete: (id: string) => void;
+  message: string;
+}) {
+  return (
+    <section className="rounded-lg border border-white/10 bg-white/5 p-4">
+      <p className="text-xs font-semibold uppercase tracking-wide text-cyan-300">
+        My Locations
+      </p>
+      {message && (
+        <p className="mt-2 text-xs leading-5 text-slate-300">
+          {message}
+        </p>
+      )}
+      {locations.length === 0 ? (
+        <p className="mt-2 text-sm leading-5 text-slate-300">
+          Search a ZIP code, then save it here for quick access.
+        </p>
+      ) : (
+        <div className="mt-3 grid gap-2">
+          {locations.map((location) => (
+            <div
+              className="rounded-lg border border-white/10 bg-white/5 p-3"
+              key={location.id}
+            >
+              <button
+                type="button"
+                onClick={() => onSelect(location.zip_code)}
+                className="block w-full text-left"
+              >
+                <span className="block text-sm font-semibold text-white">
+                  {location.label}
+                </span>
+                <span className="mt-1 block text-xs text-slate-400">
+                  {location.city}, {location.state} · {location.zip_code}
+                </span>
+              </button>
+              <button
+                type="button"
+                onClick={() => onDelete(location.id)}
+                className="mt-2 text-xs font-semibold text-fuchsia-200 hover:text-white"
+              >
+                Remove
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+    </section>
+  );
+}
+
 export default function Home() {
   const restoredZipRef = useRef("");
   const [user, setUser] = useState<User | null>(null);
@@ -237,6 +302,11 @@ export default function Home() {
   const [localNews, setLocalNews] = useState<LocalHealthNewsArticle[]>(
     []
   );
+  const [savedLocations, setSavedLocations] = useState<SavedLocation[]>(
+    []
+  );
+  const [savedLocationMessage, setSavedLocationMessage] = useState("");
+  const [savingLocation, setSavingLocation] = useState(false);
 
   const covidActivity = covidData?.activity ?? "Unknown";
   const healthRisk = calculateHealthRisk(
@@ -284,6 +354,7 @@ export default function Home() {
   };
 
   const searchZipCode = async (zipToSearch: string) => {
+    setZipCode(zipToSearch);
     setError("");
     setNewsError("");
     setLocalNews([]);
@@ -338,6 +409,72 @@ export default function Home() {
     }
   };
 
+  const loadSavedLocations = async (userId: string) => {
+    try {
+      const locations = await getSavedLocations(userId);
+      setSavedLocations(locations);
+      setSavedLocationMessage("");
+    } catch (error) {
+      if (error instanceof Error) {
+        setSavedLocationMessage(error.message);
+      } else {
+        setSavedLocationMessage("Unable to load saved locations.");
+      }
+    }
+  };
+
+  const handleSaveLocation = async () => {
+    if (!user || !searched) return;
+
+    const defaultLabel =
+      savedLocations.length === 0 ? "Home" : `${city}, ${state}`;
+    const label =
+      window.prompt("Name this location", defaultLabel) ?? "";
+
+    if (!label.trim()) return;
+
+    setSavingLocation(true);
+    setSavedLocationMessage("");
+
+    try {
+      await saveLocation({
+        userId: user.id,
+        label: label.trim(),
+        zipCode,
+        city,
+        state,
+        latitude,
+        longitude,
+      });
+      await loadSavedLocations(user.id);
+      setSavedLocationMessage("Location saved.");
+    } catch (error) {
+      if (error instanceof Error) {
+        setSavedLocationMessage(error.message);
+      } else {
+        setSavedLocationMessage("Unable to save this location.");
+      }
+    } finally {
+      setSavingLocation(false);
+    }
+  };
+
+  const handleDeleteLocation = async (id: string) => {
+    if (!user) return;
+
+    try {
+      await deleteSavedLocation(id);
+      await loadSavedLocations(user.id);
+      setSavedLocationMessage("Location removed.");
+    } catch (error) {
+      if (error instanceof Error) {
+        setSavedLocationMessage(error.message);
+      } else {
+        setSavedLocationMessage("Unable to remove this location.");
+      }
+    }
+  };
+
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const restoredZipCode = params.get("zipCode");
@@ -357,11 +494,21 @@ export default function Home() {
 
     void supabase.auth.getUser().then(({ data }) => {
       setUser(data.user);
+      if (data.user) {
+        void loadSavedLocations(data.user.id);
+      }
     });
 
     const { data } = supabase.auth.onAuthStateChange(
       (_event, session) => {
-        setUser(session?.user ?? null);
+        const nextUser = session?.user ?? null;
+        setUser(nextUser);
+
+        if (nextUser) {
+          void loadSavedLocations(nextUser.id);
+        } else {
+          setSavedLocations([]);
+        }
       }
     );
 
@@ -394,6 +541,16 @@ export default function Home() {
 
           <div className="grid w-full gap-4 sm:max-w-md">
             <AuthPanel user={user} onAuthChange={setUser} />
+            {user && (
+              <SavedLocationsPanel
+                locations={savedLocations}
+                message={savedLocationMessage}
+                onSelect={(savedZipCode) =>
+                  void searchZipCode(savedZipCode)
+                }
+                onDelete={(id) => void handleDeleteLocation(id)}
+              />
+            )}
             <form
               onSubmit={handleSearch}
               className="flex w-full flex-col gap-3 sm:flex-row"
@@ -460,6 +617,24 @@ export default function Home() {
                 Informational only, not medical advice.
               </p>
             </div>
+
+            {user && (
+              <div className="mb-5 rounded-lg border border-white/10 bg-white/5 p-4">
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                  <p className="text-sm text-slate-300">
+                    Save {city}, {state} to your account for quick access.
+                  </p>
+                  <button
+                    type="button"
+                    disabled={savingLocation}
+                    onClick={() => void handleSaveLocation()}
+                    className="rounded-lg bg-indigo-500 px-4 py-2 text-sm font-semibold text-white transition hover:bg-violet-500 disabled:bg-slate-700"
+                  >
+                    {savingLocation ? "Saving" : "Save this location"}
+                  </button>
+                </div>
+              </div>
+            )}
 
             <section className="rounded-lg border border-white/10 bg-[#101934]/90 p-6 shadow-xl shadow-black/25">
               <div className="grid gap-6 lg:grid-cols-[1.1fr_0.9fr] lg:items-center">
