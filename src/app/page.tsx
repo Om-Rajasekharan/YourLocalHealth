@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { FormEvent, useState } from "react";
 import { getAirQualityLabel } from "../lib/airQuality";
 import {
@@ -46,17 +47,23 @@ function SignalCard({
   value,
   detail,
   source,
+  href,
 }: {
   title: string;
   value: string;
   detail: string;
   source: string;
+  href: string;
 }) {
   return (
-    <article className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
+    <Link
+      href={href}
+      className="group block rounded-lg outline-none transition focus:ring-4 focus:ring-teal-100"
+    >
+    <article className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm transition group-hover:-translate-y-0.5 group-hover:border-teal-300 group-hover:shadow-md">
       <div className="flex min-h-24 flex-col justify-between gap-4">
         <div>
-          <h3 className="text-sm font-semibold uppercase tracking-wide text-slate-500">
+          <h3 className="text-sm font-semibold uppercase tracking-wide text-slate-500 transition group-hover:text-teal-700">
             {title}
           </h3>
           <div className="mt-3">
@@ -69,8 +76,12 @@ function SignalCard({
         <p className="border-t border-slate-100 pt-3 text-xs text-slate-500">
           {source}
         </p>
+        <p className="text-xs font-semibold text-teal-700">
+          View details
+        </p>
       </div>
     </article>
+    </Link>
   );
 }
 
@@ -81,6 +92,8 @@ export default function Home() {
   const [city, setCity] = useState("");
   const [state, setState] = useState("");
   const [aqi, setAqi] = useState<number | null>(null);
+  const [latitude, setLatitude] = useState("");
+  const [longitude, setLongitude] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [fluActivity, setFluActivity] = useState("Unknown");
@@ -98,6 +111,38 @@ export default function Home() {
     fluActivity,
     covidActivity
   );
+  const latitudeValue = Number(latitude);
+  const longitudeValue = Number(longitude);
+  const hasMapLocation =
+    !Number.isNaN(latitudeValue) && !Number.isNaN(longitudeValue);
+  const mapUrl = hasMapLocation
+    ? `https://www.openstreetmap.org/export/embed.html?bbox=${
+        longitudeValue - 0.08
+      }%2C${latitudeValue - 0.05}%2C${longitudeValue + 0.08}%2C${
+        latitudeValue + 0.05
+      }&layer=mapnik&marker=${latitudeValue}%2C${longitudeValue}`
+    : "";
+  const airQualityLabel = getAirQualityLabel(aqi);
+  const detailHref = (topic: string) => {
+    const params = new URLSearchParams({
+      zipCode,
+      city,
+      state,
+      aqi: aqi?.toString() ?? "",
+      airQuality: airQualityLabel,
+      fluActivity,
+      covidActivity,
+      covidValue: covidData?.value?.toString() ?? "",
+      covidSites: covidData?.numberOfSites.toString() ?? "",
+      covidCoverage: covidData?.coverage ?? "",
+      covidTimePeriod: covidData?.timePeriod ?? "",
+      covidUpdatedAt: covidData?.updatedAt ?? "",
+      healthRisk,
+      respiratoryRisk,
+    });
+
+    return `/details/${topic}?${params.toString()}`;
+  };
 
   const handleSearch = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -110,6 +155,8 @@ export default function Home() {
 
       setCity(location.city);
       setState(location.state);
+      setLatitude(location.latitude);
+      setLongitude(location.longitude);
 
       const fluData = await getFluData(location.state);
       setFluActivity(fluData);
@@ -234,7 +281,10 @@ export default function Home() {
                     local risk snapshot.
                   </p>
                 </div>
-                <div className="rounded-lg border border-slate-200 bg-slate-50 p-5">
+                <Link
+                  href={detailHref("respiratory-risk")}
+                  className="group rounded-lg border border-slate-200 bg-slate-50 p-5 outline-none transition hover:-translate-y-0.5 hover:border-teal-300 hover:shadow-md focus:ring-4 focus:ring-teal-100"
+                >
                   <p className="text-sm font-semibold uppercase tracking-wide text-slate-500">
                     Respiratory Risk
                   </p>
@@ -245,22 +295,51 @@ export default function Home() {
                     Based on flu activity, COVID wastewater activity, and air
                     quality conditions that may affect breathing.
                   </p>
-                </div>
+                  <p className="mt-4 text-xs font-semibold text-teal-700">
+                    View details
+                  </p>
+                </Link>
               </div>
             </section>
+
+            {hasMapLocation && (
+              <section className="mt-5 overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm">
+                <div className="flex flex-col gap-2 border-b border-slate-100 p-5 sm:flex-row sm:items-end sm:justify-between">
+                  <div>
+                    <p className="text-sm font-semibold uppercase tracking-wide text-slate-500">
+                      Search Location
+                    </p>
+                    <h3 className="mt-1 text-xl font-semibold text-slate-950">
+                      {city}, {state}
+                    </h3>
+                  </div>
+                  <p className="text-sm text-slate-500">
+                    ZIP {zipCode} · {latitude}, {longitude}
+                  </p>
+                </div>
+                <iframe
+                  title={`Map centered on ${city}, ${state}`}
+                  src={mapUrl}
+                  className="h-80 w-full border-0"
+                  loading="lazy"
+                />
+              </section>
+            )}
 
             <section className="mt-5 grid gap-5 md:grid-cols-2">
               <SignalCard
                 title="Air Quality"
-                value={getAirQualityLabel(aqi)}
+                value={airQualityLabel}
                 detail={`AQI category ${aqi ?? "unavailable"} from current air pollution data.`}
                 source="Source: OpenWeather Air Pollution API"
+                href={detailHref("air-quality")}
               />
               <SignalCard
                 title="Flu Activity"
                 value={fluActivity}
                 detail="CDC respiratory illness activity reported at the state level."
                 source="Source: CDC respiratory illness activity dataset"
+                href={detailHref("flu-activity")}
               />
               <SignalCard
                 title="COVID Wastewater"
@@ -275,12 +354,14 @@ export default function Home() {
                     ? `Source: CDC NWSS, updated ${covidData.updatedAt}`
                     : "Source: CDC NWSS"
                 }
+                href={detailHref("covid-wastewater")}
               />
               <SignalCard
                 title="Data Coverage"
                 value={covidData?.coverage ?? "Unknown"}
                 detail="Coverage describes how representative the wastewater data is for the state or territory."
                 source="Source: CDC National Wastewater Surveillance System"
+                href={detailHref("data-coverage")}
               />
             </section>
           </section>
