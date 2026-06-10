@@ -14,6 +14,10 @@ import {
   getCovidData,
   type CovidActivityData,
 } from "../services/covid";
+import {
+  getLocalHealthNews,
+  type LocalHealthNewsArticle,
+} from "../services/localNews";
 
 function riskBadgeClass(risk: string) {
   switch (risk) {
@@ -97,9 +101,14 @@ export default function Home() {
   const [longitude, setLongitude] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [newsLoading, setNewsLoading] = useState(false);
+  const [newsError, setNewsError] = useState("");
   const [fluActivity, setFluActivity] = useState("Unknown");
   const [covidData, setCovidData] =
     useState<CovidActivityData | null>(null);
+  const [localNews, setLocalNews] = useState<LocalHealthNewsArticle[]>(
+    []
+  );
 
   const covidActivity = covidData?.activity ?? "Unknown";
   const healthRisk = calculateHealthRisk(
@@ -148,6 +157,8 @@ export default function Home() {
 
   const searchZipCode = async (zipToSearch: string) => {
     setError("");
+    setNewsError("");
+    setLocalNews([]);
     setSearched(false);
     setLoading(true);
 
@@ -172,6 +183,21 @@ export default function Home() {
 
       setAqi(airData.list?.[0]?.main.aqi ?? null);
       setSearched(true);
+
+      setNewsLoading(true);
+      try {
+        const news = await getLocalHealthNews(
+          location.city,
+          location.state
+        );
+        setLocalNews(news);
+      } catch {
+        setNewsError(
+          "Local health news is temporarily unavailable."
+        );
+      } finally {
+        setNewsLoading(false);
+      }
     } catch (error) {
       console.error(error);
       if (error instanceof Error) {
@@ -383,6 +409,66 @@ export default function Home() {
                 source="Source: CDC National Wastewater Surveillance System"
                 href={detailHref("data-coverage")}
               />
+            </section>
+
+            <section className="mt-5 rounded-lg border border-white/10 bg-[#101934]/90 p-5 shadow-xl shadow-black/25">
+              <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+                <div>
+                  <p className="text-sm font-semibold uppercase tracking-wide text-slate-400">
+                    Local Health News
+                  </p>
+                  <h3 className="mt-1 text-xl font-semibold text-white">
+                    Recent health-related articles near {city}, {state}
+                  </h3>
+                </div>
+                <p className="text-sm text-slate-400">
+                  Sources: GDELT and Google News RSS
+                </p>
+              </div>
+
+              {newsLoading && (
+                <p className="mt-5 text-sm text-slate-300">
+                  Searching recent local health news...
+                </p>
+              )}
+
+              {newsError && (
+                <p className="mt-5 rounded-lg border border-violet-300/30 bg-violet-500/10 p-4 text-sm text-violet-100">
+                  {newsError}
+                </p>
+              )}
+
+              {!newsLoading && !newsError && localNews.length === 0 && (
+                <p className="mt-5 text-sm leading-6 text-slate-300">
+                  No recent local health news articles were found for this
+                  search. This does not mean there are no public health issues
+                  in the area.
+                </p>
+              )}
+
+              {localNews.length > 0 && (
+                <div className="mt-5 grid gap-4 md:grid-cols-2">
+                  {localNews.map((article) => (
+                    <a
+                      href={article.url}
+                      key={article.url}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="rounded-lg border border-white/10 bg-white/5 p-4 transition hover:-translate-y-0.5 hover:border-cyan-300/50 hover:bg-white/10"
+                    >
+                      <p className="text-xs font-semibold uppercase tracking-wide text-cyan-300">
+                        {article.source}
+                      </p>
+                      <h4 className="mt-2 text-base font-semibold leading-6 text-white">
+                        {article.title}
+                      </h4>
+                      <p className="mt-3 text-sm text-slate-400">
+                        {article.publishedAt} · {article.language}
+                      </p>
+                    </a>
+                  ))}
+                </div>
+              )}
             </section>
           </section>
         )}
