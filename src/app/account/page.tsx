@@ -57,7 +57,7 @@ function AuthPanel({
   const [authMessage, setAuthMessage] = useState("");
   const [authLoading, setAuthLoading] = useState(false);
 
-  const handleAuth = async (mode: "sign-in" | "sign-up") => {
+  const handleSignIn = async () => {
     setAuthMessage("");
 
     if (!supabase) {
@@ -67,20 +67,17 @@ function AuthPanel({
 
     setAuthLoading(true);
 
-    const result =
-      mode === "sign-in"
-        ? await supabase.auth.signInWithPassword({ email, password })
-        : await supabase.auth.signUp({ email, password });
+    const result = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
 
     if (result.error) {
       setAuthMessage(result.error.message);
     } else {
-      onAuthChange(result.data.user);
-      setAuthMessage(
-        mode === "sign-up"
-          ? "Account created. Check your email if confirmation is enabled."
-          : "Signed in."
-      );
+      const sessionUser = result.data.session?.user ?? null;
+      onAuthChange(sessionUser);
+      setAuthMessage("Signed in.");
     }
 
     setAuthLoading(false);
@@ -122,11 +119,10 @@ function AuthPanel({
         Sign In
       </p>
       <h2 className="mt-2 text-2xl font-semibold text-white">
-        Personalize YourLocalHealth
+        Welcome back
       </h2>
       <p className="mt-2 text-sm leading-6 text-slate-300">
-        Create an account to save locations and add profile factors that help
-        personalize your health risk snapshot.
+        Sign in to manage your profile and saved places.
       </p>
       {!isSupabaseConfigured && (
         <p className="mt-3 rounded-lg border border-violet-300/30 bg-violet-500/10 p-3 text-xs leading-5 text-violet-100">
@@ -153,19 +149,17 @@ function AuthPanel({
         <button
           type="button"
           disabled={authLoading}
-          onClick={() => void handleAuth("sign-in")}
+          onClick={() => void handleSignIn()}
           className="rounded-lg bg-indigo-500 px-4 py-2 text-sm font-semibold text-white transition hover:bg-violet-500 disabled:bg-slate-700"
         >
           Sign in
         </button>
-        <button
-          type="button"
-          disabled={authLoading}
-          onClick={() => void handleAuth("sign-up")}
-          className="rounded-lg border border-white/15 px-4 py-2 text-sm font-semibold text-white transition hover:border-cyan-300/50 hover:bg-white/10 disabled:text-slate-400"
+        <Link
+          href="/signup"
+          className="rounded-lg border border-white/15 px-4 py-2 text-sm font-semibold text-white transition hover:border-cyan-300/50 hover:bg-white/10"
         >
-          Sign up
-        </button>
+          Create account
+        </Link>
       </div>
       {authMessage && (
         <p className="mt-3 text-xs leading-5 text-slate-300">

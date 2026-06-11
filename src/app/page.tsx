@@ -147,6 +147,238 @@ function SignalCard({
   );
 }
 
+function getSignalPriority(value: string) {
+  if (value === "High" || value === "Very High" || value === "Poor" || value === "Very Poor") {
+    return 3;
+  }
+
+  if (
+    value === "Moderate" ||
+    value === "Limited Coverage" ||
+    value === "Fair"
+  ) {
+    return 2;
+  }
+
+  if (value === "Unknown" || value === "Unavailable") {
+    return 1;
+  }
+
+  return 0;
+}
+
+function buildHealthBrief({
+  healthRisk,
+  respiratoryRisk,
+  airQualityLabel,
+  dominantPollutant,
+  pollutantRisk,
+  heatRisk,
+  uvRisk,
+  alertRisk,
+  weatherAlerts,
+  fluActivity,
+  covidActivity,
+  personalizedRiskReasons,
+  isPersonalized,
+}: {
+  healthRisk: string;
+  respiratoryRisk: string;
+  airQualityLabel: string;
+  dominantPollutant: string;
+  pollutantRisk: string;
+  heatRisk: string;
+  uvRisk: string;
+  alertRisk: string;
+  weatherAlerts: WeatherAlert[];
+  fluActivity: string;
+  covidActivity: string;
+  personalizedRiskReasons: string[];
+  isPersonalized: boolean;
+}) {
+  const signals = [
+    {
+      label: "Respiratory risk",
+      value: respiratoryRisk,
+      note: "combined breathing-related signal",
+    },
+    {
+      label: "Air quality",
+      value: airQualityLabel,
+      note: `main pollutant signal: ${dominantPollutant}`,
+    },
+    {
+      label: "Pollutants",
+      value: pollutantRisk,
+      note: "pollutant-specific risk check",
+    },
+    {
+      label: "Heat",
+      value: heatRisk,
+      note: "feels-like temperature exposure",
+    },
+    {
+      label: "UV",
+      value: uvRisk,
+      note: "sun exposure risk",
+    },
+    {
+      label: "Weather alerts",
+      value: alertRisk,
+      note:
+        weatherAlerts.length > 0
+          ? weatherAlerts
+              .slice(0, 2)
+              .map((alert) => alert.event)
+              .join(", ")
+          : "no active NWS alerts found",
+    },
+    {
+      label: "Flu",
+      value: fluActivity,
+      note: "state respiratory illness activity",
+    },
+    {
+      label: "COVID wastewater",
+      value: covidActivity,
+      note: "state wastewater activity",
+    },
+  ];
+
+  const drivers = signals
+    .filter((signal) => getSignalPriority(signal.value) >= 2)
+    .sort(
+      (a, b) => getSignalPriority(b.value) - getSignalPriority(a.value)
+    )
+    .slice(0, 4);
+
+  const focusItems = [
+    heatRisk === "High" || heatRisk === "Moderate"
+      ? "Plan outdoor time around heat, hydrate, and take shade or cooling breaks."
+      : "",
+    uvRisk === "High" || uvRisk === "Moderate"
+      ? "Use sun protection if you will be outside during peak daylight."
+      : "",
+    respiratoryRisk === "High" || respiratoryRisk === "Moderate"
+      ? "Pay attention to breathing symptoms and consider reducing strenuous outdoor activity if you are sensitive."
+      : "",
+    alertRisk !== "None"
+      ? "Review official local alerts before travel, outdoor work, or exercise."
+      : "",
+    fluActivity === "High" ||
+    fluActivity === "Very High" ||
+    covidActivity === "High" ||
+    covidActivity === "Very High"
+      ? "Respiratory illness activity is elevated, so prevention steps may matter more today."
+      : "",
+  ].filter(Boolean);
+
+  return {
+    headline:
+      healthRisk === "High"
+        ? "Today has elevated local health signals."
+        : healthRisk === "Moderate"
+        ? "A few local signals are worth watching today."
+        : "Local signals look relatively low today.",
+    drivers,
+    focusItems:
+      focusItems.length > 0
+        ? focusItems.slice(0, 3)
+        : ["No major action signal stands out from the current public data."],
+    profileNote: isPersonalized
+      ? personalizedRiskReasons.length > 0
+        ? `Personalized because of ${personalizedRiskReasons.join(", ")}.`
+        : "Personalized with your saved profile."
+      : "Sign in and complete a health profile to personalize this brief.",
+  };
+}
+
+function TodayHealthBrief({
+  healthRisk,
+  headline,
+  drivers,
+  focusItems,
+  profileNote,
+}: {
+  healthRisk: string;
+  headline: string;
+  drivers: { label: string; value: string; note: string }[];
+  focusItems: string[];
+  profileNote: string;
+}) {
+  return (
+    <section className="mb-5 rounded-lg border border-cyan-300/20 bg-[#101934]/90 p-5 shadow-xl shadow-black/25">
+      <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+        <div>
+          <p className="text-sm font-semibold uppercase tracking-wide text-cyan-300">
+            Today&apos;s Health Brief
+          </p>
+          <h3 className="mt-2 text-2xl font-semibold text-white">
+            {headline}
+          </h3>
+          <p className="mt-3 max-w-3xl text-sm leading-6 text-slate-300">
+            This brief summarizes the strongest signals from today&apos;s local
+            air, heat, UV, alert, respiratory illness, wastewater, and profile
+            context.
+          </p>
+        </div>
+        <RiskBadge value={healthRisk} />
+      </div>
+
+      <div className="mt-5 grid gap-4 lg:grid-cols-[1fr_1fr]">
+        <div className="rounded-lg border border-white/10 bg-white/5 p-4">
+          <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">
+            Main drivers
+          </p>
+          {drivers.length > 0 ? (
+            <div className="mt-3 grid gap-3">
+              {drivers.map((driver) => (
+                <div
+                  className="flex flex-col gap-2 rounded-lg border border-white/10 bg-black/10 p-3 sm:flex-row sm:items-center sm:justify-between"
+                  key={driver.label}
+                >
+                  <div>
+                    <p className="text-sm font-semibold text-white">
+                      {driver.label}
+                    </p>
+                    <p className="mt-1 text-xs leading-5 text-slate-400">
+                      {driver.note}
+                    </p>
+                  </div>
+                  <RiskBadge value={driver.value} />
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="mt-3 text-sm leading-6 text-slate-300">
+              No moderate or high drivers were detected from the current data.
+            </p>
+          )}
+        </div>
+
+        <div className="rounded-lg border border-white/10 bg-white/5 p-4">
+          <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">
+            Suggested focus
+          </p>
+          <ul className="mt-3 grid gap-3">
+            {focusItems.map((item) => (
+              <li
+                className="rounded-lg border border-white/10 bg-black/10 p-3 text-sm leading-6 text-slate-200"
+                key={item}
+              >
+                {item}
+              </li>
+            ))}
+          </ul>
+          <p className="mt-4 rounded-lg border border-cyan-300/20 bg-cyan-400/10 p-3 text-xs leading-5 text-cyan-100">
+            {profileNote}
+          </p>
+        </div>
+      </div>
+    </section>
+  );
+}
+
 function HealthChatPanel({ context }: { context: HealthChatContext }) {
   const [question, setQuestion] = useState("");
   const [messages, setMessages] = useState<ChatMessage[]>([
@@ -367,6 +599,21 @@ export default function Home() {
       }&layer=mapnik&marker=${latitudeValue}%2C${longitudeValue}`
     : "";
   const airQualityLabel = getAirQualityLabel(aqi);
+  const healthBrief = buildHealthBrief({
+    healthRisk,
+    respiratoryRisk,
+    airQualityLabel,
+    dominantPollutant,
+    pollutantRisk,
+    heatRisk,
+    uvRisk,
+    alertRisk,
+    weatherAlerts,
+    fluActivity,
+    covidActivity,
+    personalizedRiskReasons: personalizedRisk.reasons,
+    isPersonalized: personalizedRisk.isPersonalized,
+  });
   const chatContext: HealthChatContext = {
     zipCode,
     city,
@@ -570,12 +817,22 @@ export default function Home() {
               </p>
             </div>
 
-            <Link
-              href="/account"
-              className="w-fit rounded-lg border border-white/15 px-4 py-2 text-sm font-semibold text-white transition hover:border-cyan-300/50 hover:bg-white/10"
-            >
-              {user ? "Account" : "Sign in"}
-            </Link>
+            <div className="flex flex-wrap gap-2">
+              <Link
+                href="/account"
+                className="w-fit rounded-lg border border-white/15 px-4 py-2 text-sm font-semibold text-white transition hover:border-cyan-300/50 hover:bg-white/10"
+              >
+                {user ? "Account" : "Sign in"}
+              </Link>
+              {!user && (
+                <Link
+                  href="/signup"
+                  className="w-fit rounded-lg bg-cyan-500 px-4 py-2 text-sm font-semibold text-slate-950 transition hover:bg-cyan-300"
+                >
+                  Sign up
+                </Link>
+              )}
+            </div>
           </div>
 
           <form
@@ -643,6 +900,14 @@ export default function Home() {
                 Informational only, not medical advice.
               </p>
             </div>
+
+            <TodayHealthBrief
+              healthRisk={healthRisk}
+              headline={healthBrief.headline}
+              drivers={healthBrief.drivers}
+              focusItems={healthBrief.focusItems}
+              profileNote={healthBrief.profileNote}
+            />
 
             <section className="rounded-lg border border-white/10 bg-[#101934]/90 p-6 shadow-xl shadow-black/25">
               <div className="grid gap-6 lg:grid-cols-[1.1fr_0.9fr] lg:items-center">

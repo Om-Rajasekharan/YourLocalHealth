@@ -64,6 +64,17 @@ export async function saveUserProfile(
     throw new Error("Supabase is not configured.");
   }
 
+  const { data: authData, error: authError } =
+    await supabase.auth.getUser();
+
+  if (authError || !authData.user) {
+    throw new Error("Please confirm your email and sign in before saving your profile.");
+  }
+
+  if (authData.user.id !== profile.userId) {
+    throw new Error("Please sign in again before saving your profile.");
+  }
+
   const { data, error } = await supabase
     .from("user_profiles")
     .upsert(
