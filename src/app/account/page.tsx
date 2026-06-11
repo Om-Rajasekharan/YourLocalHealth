@@ -1,0 +1,625 @@
+"use client";
+
+import Link from "next/link";
+import { FormEvent, useEffect, useState } from "react";
+import type { User } from "@supabase/supabase-js";
+import {
+  deleteSavedLocation,
+  getSavedLocations,
+  type SavedLocation,
+} from "../../services/savedLocations";
+import {
+  getUserProfile,
+  saveUserProfile,
+  type ActivityLevel,
+  type AgeRange,
+  type ExposureLevel,
+  type RespiratorySensitivity,
+  type UserProfile,
+} from "../../services/userProfile";
+import {
+  isSupabaseConfigured,
+  supabase,
+} from "../../lib/supabaseClient";
+
+const ageRanges: AgeRange[] = [
+  "Under 18",
+  "18-34",
+  "35-49",
+  "50-64",
+  "65+",
+];
+const exposureLevels: ExposureLevel[] = ["Low", "Moderate", "High"];
+const activityLevels: ActivityLevel[] = ["Low", "Moderate", "High"];
+const respiratorySensitivityLevels: RespiratorySensitivity[] = [
+  "None",
+  "Mild",
+  "High",
+];
+const carTypes = [
+  "No car",
+  "Gas",
+  "Hybrid",
+  "Electric",
+  "Diesel",
+  "Other",
+];
+
+function AuthPanel({
+  user,
+  onAuthChange,
+}: {
+  user: User | null;
+  onAuthChange: (user: User | null) => void;
+}) {
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [authMessage, setAuthMessage] = useState("");
+  const [authLoading, setAuthLoading] = useState(false);
+
+  const handleAuth = async (mode: "sign-in" | "sign-up") => {
+    setAuthMessage("");
+
+    if (!supabase) {
+      setAuthMessage("Add Supabase environment variables to enable sign in.");
+      return;
+    }
+
+    setAuthLoading(true);
+
+    const result =
+      mode === "sign-in"
+        ? await supabase.auth.signInWithPassword({ email, password })
+        : await supabase.auth.signUp({ email, password });
+
+    if (result.error) {
+      setAuthMessage(result.error.message);
+    } else {
+      onAuthChange(result.data.user);
+      setAuthMessage(
+        mode === "sign-up"
+          ? "Account created. Check your email if confirmation is enabled."
+          : "Signed in."
+      );
+    }
+
+    setAuthLoading(false);
+  };
+
+  const handleSignOut = async () => {
+    if (!supabase) return;
+    await supabase.auth.signOut();
+    onAuthChange(null);
+    setAuthMessage("Signed out.");
+  };
+
+  if (user) {
+    return (
+      <section className="rounded-lg border border-white/10 bg-white/5 p-5">
+        <p className="text-xs font-semibold uppercase tracking-wide text-cyan-300">
+          Account
+        </p>
+        <p className="mt-2 text-sm text-slate-200">{user.email}</p>
+        <button
+          type="button"
+          onClick={handleSignOut}
+          className="mt-4 rounded-lg border border-white/15 px-4 py-2 text-sm font-semibold text-white transition hover:border-cyan-300/50 hover:bg-white/10"
+        >
+          Sign out
+        </button>
+        {authMessage && (
+          <p className="mt-3 text-xs leading-5 text-slate-300">
+            {authMessage}
+          </p>
+        )}
+      </section>
+    );
+  }
+
+  return (
+    <section className="rounded-lg border border-white/10 bg-white/5 p-5">
+      <p className="text-xs font-semibold uppercase tracking-wide text-cyan-300">
+        Sign In
+      </p>
+      <h2 className="mt-2 text-2xl font-semibold text-white">
+        Personalize YourLocalHealth
+      </h2>
+      <p className="mt-2 text-sm leading-6 text-slate-300">
+        Create an account to save locations and add profile factors that help
+        personalize your health risk snapshot.
+      </p>
+      {!isSupabaseConfigured && (
+        <p className="mt-3 rounded-lg border border-violet-300/30 bg-violet-500/10 p-3 text-xs leading-5 text-violet-100">
+          Supabase is not configured yet.
+        </p>
+      )}
+      <div className="mt-4 grid gap-3">
+        <input
+          type="email"
+          placeholder="Email"
+          value={email}
+          onChange={(event) => setEmail(event.target.value)}
+          className="h-11 rounded-lg border border-white/15 bg-white/10 px-3 text-sm text-white outline-none placeholder:text-slate-400 focus:border-cyan-300"
+        />
+        <input
+          type="password"
+          placeholder="Password"
+          value={password}
+          onChange={(event) => setPassword(event.target.value)}
+          className="h-11 rounded-lg border border-white/15 bg-white/10 px-3 text-sm text-white outline-none placeholder:text-slate-400 focus:border-cyan-300"
+        />
+      </div>
+      <div className="mt-4 flex flex-wrap gap-2">
+        <button
+          type="button"
+          disabled={authLoading}
+          onClick={() => void handleAuth("sign-in")}
+          className="rounded-lg bg-indigo-500 px-4 py-2 text-sm font-semibold text-white transition hover:bg-violet-500 disabled:bg-slate-700"
+        >
+          Sign in
+        </button>
+        <button
+          type="button"
+          disabled={authLoading}
+          onClick={() => void handleAuth("sign-up")}
+          className="rounded-lg border border-white/15 px-4 py-2 text-sm font-semibold text-white transition hover:border-cyan-300/50 hover:bg-white/10 disabled:text-slate-400"
+        >
+          Sign up
+        </button>
+      </div>
+      {authMessage && (
+        <p className="mt-3 text-xs leading-5 text-slate-300">
+          {authMessage}
+        </p>
+      )}
+    </section>
+  );
+}
+
+function ProfilePanel({
+  profile,
+  userId,
+  message,
+  onSaved,
+}: {
+  profile: UserProfile | null;
+  userId: string;
+  message: string;
+  onSaved: (profile: UserProfile, message: string) => void;
+}) {
+  const [fullName, setFullName] = useState(profile?.full_name ?? "");
+  const [ageRange, setAgeRange] = useState<AgeRange>(
+    profile?.age_range ?? "18-34"
+  );
+  const [placeOfBirth, setPlaceOfBirth] = useState(
+    profile?.place_of_birth ?? ""
+  );
+  const [carType, setCarType] = useState(profile?.car_type ?? "Other");
+  const [outdoorExposure, setOutdoorExposure] = useState<ExposureLevel>(
+    profile?.outdoor_exposure ?? "Moderate"
+  );
+  const [activityLevel, setActivityLevel] = useState<ActivityLevel>(
+    profile?.activity_level ?? "Moderate"
+  );
+  const [commuteExposure, setCommuteExposure] = useState<ExposureLevel>(
+    profile?.commute_exposure ?? "Moderate"
+  );
+  const [respiratorySensitivity, setRespiratorySensitivity] =
+    useState<RespiratorySensitivity>(
+      profile?.respiratory_sensitivity ?? "None"
+    );
+  const [savingProfile, setSavingProfile] = useState(false);
+  const [profileError, setProfileError] = useState("");
+
+  useEffect(() => {
+    setFullName(profile?.full_name ?? "");
+    setAgeRange(profile?.age_range ?? "18-34");
+    setPlaceOfBirth(profile?.place_of_birth ?? "");
+    setCarType(profile?.car_type ?? "Other");
+    setOutdoorExposure(profile?.outdoor_exposure ?? "Moderate");
+    setActivityLevel(profile?.activity_level ?? "Moderate");
+    setCommuteExposure(profile?.commute_exposure ?? "Moderate");
+    setRespiratorySensitivity(
+      profile?.respiratory_sensitivity ?? "None"
+    );
+  }, [profile]);
+
+  const handleProfileSubmit = async (
+    event: FormEvent<HTMLFormElement>
+  ) => {
+    event.preventDefault();
+    setSavingProfile(true);
+    setProfileError("");
+
+    try {
+      const savedProfile = await saveUserProfile({
+        userId,
+        fullName: fullName.trim(),
+        ageRange,
+        placeOfBirth,
+        carType,
+        outdoorExposure,
+        activityLevel,
+        commuteExposure,
+        respiratorySensitivity,
+      });
+      onSaved(
+        savedProfile,
+        "Profile saved. Your dashboard risk snapshot is now personalized."
+      );
+    } catch (error) {
+      if (error instanceof Error) {
+        setProfileError(error.message);
+      } else {
+        setProfileError("Unable to save profile.");
+      }
+    } finally {
+      setSavingProfile(false);
+    }
+  };
+
+  return (
+    <section className="rounded-lg border border-white/10 bg-white/5 p-5">
+      <p className="text-xs font-semibold uppercase tracking-wide text-cyan-300">
+        Health Profile
+      </p>
+      <h2 className="mt-2 text-2xl font-semibold text-white">
+        Personal details
+      </h2>
+      <p className="mt-2 text-sm leading-6 text-slate-300">
+        These factors are used only to adjust your informational risk snapshot.
+      </p>
+
+      <form onSubmit={handleProfileSubmit} className="mt-5 grid gap-4">
+        <label className="grid gap-1 text-xs font-semibold uppercase tracking-wide text-slate-400">
+          Name
+          <input
+            type="text"
+            value={fullName}
+            onChange={(event) => setFullName(event.target.value)}
+            placeholder="Optional"
+            className="h-11 rounded-lg border border-white/15 bg-white/10 px-3 text-sm font-normal normal-case tracking-normal text-white outline-none placeholder:text-slate-400 focus:border-cyan-300"
+          />
+        </label>
+
+        <div className="grid gap-4 sm:grid-cols-2">
+          <label className="grid gap-1 text-xs font-semibold uppercase tracking-wide text-slate-400">
+            Age range
+            <select
+              value={ageRange}
+              onChange={(event) =>
+                setAgeRange(event.target.value as AgeRange)
+              }
+              className="h-11 rounded-lg border border-white/15 bg-[#111a33] px-3 text-sm font-normal normal-case tracking-normal text-white outline-none focus:border-cyan-300"
+            >
+              {ageRanges.map((range) => (
+                <option key={range}>{range}</option>
+              ))}
+            </select>
+          </label>
+
+          <label className="grid gap-1 text-xs font-semibold uppercase tracking-wide text-slate-400">
+            Car type
+            <select
+              value={carType}
+              onChange={(event) => setCarType(event.target.value)}
+              className="h-11 rounded-lg border border-white/15 bg-[#111a33] px-3 text-sm font-normal normal-case tracking-normal text-white outline-none focus:border-cyan-300"
+            >
+              {carTypes.map((type) => (
+                <option key={type}>{type}</option>
+              ))}
+            </select>
+          </label>
+        </div>
+
+        <div className="grid gap-4 sm:grid-cols-2">
+          <label className="grid gap-1 text-xs font-semibold uppercase tracking-wide text-slate-400">
+            Time outside
+            <select
+              value={outdoorExposure}
+              onChange={(event) =>
+                setOutdoorExposure(event.target.value as ExposureLevel)
+              }
+              className="h-11 rounded-lg border border-white/15 bg-[#111a33] px-3 text-sm font-normal normal-case tracking-normal text-white outline-none focus:border-cyan-300"
+            >
+              {exposureLevels.map((level) => (
+                <option key={level}>{level}</option>
+              ))}
+            </select>
+          </label>
+
+          <label className="grid gap-1 text-xs font-semibold uppercase tracking-wide text-slate-400">
+            Activity level
+            <select
+              value={activityLevel}
+              onChange={(event) =>
+                setActivityLevel(event.target.value as ActivityLevel)
+              }
+              className="h-11 rounded-lg border border-white/15 bg-[#111a33] px-3 text-sm font-normal normal-case tracking-normal text-white outline-none focus:border-cyan-300"
+            >
+              {activityLevels.map((level) => (
+                <option key={level}>{level}</option>
+              ))}
+            </select>
+          </label>
+        </div>
+
+        <div className="grid gap-4 sm:grid-cols-2">
+          <label className="grid gap-1 text-xs font-semibold uppercase tracking-wide text-slate-400">
+            Traffic exposure
+            <select
+              value={commuteExposure}
+              onChange={(event) =>
+                setCommuteExposure(event.target.value as ExposureLevel)
+              }
+              className="h-11 rounded-lg border border-white/15 bg-[#111a33] px-3 text-sm font-normal normal-case tracking-normal text-white outline-none focus:border-cyan-300"
+            >
+              {exposureLevels.map((level) => (
+                <option key={level}>{level}</option>
+              ))}
+            </select>
+          </label>
+
+          <label className="grid gap-1 text-xs font-semibold uppercase tracking-wide text-slate-400">
+            Breathing sensitivity
+            <select
+              value={respiratorySensitivity}
+              onChange={(event) =>
+                setRespiratorySensitivity(
+                  event.target.value as RespiratorySensitivity
+                )
+              }
+              className="h-11 rounded-lg border border-white/15 bg-[#111a33] px-3 text-sm font-normal normal-case tracking-normal text-white outline-none focus:border-cyan-300"
+            >
+              {respiratorySensitivityLevels.map((level) => (
+                <option key={level}>{level}</option>
+              ))}
+            </select>
+          </label>
+        </div>
+
+        <label className="grid gap-1 text-xs font-semibold uppercase tracking-wide text-slate-400">
+          Place of birth
+          <input
+            type="text"
+            value={placeOfBirth}
+            onChange={(event) => setPlaceOfBirth(event.target.value)}
+            placeholder="Optional"
+            className="h-11 rounded-lg border border-white/15 bg-white/10 px-3 text-sm font-normal normal-case tracking-normal text-white outline-none placeholder:text-slate-400 focus:border-cyan-300"
+          />
+        </label>
+
+        <button
+          type="submit"
+          disabled={savingProfile}
+          className="rounded-lg bg-cyan-500 px-4 py-2 text-sm font-semibold text-slate-950 transition hover:bg-cyan-300 disabled:bg-slate-700 disabled:text-slate-300"
+        >
+          {savingProfile ? "Saving profile" : "Save profile"}
+        </button>
+      </form>
+
+      {(message || profileError) && (
+        <p className="mt-3 text-xs leading-5 text-slate-300">
+          {profileError || message}
+        </p>
+      )}
+    </section>
+  );
+}
+
+function SavedLocationsPanel({
+  locations,
+  onDelete,
+  message,
+}: {
+  locations: SavedLocation[];
+  onDelete: (id: string) => void;
+  message: string;
+}) {
+  return (
+    <section className="rounded-lg border border-white/10 bg-white/5 p-5">
+      <p className="text-xs font-semibold uppercase tracking-wide text-cyan-300">
+        My Locations
+      </p>
+      <h2 className="mt-2 text-2xl font-semibold text-white">
+        Saved places
+      </h2>
+      {message && (
+        <p className="mt-2 text-xs leading-5 text-slate-300">
+          {message}
+        </p>
+      )}
+      {locations.length === 0 ? (
+        <p className="mt-3 text-sm leading-6 text-slate-300">
+          Saved locations will appear here after you save them from a ZIP code
+          result.
+        </p>
+      ) : (
+        <div className="mt-4 grid gap-3">
+          {locations.map((location) => (
+            <div
+              className="rounded-lg border border-white/10 bg-white/5 p-4"
+              key={location.id}
+            >
+              <div className="flex flex-wrap items-start justify-between gap-3">
+                <Link
+                  href={`/?zipCode=${location.zip_code}`}
+                  className="min-w-0"
+                >
+                  <span className="flex flex-wrap items-center gap-2">
+                    <span className="text-sm font-semibold text-white">
+                      {location.label}
+                    </span>
+                    <span className="rounded-full border border-cyan-300/30 bg-cyan-400/10 px-2 py-0.5 text-[0.68rem] font-semibold uppercase tracking-wide text-cyan-100">
+                      {location.location_type}
+                    </span>
+                  </span>
+                  <span className="mt-1 block text-xs text-slate-400">
+                    {location.city}, {location.state} · {location.zip_code}
+                  </span>
+                </Link>
+                <button
+                  type="button"
+                  onClick={() => onDelete(location.id)}
+                  className="text-xs font-semibold text-fuchsia-200 hover:text-white"
+                >
+                  Remove
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </section>
+  );
+}
+
+export default function AccountPage() {
+  const [user, setUser] = useState<User | null>(null);
+  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
+  const [profileMessage, setProfileMessage] = useState("");
+  const [savedLocations, setSavedLocations] = useState<SavedLocation[]>(
+    []
+  );
+  const [savedLocationMessage, setSavedLocationMessage] = useState("");
+
+  const loadSavedLocations = async (userId: string) => {
+    try {
+      const locations = await getSavedLocations(userId);
+      setSavedLocations(locations);
+      setSavedLocationMessage("");
+    } catch (error) {
+      if (error instanceof Error) {
+        setSavedLocationMessage(error.message);
+      } else {
+        setSavedLocationMessage("Unable to load saved locations.");
+      }
+    }
+  };
+
+  const loadUserProfile = async (userId: string) => {
+    try {
+      const profile = await getUserProfile(userId);
+      setUserProfile(profile);
+      setProfileMessage(
+        profile
+          ? "Profile loaded."
+          : "Create a profile to personalize your dashboard."
+      );
+    } catch (error) {
+      if (error instanceof Error) {
+        setProfileMessage(error.message);
+      } else {
+        setProfileMessage("Unable to load health profile.");
+      }
+    }
+  };
+
+  const handleDeleteLocation = async (id: string) => {
+    if (!user) return;
+
+    try {
+      await deleteSavedLocation(id);
+      await loadSavedLocations(user.id);
+      setSavedLocationMessage("Location removed.");
+    } catch (error) {
+      if (error instanceof Error) {
+        setSavedLocationMessage(error.message);
+      } else {
+        setSavedLocationMessage("Unable to remove this location.");
+      }
+    }
+  };
+
+  useEffect(() => {
+    if (!supabase) return;
+
+    void supabase.auth.getUser().then(({ data }) => {
+      setUser(data.user);
+      if (data.user) {
+        void loadSavedLocations(data.user.id);
+        void loadUserProfile(data.user.id);
+      }
+    });
+
+    const { data } = supabase.auth.onAuthStateChange(
+      (_event, session) => {
+        const nextUser = session?.user ?? null;
+        setUser(nextUser);
+
+        if (nextUser) {
+          void loadSavedLocations(nextUser.id);
+          void loadUserProfile(nextUser.id);
+        } else {
+          setSavedLocations([]);
+          setUserProfile(null);
+          setProfileMessage("");
+        }
+      }
+    );
+
+    return () => {
+      data.subscription.unsubscribe();
+    };
+  }, []);
+
+  return (
+    <main className="min-h-screen bg-[#070b1d] text-white">
+      <section className="mx-auto flex min-h-screen w-full max-w-5xl flex-col px-5 py-8 sm:px-8 lg:px-10">
+        <header className="flex flex-col gap-4 border-b border-white/10 pb-8 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <p className="text-sm font-semibold uppercase tracking-wide text-cyan-300">
+              YourLocalHealth Account
+            </p>
+            <h1 className="mt-3 text-4xl font-bold text-white">
+              Profile and saved places
+            </h1>
+          </div>
+          <Link
+            href="/"
+            className="w-fit rounded-lg border border-white/15 px-4 py-2 text-sm font-semibold text-white transition hover:border-cyan-300/50 hover:bg-white/10"
+          >
+            Back to dashboard
+          </Link>
+        </header>
+
+        <section className="grid gap-5 py-8 lg:grid-cols-[0.8fr_1.2fr]">
+          <AuthPanel user={user} onAuthChange={setUser} />
+          {user ? (
+            <ProfilePanel
+              profile={userProfile}
+              userId={user.id}
+              message={profileMessage}
+              onSaved={(profile, message) => {
+                setUserProfile(profile);
+                setProfileMessage(message);
+              }}
+            />
+          ) : (
+            <section className="rounded-lg border border-white/10 bg-white/5 p-5">
+              <p className="text-xs font-semibold uppercase tracking-wide text-cyan-300">
+                Next
+              </p>
+              <h2 className="mt-2 text-2xl font-semibold text-white">
+                After signing in
+              </h2>
+              <p className="mt-3 text-sm leading-6 text-slate-300">
+                You will be able to enter profile details, manage saved
+                locations, and return to the dashboard for a personalized
+                health snapshot.
+              </p>
+            </section>
+          )}
+        </section>
+
+        {user && (
+          <SavedLocationsPanel
+            locations={savedLocations}
+            message={savedLocationMessage}
+            onDelete={(id) => void handleDeleteLocation(id)}
+          />
+        )}
+      </section>
+    </main>
+  );
+}

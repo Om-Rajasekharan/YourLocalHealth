@@ -25,6 +25,14 @@ type HealthChatRequest = {
     covidUpdatedAt?: string;
     healthRisk?: string;
     respiratoryRisk?: string;
+    profileSummary?: string;
+    profileReasons?: string[];
+    heatRisk?: string;
+    uvRisk?: string;
+    alertRisk?: string;
+    activeAlerts?: string[];
+    dominantPollutant?: string;
+    pollutantRisk?: string;
     news?: {
       title: string;
       source: string;
@@ -82,6 +90,22 @@ Location:
 Dashboard signals:
 - Overall health risk: ${context.healthRisk ?? "Unknown"}
 - Respiratory risk: ${context.respiratoryRisk ?? "Unknown"}
+- Personalization summary: ${context.profileSummary ?? "No profile summary"}
+- Personalization factors: ${
+    context.profileReasons?.length
+      ? context.profileReasons.join(", ")
+      : "No saved profile factors were used"
+  }
+- Heat risk: ${context.heatRisk ?? "Unknown"}
+- UV risk: ${context.uvRisk ?? "Unknown"}
+- Active alert risk: ${context.alertRisk ?? "Unknown"}
+- Active alerts: ${
+    context.activeAlerts?.length
+      ? context.activeAlerts.join(", ")
+      : "No active alerts provided"
+  }
+- Dominant pollutant signal: ${context.dominantPollutant ?? "Unknown"}
+- Pollutant-specific risk: ${context.pollutantRisk ?? "Unknown"}
 - Air quality: ${context.airQuality ?? "Unknown"}; AQI category value ${
     context.aqi ?? "unavailable"
   }

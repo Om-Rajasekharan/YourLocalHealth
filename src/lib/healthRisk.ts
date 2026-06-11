@@ -1,7 +1,13 @@
 export function calculateHealthRisk(
   aqi: number | null,
   fluActivity: string,
-  covidActivity: string
+  covidActivity: string,
+  context?: {
+    heatRisk?: string;
+    uvRisk?: string;
+    alertRisk?: string;
+    pollutantRisk?: string;
+  }
 ) {
   if (aqi === null || aqi === undefined)
     return "Unknown";
@@ -12,7 +18,11 @@ export function calculateHealthRisk(
     fluActivity === "High" ||
     fluActivity === "Very High" ||
     covidActivity === "High" ||
-    covidActivity === "Very High"
+    covidActivity === "Very High" ||
+    context?.heatRisk === "High" ||
+    context?.uvRisk === "High" ||
+    context?.alertRisk === "High" ||
+    context?.pollutantRisk === "High"
   ) {
     return "High";
   }
@@ -21,7 +31,11 @@ export function calculateHealthRisk(
   if (
     aqi === 3 ||
     fluActivity === "Moderate" ||
-    covidActivity === "Moderate"
+    covidActivity === "Moderate" ||
+    context?.heatRisk === "Moderate" ||
+    context?.uvRisk === "Moderate" ||
+    context?.alertRisk === "Moderate" ||
+    context?.pollutantRisk === "Moderate"
   ) {
     return "Moderate";
   }
@@ -32,7 +46,11 @@ export function calculateHealthRisk(
 export function calculateRespiratoryRisk(
   aqi: number | null,
   fluActivity: string,
-  covidActivity: string
+  covidActivity: string,
+  context?: {
+    alertRisk?: string;
+    pollutantRisk?: string;
+  }
 ) {
   if (aqi === null || aqi === undefined)
     return "Unknown";
@@ -42,7 +60,9 @@ export function calculateRespiratoryRisk(
     fluActivity === "High" ||
     fluActivity === "Very High" ||
     covidActivity === "High" ||
-    covidActivity === "Very High"
+    covidActivity === "Very High" ||
+    context?.alertRisk === "High" ||
+    context?.pollutantRisk === "High"
   ) {
     return "High";
   }
@@ -50,7 +70,9 @@ export function calculateRespiratoryRisk(
   if (
     aqi === 3 ||
     fluActivity === "Moderate" ||
-    covidActivity === "Moderate"
+    covidActivity === "Moderate" ||
+    context?.alertRisk === "Moderate" ||
+    context?.pollutantRisk === "Moderate"
   ) {
     return "Moderate";
   }

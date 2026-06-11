@@ -19,6 +19,178 @@ type DetailContent = {
   interpretation: string;
 };
 
+function parseNumber(value: string) {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : null;
+}
+
+function formatNumber(value: string, suffix = "") {
+  const parsed = parseNumber(value);
+  return parsed === null ? "Unavailable" : `${parsed.toFixed(1)}${suffix}`;
+}
+
+function meterPercent(value: number | null, max: number) {
+  if (value === null) return 0;
+  return Math.min(Math.max((value / max) * 100, 0), 100);
+}
+
+function RiskMeter({
+  label,
+  value,
+  max,
+  ticks,
+  unit,
+}: {
+  label: string;
+  value: number | null;
+  max: number;
+  ticks: { label: string; at: number }[];
+  unit?: string;
+}) {
+  return (
+    <article className="rounded-lg border border-white/10 bg-[#101934]/90 p-5 shadow-xl shadow-black/25">
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+          <p className="text-sm font-semibold uppercase tracking-wide text-slate-400">
+            Visual Reading
+          </p>
+          <h2 className="mt-1 text-xl font-semibold text-white">
+            {label}
+          </h2>
+        </div>
+        <p className="text-2xl font-bold text-white">
+          {value === null ? "Unavailable" : `${value.toFixed(1)}${unit ?? ""}`}
+        </p>
+      </div>
+
+      <div className="mt-5 h-4 overflow-hidden rounded-full bg-white/10">
+        <div
+          className="h-full rounded-full bg-gradient-to-r from-cyan-300 via-violet-400 to-fuchsia-400"
+          style={{ width: `${meterPercent(value, max)}%` }}
+        />
+      </div>
+      <div className="relative mt-3 h-9">
+        {ticks.map((tick) => (
+          <div
+            className="absolute top-0 -translate-x-1/2 text-center"
+            key={tick.label}
+            style={{ left: `${meterPercent(tick.at, max)}%` }}
+          >
+            <span className="block h-2 w-px bg-white/30" />
+            <span className="mt-1 block whitespace-nowrap text-[0.68rem] font-semibold uppercase tracking-wide text-slate-400">
+              {tick.label}
+            </span>
+          </div>
+        ))}
+      </div>
+    </article>
+  );
+}
+
+function TopicVisualization({
+  topic,
+  heatIndex,
+  heatIndexMax,
+  uvIndex,
+  alertNames,
+  dominantPollutant,
+  pollutantRisk,
+}: {
+  topic: string;
+  heatIndex: number | null;
+  heatIndexMax: number | null;
+  uvIndex: number | null;
+  alertNames: string[];
+  dominantPollutant: string;
+  pollutantRisk: string;
+}) {
+  if (topic === "heat-risk") {
+    return (
+      <RiskMeter
+        label="Daily max feels-like temperature"
+        value={heatIndexMax ?? heatIndex}
+        max={115}
+        unit="°F"
+        ticks={[
+          { label: "Low", at: 80 },
+          { label: "Moderate", at: 90 },
+          { label: "High", at: 103 },
+        ]}
+      />
+    );
+  }
+
+  if (topic === "uv-risk") {
+    return (
+      <RiskMeter
+        label="Daily maximum UV index"
+        value={uvIndex}
+        max={11}
+        ticks={[
+          { label: "Low", at: 2 },
+          { label: "Moderate", at: 6 },
+          { label: "High", at: 8 },
+        ]}
+      />
+    );
+  }
+
+  if (topic === "weather-alerts") {
+    return (
+      <article className="rounded-lg border border-white/10 bg-[#101934]/90 p-5 shadow-xl shadow-black/25">
+        <p className="text-sm font-semibold uppercase tracking-wide text-slate-400">
+          Active Alert Events
+        </p>
+        {alertNames.length > 0 ? (
+          <div className="mt-4 flex flex-wrap gap-2">
+            {alertNames.map((alert) => (
+              <span
+                className="rounded-full border border-fuchsia-300/30 bg-fuchsia-500/10 px-3 py-1 text-sm font-semibold text-fuchsia-100"
+                key={alert}
+              >
+                {alert}
+              </span>
+            ))}
+          </div>
+        ) : (
+          <p className="mt-4 text-sm leading-6 text-slate-300">
+            No active National Weather Service alerts were found for this
+            point when the dashboard was generated.
+          </p>
+        )}
+      </article>
+    );
+  }
+
+  if (topic === "air-quality") {
+    return (
+      <article className="rounded-lg border border-white/10 bg-[#101934]/90 p-5 shadow-xl shadow-black/25">
+        <p className="text-sm font-semibold uppercase tracking-wide text-slate-400">
+          Pollutant Context
+        </p>
+        <h2 className="mt-2 text-xl font-semibold text-white">
+          {dominantPollutant}
+        </h2>
+        <p className="mt-3 text-sm leading-6 text-slate-300">
+          This is the pollutant signal closest to its moderate-risk threshold
+          among the pollutants available from the air quality API.
+        </p>
+        <div className="mt-4">
+          <span
+            className={`inline-flex rounded-full border px-3 py-1 text-sm font-semibold ${getRiskTone(
+              pollutantRisk
+            )}`}
+          >
+            Pollutant risk: {pollutantRisk}
+          </span>
+        </div>
+      </article>
+    );
+  }
+
+  return null;
+}
+
 function getRiskTone(value: string) {
   switch (value) {
     case "Low":
@@ -344,6 +516,28 @@ function DetailsContent() {
   const healthRisk = searchParams.get("healthRisk") || "Unknown";
   const respiratoryRisk =
     searchParams.get("respiratoryRisk") || "Unknown";
+  const heatRisk = searchParams.get("heatRisk") || "Unknown";
+  const uvRisk = searchParams.get("uvRisk") || "Unknown";
+  const alertRisk = searchParams.get("alertRisk") || "Unknown";
+  const pollutantRisk = searchParams.get("pollutantRisk") || "Unknown";
+  const dominantPollutant =
+    searchParams.get("dominantPollutant") || "Unavailable";
+  const temperature = searchParams.get("temperature") || "";
+  const apparentTemperature =
+    searchParams.get("apparentTemperature") || "";
+  const humidity = searchParams.get("humidity") || "";
+  const uvIndexMax = searchParams.get("uvIndexMax") || "";
+  const temperatureMax = searchParams.get("temperatureMax") || "";
+  const apparentTemperatureMax =
+    searchParams.get("apparentTemperatureMax") || "";
+  const activeAlerts = searchParams.get("activeAlerts") || "";
+  const alertNames = activeAlerts
+    .split("|")
+    .map((alert) => alert.trim())
+    .filter(Boolean);
+  const heatIndexValue =
+    parseNumber(apparentTemperatureMax) ?? parseNumber(apparentTemperature);
+  const uvIndexValue = parseNumber(uvIndexMax);
 
   const detailsByTopic: Record<string, DetailContent> = {
     "air-quality": {
@@ -356,10 +550,75 @@ function DetailsContent() {
       rows: [
         { label: "AQI category", value: aqi },
         { label: "Displayed level", value: airQuality },
+        { label: "Dominant pollutant", value: dominantPollutant },
+        { label: "Pollutant risk", value: pollutantRisk },
         { label: "Location", value: location },
       ],
       interpretation:
-        "Higher AQI categories suggest more polluted air. YourLocalHealth uses this value as one input into respiratory and overall health risk.",
+        "Higher AQI categories suggest more polluted air. YourLocalHealth also checks the pollutant breakdown to identify which pollutant is most important for the local signal.",
+    },
+    "heat-risk": {
+      title: "Heat Risk",
+      eyebrow: "Environmental exposure signal",
+      value: heatRisk,
+      summary:
+        "Heat risk uses current and daily maximum apparent temperature, which estimates how hot conditions feel to the body.",
+      source: "Open-Meteo forecast API",
+      rows: [
+        { label: "Heat risk", value: heatRisk },
+        {
+          label: "Current temperature",
+          value: formatNumber(temperature, "°F"),
+        },
+        {
+          label: "Current feels-like temperature",
+          value: formatNumber(apparentTemperature, "°F"),
+        },
+        {
+          label: "Daily max temperature",
+          value: formatNumber(temperatureMax, "°F"),
+        },
+        {
+          label: "Daily max feels-like temperature",
+          value: formatNumber(apparentTemperatureMax, "°F"),
+        },
+        { label: "Relative humidity", value: formatNumber(humidity, "%") },
+      ],
+      interpretation:
+        "Higher apparent temperatures can increase risk for dehydration, heat exhaustion, and heat illness, especially during outdoor work or exercise.",
+    },
+    "uv-risk": {
+      title: "UV Risk",
+      eyebrow: "Environmental exposure signal",
+      value: uvRisk,
+      summary:
+        "UV risk uses the forecast daily maximum UV index for the searched location.",
+      source: "Open-Meteo forecast API",
+      rows: [
+        { label: "UV risk", value: uvRisk },
+        { label: "Daily max UV index", value: formatNumber(uvIndexMax) },
+        { label: "Location", value: location },
+      ],
+      interpretation:
+        "Higher UV index values mean faster sunburn and greater skin and eye exposure risk. Outdoor time, time of day, shade, clothing, and sunscreen all matter.",
+    },
+    "weather-alerts": {
+      title: "Active Alerts",
+      eyebrow: "Official alert signal",
+      value: alertRisk,
+      summary:
+        "This checks active National Weather Service alerts for the searched latitude and longitude.",
+      source: "National Weather Service alerts API",
+      rows: [
+        { label: "Alert risk", value: alertRisk },
+        { label: "Active alert count", value: String(alertNames.length) },
+        {
+          label: "Alert events",
+          value: alertNames.length ? alertNames.join(", ") : "None found",
+        },
+      ],
+      interpretation:
+        "Official alerts can include heat, air quality, severe weather, flood, winter weather, and other hazards that may change local health risk.",
     },
     "flu-activity": {
       title: "Flu Activity",
@@ -414,16 +673,19 @@ function DetailsContent() {
       eyebrow: "Combined risk score",
       value: respiratoryRisk,
       summary:
-        "Respiratory risk combines flu activity, COVID wastewater activity, and air quality into one simple signal.",
-      source: "YourLocalHealth risk calculation using CDC and OpenWeather data",
+        "Respiratory risk combines flu activity, COVID wastewater activity, air quality, pollutant risk, and active alert context into one simple signal.",
+      source:
+        "YourLocalHealth risk calculation using CDC, OpenWeather, Open-Meteo, and National Weather Service data",
       rows: [
         { label: "Respiratory risk", value: respiratoryRisk },
         { label: "Flu activity", value: fluActivity },
         { label: "COVID wastewater", value: covidActivity },
         { label: "Air quality", value: airQuality },
+        { label: "Pollutant risk", value: pollutantRisk },
+        { label: "Active alert risk", value: alertRisk },
       ],
       interpretation:
-        "The current rule flags respiratory risk as high when any major input is high, moderate when any major input is moderate, and low when all inputs are low.",
+        "The current rule flags respiratory risk as high when a major respiratory input is high, moderate when a major input is moderate, and low when all inputs are low.",
     },
   };
 
@@ -518,6 +780,18 @@ function DetailsContent() {
               medical advice, diagnosis, or treatment.
             </p>
           </article>
+        </section>
+
+        <section className="mt-5">
+          <TopicVisualization
+            topic={topic}
+            heatIndex={parseNumber(apparentTemperature)}
+            heatIndexMax={heatIndexValue}
+            uvIndex={uvIndexValue}
+            alertNames={alertNames}
+            dominantPollutant={dominantPollutant}
+            pollutantRisk={pollutantRisk}
+          />
         </section>
 
         <WastewaterTrendSection

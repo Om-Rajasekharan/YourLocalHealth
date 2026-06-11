@@ -3,33 +3,43 @@
 import Link from "next/link";
 import { FormEvent, useEffect, useRef, useState } from "react";
 import type { User } from "@supabase/supabase-js";
-import { getAirQualityLabel } from "../lib/airQuality";
+import {
+  getAirQualityLabel,
+  getDominantPollutant,
+  getPollutantRiskLabel,
+} from "../lib/airQuality";
 import {
   calculateHealthRisk,
   calculateRespiratoryRisk,
 } from "../lib/healthRisk";
+import { personalizeRisk } from "../lib/personalizedRisk";
 import { getLocation } from "../services/location";
 import { getAirQuality } from "../services/airsQuality";
 import { getFluData } from "../services/flu";
 import {
   getCovidData,
-type CovidActivityData,
+  type CovidActivityData,
 } from "../services/covid";
 import {
   getLocalHealthNews,
   type LocalHealthNewsArticle,
 } from "../services/localNews";
 import {
-  deleteSavedLocation,
-  getSavedLocations,
-  saveLocation,
-  type LocationType,
-  type SavedLocation,
-} from "../services/savedLocations";
+  getEnvironmentData,
+  getHeatRiskLabel,
+  getUvRiskLabel,
+  type EnvironmentData,
+} from "../services/environment";
 import {
-  isSupabaseConfigured,
-  supabase,
-} from "../lib/supabaseClient";
+  getWeatherAlerts,
+  summarizeAlertRisk,
+  type WeatherAlert,
+} from "../services/weatherAlerts";
+import {
+  getUserProfile,
+  type UserProfile,
+} from "../services/userProfile";
+import { supabase } from "../lib/supabaseClient";
 
 type ChatMessage = {
   role: "user" | "assistant";
@@ -51,6 +61,14 @@ type HealthChatContext = {
   covidUpdatedAt: string;
   healthRisk: string;
   respiratoryRisk: string;
+  profileSummary: string;
+  profileReasons: string[];
+  heatRisk: string;
+  uvRisk: string;
+  alertRisk: string;
+  activeAlerts: string[];
+  dominantPollutant: string;
+  pollutantRisk: string;
   news: {
     title: string;
     source: string;
@@ -58,22 +76,6 @@ type HealthChatContext = {
     url: string;
   }[];
 };
-
-const locationTypes: LocationType[] = [
-  "Home",
-  "Work",
-  "School",
-  "Caregiving",
-  "Other",
-];
-
-function normalizeLocationType(value: string): LocationType {
-  return (
-    locationTypes.find(
-      (type) => type.toLowerCase() === value.trim().toLowerCase()
-    ) ?? "Other"
-  );
-}
 
 function riskBadgeClass(risk: string) {
   switch (risk) {
@@ -142,193 +144,6 @@ function SignalCard({
       </div>
     </article>
     </Link>
-  );
-}
-
-function AuthPanel({
-  user,
-  onAuthChange,
-}: {
-  user: User | null;
-  onAuthChange: (user: User | null) => void;
-}) {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [authMessage, setAuthMessage] = useState("");
-  const [authLoading, setAuthLoading] = useState(false);
-
-  const handleAuth = async (mode: "sign-in" | "sign-up") => {
-    setAuthMessage("");
-
-    if (!supabase) {
-      setAuthMessage("Add Supabase environment variables to enable sign in.");
-      return;
-    }
-
-    setAuthLoading(true);
-
-    const result =
-      mode === "sign-in"
-        ? await supabase.auth.signInWithPassword({ email, password })
-        : await supabase.auth.signUp({ email, password });
-
-    if (result.error) {
-      setAuthMessage(result.error.message);
-    } else {
-      onAuthChange(result.data.user);
-      setAuthMessage(
-        mode === "sign-up"
-          ? "Account created. Check your email if confirmation is enabled."
-          : "Signed in."
-      );
-    }
-
-    setAuthLoading(false);
-  };
-
-  const handleSignOut = async () => {
-    if (!supabase) return;
-    await supabase.auth.signOut();
-    onAuthChange(null);
-    setAuthMessage("Signed out.");
-  };
-
-  if (user) {
-    return (
-      <section className="rounded-lg border border-white/10 bg-white/5 p-4">
-        <p className="text-xs font-semibold uppercase tracking-wide text-cyan-300">
-          Account
-        </p>
-        <p className="mt-2 text-sm text-slate-200">{user.email}</p>
-        <button
-          type="button"
-          onClick={handleSignOut}
-          className="mt-3 rounded-lg border border-white/15 px-4 py-2 text-sm font-semibold text-white transition hover:border-cyan-300/50 hover:bg-white/10"
-        >
-          Sign out
-        </button>
-      </section>
-    );
-  }
-
-  return (
-    <section className="rounded-lg border border-white/10 bg-white/5 p-4">
-      <p className="text-xs font-semibold uppercase tracking-wide text-cyan-300">
-        Personalize
-      </p>
-      <p className="mt-2 text-sm leading-5 text-slate-300">
-        Sign in to start saving locations.
-      </p>
-      {!isSupabaseConfigured && (
-        <p className="mt-3 rounded-lg border border-violet-300/30 bg-violet-500/10 p-3 text-xs leading-5 text-violet-100">
-          Supabase is not configured yet.
-        </p>
-      )}
-      <div className="mt-3 grid gap-2">
-        <input
-          type="email"
-          placeholder="Email"
-          value={email}
-          onChange={(event) => setEmail(event.target.value)}
-          className="h-10 rounded-lg border border-white/15 bg-white/10 px-3 text-sm text-white outline-none placeholder:text-slate-400 focus:border-cyan-300"
-        />
-        <input
-          type="password"
-          placeholder="Password"
-          value={password}
-          onChange={(event) => setPassword(event.target.value)}
-          className="h-10 rounded-lg border border-white/15 bg-white/10 px-3 text-sm text-white outline-none placeholder:text-slate-400 focus:border-cyan-300"
-        />
-      </div>
-      <div className="mt-3 flex gap-2">
-        <button
-          type="button"
-          disabled={authLoading}
-          onClick={() => void handleAuth("sign-in")}
-          className="rounded-lg bg-indigo-500 px-4 py-2 text-sm font-semibold text-white transition hover:bg-violet-500 disabled:bg-slate-700"
-        >
-          Sign in
-        </button>
-        <button
-          type="button"
-          disabled={authLoading}
-          onClick={() => void handleAuth("sign-up")}
-          className="rounded-lg border border-white/15 px-4 py-2 text-sm font-semibold text-white transition hover:border-cyan-300/50 hover:bg-white/10 disabled:text-slate-400"
-        >
-          Sign up
-        </button>
-      </div>
-      {authMessage && (
-        <p className="mt-3 text-xs leading-5 text-slate-300">
-          {authMessage}
-        </p>
-      )}
-    </section>
-  );
-}
-
-function SavedLocationsPanel({
-  locations,
-  onSelect,
-  onDelete,
-  message,
-}: {
-  locations: SavedLocation[];
-  onSelect: (zipCode: string) => void;
-  onDelete: (id: string) => void;
-  message: string;
-}) {
-  return (
-    <section className="rounded-lg border border-white/10 bg-white/5 p-4">
-      <p className="text-xs font-semibold uppercase tracking-wide text-cyan-300">
-        My Locations
-      </p>
-      {message && (
-        <p className="mt-2 text-xs leading-5 text-slate-300">
-          {message}
-        </p>
-      )}
-      {locations.length === 0 ? (
-        <p className="mt-2 text-sm leading-5 text-slate-300">
-          Search a ZIP code, then save it as home, work, school, caregiving,
-          or another important place.
-        </p>
-      ) : (
-        <div className="mt-3 grid gap-2">
-          {locations.map((location) => (
-            <div
-              className="rounded-lg border border-white/10 bg-white/5 p-3"
-              key={location.id}
-            >
-              <button
-                type="button"
-                onClick={() => onSelect(location.zip_code)}
-                className="block w-full text-left"
-              >
-                <span className="flex flex-wrap items-center gap-2">
-                  <span className="text-sm font-semibold text-white">
-                    {location.label}
-                  </span>
-                  <span className="rounded-full border border-cyan-300/30 bg-cyan-400/10 px-2 py-0.5 text-[0.68rem] font-semibold uppercase tracking-wide text-cyan-100">
-                    {location.location_type}
-                  </span>
-                </span>
-                <span className="mt-1 block text-xs text-slate-400">
-                  {location.city}, {location.state} · {location.zip_code}
-                </span>
-              </button>
-              <button
-                type="button"
-                onClick={() => onDelete(location.id)}
-                className="mt-2 text-xs font-semibold text-fuchsia-200 hover:text-white"
-              >
-                Remove
-              </button>
-            </div>
-          ))}
-        </div>
-      )}
-    </section>
   );
 }
 
@@ -486,26 +301,60 @@ export default function Home() {
   const [fluActivity, setFluActivity] = useState("Unknown");
   const [covidData, setCovidData] =
     useState<CovidActivityData | null>(null);
+  const [environmentData, setEnvironmentData] =
+    useState<EnvironmentData | null>(null);
+  const [weatherAlerts, setWeatherAlerts] = useState<WeatherAlert[]>(
+    []
+  );
+  const [airComponents, setAirComponents] =
+    useState<Record<string, number>>();
   const [localNews, setLocalNews] = useState<LocalHealthNewsArticle[]>(
     []
   );
-  const [savedLocations, setSavedLocations] = useState<SavedLocation[]>(
-    []
-  );
-  const [savedLocationMessage, setSavedLocationMessage] = useState("");
-  const [savingLocation, setSavingLocation] = useState(false);
+  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
 
   const covidActivity = covidData?.activity ?? "Unknown";
-  const healthRisk = calculateHealthRisk(
+  const heatRisk = getHeatRiskLabel(
+    environmentData?.apparentTemperatureMax ??
+      environmentData?.apparentTemperature ??
+      null
+  );
+  const uvRisk = getUvRiskLabel(environmentData?.uvIndexMax ?? null);
+  const alertRisk = summarizeAlertRisk(weatherAlerts);
+  const pollutantRisk = getPollutantRiskLabel(airComponents);
+  const dominantPollutant = getDominantPollutant(airComponents);
+  const baseHealthRisk = calculateHealthRisk(
     aqi,
     fluActivity,
-    covidActivity
+    covidActivity,
+    {
+      heatRisk,
+      uvRisk,
+      alertRisk,
+      pollutantRisk,
+    }
   );
-  const respiratoryRisk = calculateRespiratoryRisk(
+  const baseRespiratoryRisk = calculateRespiratoryRisk(
     aqi,
     fluActivity,
-    covidActivity
+    covidActivity,
+    {
+      alertRisk,
+      pollutantRisk,
+    }
   );
+  const personalizedRisk = personalizeRisk(
+    baseHealthRisk,
+    baseRespiratoryRisk,
+    userProfile
+  );
+  const healthRisk = personalizedRisk.healthRisk;
+  const respiratoryRisk = personalizedRisk.respiratoryRisk;
+  const personalizationSummary = personalizedRisk.isPersonalized
+    ? personalizedRisk.reasons.length > 0
+      ? `Personalized based on ${personalizedRisk.reasons.join(", ")}.`
+      : "Personalized with your saved profile. No added exposure factors were found."
+    : "Based on public local data only.";
   const latitudeValue = Number(latitude);
   const longitudeValue = Number(longitude);
   const hasMapLocation =
@@ -533,6 +382,14 @@ export default function Home() {
     covidUpdatedAt: covidData?.updatedAt ?? "Unknown",
     healthRisk,
     respiratoryRisk,
+    profileSummary: personalizationSummary,
+    profileReasons: personalizedRisk.reasons,
+    heatRisk,
+    uvRisk,
+    alertRisk,
+    activeAlerts: weatherAlerts.map((alert) => alert.event),
+    dominantPollutant,
+    pollutantRisk,
     news: localNews.map((article) => ({
       title: article.title,
       source: article.source,
@@ -555,6 +412,20 @@ export default function Home() {
       covidCoverage: covidData?.coverage ?? "",
       covidTimePeriod: covidData?.timePeriod ?? "",
       covidUpdatedAt: covidData?.updatedAt ?? "",
+      heatRisk,
+      uvRisk,
+      alertRisk,
+      pollutantRisk,
+      dominantPollutant,
+      temperature: environmentData?.temperature?.toString() ?? "",
+      apparentTemperature:
+        environmentData?.apparentTemperature?.toString() ?? "",
+      humidity: environmentData?.humidity?.toString() ?? "",
+      uvIndexMax: environmentData?.uvIndexMax?.toString() ?? "",
+      temperatureMax: environmentData?.temperatureMax?.toString() ?? "",
+      apparentTemperatureMax:
+        environmentData?.apparentTemperatureMax?.toString() ?? "",
+      activeAlerts: weatherAlerts.map((alert) => alert.event).join("|"),
       healthRisk,
       respiratoryRisk,
     });
@@ -567,6 +438,9 @@ export default function Home() {
     setError("");
     setNewsError("");
     setLocalNews([]);
+    setEnvironmentData(null);
+    setWeatherAlerts([]);
+    setAirComponents(undefined);
     setSearched(false);
     setLoading(true);
 
@@ -584,12 +458,16 @@ export default function Home() {
       const covidActivityData = await getCovidData(location.state);
       setCovidData(covidActivityData);
 
-      const airData = await getAirQuality(
-        location.latitude,
-        location.longitude
-      );
+      const [airData, environment, alerts] = await Promise.all([
+        getAirQuality(location.latitude, location.longitude),
+        getEnvironmentData(location.latitude, location.longitude),
+        getWeatherAlerts(location.latitude, location.longitude),
+      ]);
 
       setAqi(airData.list?.[0]?.main.aqi ?? null);
+      setAirComponents(airData.list?.[0]?.components);
+      setEnvironmentData(environment);
+      setWeatherAlerts(alerts);
       setSearched(true);
 
       setNewsLoading(true);
@@ -618,79 +496,12 @@ export default function Home() {
     }
   };
 
-  const loadSavedLocations = async (userId: string) => {
+  const loadUserProfile = async (userId: string) => {
     try {
-      const locations = await getSavedLocations(userId);
-      setSavedLocations(locations);
-      setSavedLocationMessage("");
+      const profile = await getUserProfile(userId);
+      setUserProfile(profile);
     } catch (error) {
-      if (error instanceof Error) {
-        setSavedLocationMessage(error.message);
-      } else {
-        setSavedLocationMessage("Unable to load saved locations.");
-      }
-    }
-  };
-
-  const handleSaveLocation = async () => {
-    if (!user || !searched) return;
-
-    const defaultLabel =
-      savedLocations.length === 0 ? "Home" : `${city}, ${state}`;
-    const label =
-      window.prompt("Name this location", defaultLabel) ?? "";
-
-    if (!label.trim()) return;
-
-    const defaultLocationType =
-      savedLocations.length === 0 ? "Home" : "Work";
-    const locationTypeInput =
-      window.prompt(
-        "What type of location is this? Home, Work, School, Caregiving, or Other",
-        defaultLocationType
-      ) ?? "";
-    const locationType = normalizeLocationType(locationTypeInput);
-
-    setSavingLocation(true);
-    setSavedLocationMessage("");
-
-    try {
-      await saveLocation({
-        userId: user.id,
-        label: label.trim(),
-        locationType,
-        zipCode,
-        city,
-        state,
-        latitude,
-        longitude,
-      });
-      await loadSavedLocations(user.id);
-      setSavedLocationMessage("Location saved.");
-    } catch (error) {
-      if (error instanceof Error) {
-        setSavedLocationMessage(error.message);
-      } else {
-        setSavedLocationMessage("Unable to save this location.");
-      }
-    } finally {
-      setSavingLocation(false);
-    }
-  };
-
-  const handleDeleteLocation = async (id: string) => {
-    if (!user) return;
-
-    try {
-      await deleteSavedLocation(id);
-      await loadSavedLocations(user.id);
-      setSavedLocationMessage("Location removed.");
-    } catch (error) {
-      if (error instanceof Error) {
-        setSavedLocationMessage(error.message);
-      } else {
-        setSavedLocationMessage("Unable to remove this location.");
-      }
+      console.error(error);
     }
   };
 
@@ -714,7 +525,7 @@ export default function Home() {
     void supabase.auth.getUser().then(({ data }) => {
       setUser(data.user);
       if (data.user) {
-        void loadSavedLocations(data.user.id);
+        void loadUserProfile(data.user.id);
       }
     });
 
@@ -724,9 +535,9 @@ export default function Home() {
         setUser(nextUser);
 
         if (nextUser) {
-          void loadSavedLocations(nextUser.id);
+          void loadUserProfile(nextUser.id);
         } else {
-          setSavedLocations([]);
+          setUserProfile(null);
         }
       }
     );
@@ -744,58 +555,54 @@ export default function Home() {
   return (
     <main className="min-h-screen bg-[#070b1d] text-white">
       <section className="mx-auto flex min-h-screen w-full max-w-6xl flex-col px-5 py-8 sm:px-8 lg:px-10">
-        <header className="flex flex-col gap-6 border-b border-white/10 pb-8 md:flex-row md:items-end md:justify-between">
-          <div>
-            <p className="text-sm font-semibold uppercase tracking-wide text-cyan-300">
-              Local public health dashboard
-            </p>
-            <h1 className="mt-3 text-4xl font-bold text-white sm:text-5xl">
-              YourLocalHealth
-            </h1>
-            <p className="mt-4 max-w-2xl text-base leading-7 text-slate-300">
-              Enter a ZIP code to view local respiratory and environmental
-              health signals from public data sources.
-            </p>
-          </div>
+        <header className="border-b border-white/10 pb-8">
+          <div className="flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between">
+            <div>
+              <p className="text-sm font-semibold uppercase tracking-wide text-cyan-300">
+                Local public health dashboard
+              </p>
+              <h1 className="mt-3 text-4xl font-bold text-white sm:text-5xl">
+                YourLocalHealth
+              </h1>
+              <p className="mt-4 max-w-2xl text-base leading-7 text-slate-300">
+                Enter a ZIP code to view local respiratory and environmental
+                health signals from public data sources.
+              </p>
+            </div>
 
-          <div className="grid w-full gap-4 sm:max-w-md">
-            <AuthPanel user={user} onAuthChange={setUser} />
-            {user && (
-              <SavedLocationsPanel
-                locations={savedLocations}
-                message={savedLocationMessage}
-                onSelect={(savedZipCode) =>
-                  void searchZipCode(savedZipCode)
-                }
-                onDelete={(id) => void handleDeleteLocation(id)}
-              />
-            )}
-            <form
-              onSubmit={handleSearch}
-              className="flex w-full flex-col gap-3 sm:flex-row"
+            <Link
+              href="/account"
+              className="w-fit rounded-lg border border-white/15 px-4 py-2 text-sm font-semibold text-white transition hover:border-cyan-300/50 hover:bg-white/10"
             >
-              <label className="sr-only" htmlFor="zip-code">
-                ZIP code
-              </label>
-              <input
-                id="zip-code"
-                type="text"
-                inputMode="numeric"
-                placeholder="Enter ZIP code"
-                value={zipCode}
-                onChange={(event) => setZipCode(event.target.value)}
-                className="h-12 min-w-0 flex-1 rounded-lg border border-white/15 bg-white/10 px-4 text-base text-white shadow-sm outline-none transition placeholder:text-slate-400 focus:border-cyan-300 focus:ring-4 focus:ring-cyan-400/20"
-              />
-
-              <button
-                type="submit"
-                disabled={loading}
-                className="h-12 rounded-lg bg-indigo-500 px-6 text-sm font-semibold text-white shadow-lg shadow-indigo-950/30 transition hover:bg-violet-500 disabled:cursor-not-allowed disabled:bg-slate-700 disabled:text-slate-300"
-              >
-                {loading ? "Searching" : "Search"}
-              </button>
-            </form>
+              {user ? "Account" : "Sign in"}
+            </Link>
           </div>
+
+          <form
+            onSubmit={handleSearch}
+            className="mt-8 flex w-full max-w-2xl flex-col gap-3 sm:flex-row"
+          >
+            <label className="sr-only" htmlFor="zip-code">
+              ZIP code
+            </label>
+            <input
+              id="zip-code"
+              type="text"
+              inputMode="numeric"
+              placeholder="Enter ZIP code"
+              value={zipCode}
+              onChange={(event) => setZipCode(event.target.value)}
+              className="h-12 min-w-0 flex-1 rounded-lg border border-white/15 bg-white/10 px-4 text-base text-white shadow-sm outline-none transition placeholder:text-slate-400 focus:border-cyan-300 focus:ring-4 focus:ring-cyan-400/20"
+            />
+
+            <button
+              type="submit"
+              disabled={loading}
+              className="h-12 rounded-lg bg-indigo-500 px-6 text-sm font-semibold text-white shadow-lg shadow-indigo-950/30 transition hover:bg-violet-500 disabled:cursor-not-allowed disabled:bg-slate-700 disabled:text-slate-300"
+            >
+              {loading ? "Searching" : "Search"}
+            </button>
+          </form>
         </header>
 
         {error && (
@@ -837,24 +644,6 @@ export default function Home() {
               </p>
             </div>
 
-            {user && (
-              <div className="mb-5 rounded-lg border border-white/10 bg-white/5 p-4">
-                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                  <p className="text-sm text-slate-300">
-                    Save {city}, {state} to your account for quick access.
-                  </p>
-                  <button
-                    type="button"
-                    disabled={savingLocation}
-                    onClick={() => void handleSaveLocation()}
-                    className="rounded-lg bg-indigo-500 px-4 py-2 text-sm font-semibold text-white transition hover:bg-violet-500 disabled:bg-slate-700"
-                  >
-                    {savingLocation ? "Saving" : "Save this location"}
-                  </button>
-                </div>
-              </div>
-            )}
-
             <section className="rounded-lg border border-white/10 bg-[#101934]/90 p-6 shadow-xl shadow-black/25">
               <div className="grid gap-6 lg:grid-cols-[1.1fr_0.9fr] lg:items-center">
                 <div>
@@ -864,11 +653,21 @@ export default function Home() {
                   <p className="mt-3 text-5xl font-bold text-white">
                     {healthRisk}
                   </p>
-                  <p className="mt-4 max-w-2xl text-sm leading-6 text-slate-300">
-                    This score combines air quality, CDC respiratory illness
-                    activity, and CDC COVID wastewater activity for a simple
-                    local risk snapshot.
+                <p className="mt-4 max-w-2xl text-sm leading-6 text-slate-300">
+                    This score combines air quality, pollutant levels, heat,
+                    UV, official weather alerts, CDC respiratory illness
+                    activity, CDC COVID wastewater activity, and your saved
+                    profile factors when available.
                   </p>
+                  <p className="mt-3 text-sm leading-6 text-cyan-100">
+                    {personalizationSummary}
+                  </p>
+                  {personalizedRisk.isPersonalized && (
+                    <p className="mt-2 text-xs leading-5 text-slate-400">
+                      Base environmental risk: {baseHealthRisk}. Personalized
+                      risk is informational only.
+                    </p>
+                  )}
                 </div>
                 <Link
                   href={detailHref("respiratory-risk")}
@@ -882,7 +681,8 @@ export default function Home() {
                   </div>
                   <p className="mt-3 text-sm leading-6 text-slate-300">
                     Based on flu activity, COVID wastewater activity, and air
-                    quality conditions that may affect breathing.
+                    quality conditions that may affect breathing, adjusted by
+                    your profile when available.
                   </p>
                   <p className="mt-4 text-xs font-semibold text-cyan-200">
                     View details
@@ -919,9 +719,46 @@ export default function Home() {
               <SignalCard
                 title="Air Quality"
                 value={airQualityLabel}
-                detail={`AQI category ${aqi ?? "unavailable"} from current air pollution data.`}
+                detail={`AQI category ${aqi ?? "unavailable"}. Main pollutant signal: ${dominantPollutant}.`}
                 source="Source: OpenWeather Air Pollution API"
                 href={detailHref("air-quality")}
+              />
+              <SignalCard
+                title="Heat Risk"
+                value={heatRisk}
+                detail={`Feels like ${
+                  environmentData?.apparentTemperature?.toFixed(0) ??
+                  "unavailable"
+                }°F now; daily max feels like ${
+                  environmentData?.apparentTemperatureMax?.toFixed(0) ??
+                  "unavailable"
+                }°F.`}
+                source="Source: Open-Meteo forecast API"
+                href={detailHref("heat-risk")}
+              />
+              <SignalCard
+                title="UV Risk"
+                value={uvRisk}
+                detail={`Daily maximum UV index is ${
+                  environmentData?.uvIndexMax?.toFixed(1) ??
+                  "unavailable"
+                }.`}
+                source="Source: Open-Meteo forecast API"
+                href={detailHref("uv-risk")}
+              />
+              <SignalCard
+                title="Active Alerts"
+                value={alertRisk}
+                detail={
+                  weatherAlerts.length > 0
+                    ? weatherAlerts
+                        .slice(0, 2)
+                        .map((alert) => alert.event)
+                        .join(", ")
+                    : "No active National Weather Service alerts found for this point."
+                }
+                source="Source: National Weather Service alerts API"
+                href={detailHref("weather-alerts")}
               />
               <SignalCard
                 title="Flu Activity"
