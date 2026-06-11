@@ -9,10 +9,12 @@ import {
   getPollutantRiskLabel,
 } from "../lib/airQuality";
 import {
-  calculateHealthRisk,
-  calculateRespiratoryRisk,
-} from "../lib/healthRisk";
-import { personalizeRisk } from "../lib/personalizedRisk";
+  evaluateRiskModel,
+  type DataStatus,
+  type RiskCategoryScore,
+  type RiskModelConfidence,
+  type RiskModelItem,
+} from "../lib/riskModel";
 import { getLocation } from "../services/location";
 import { getAirQuality } from "../services/airsQuality";
 import { getFluData } from "../services/flu";
@@ -77,6 +79,36 @@ type HealthChatContext = {
   }[];
 };
 
+type DashboardView = "overview" | "signals" | "news" | "assistant" | "model";
+
+const dashboardViews: { id: DashboardView; label: string; description: string }[] = [
+  {
+    id: "overview",
+    label: "Overview",
+    description: "Brief, risk score, and map",
+  },
+  {
+    id: "signals",
+    label: "Health Signals",
+    description: "Air, heat, UV, flu, COVID, and alerts",
+  },
+  {
+    id: "news",
+    label: "Local News",
+    description: "Recent health-related articles",
+  },
+  {
+    id: "assistant",
+    label: "Ask AI",
+    description: "Questions about this location",
+  },
+  {
+    id: "model",
+    label: "Model & Data",
+    description: "Risk index, weights, and confidence",
+  },
+];
+
 function riskBadgeClass(risk: string) {
   switch (risk) {
     case "Low":
@@ -90,6 +122,45 @@ function riskBadgeClass(risk: string) {
     default:
       return "border-white/15 bg-white/10 text-slate-200";
   }
+}
+
+function DashboardNav({
+  activeView,
+  onChange,
+}: {
+  activeView: DashboardView;
+  onChange: (view: DashboardView) => void;
+}) {
+  return (
+    <nav
+      aria-label="Dashboard sections"
+      className="mb-5 grid gap-2 rounded-lg border border-white/10 bg-[#101934]/90 p-2 shadow-xl shadow-black/25 sm:grid-cols-2 lg:grid-cols-5"
+    >
+      {dashboardViews.map((view) => {
+        const isActive = activeView === view.id;
+
+        return (
+          <button
+            key={view.id}
+            type="button"
+            onClick={() => onChange(view.id)}
+            className={`rounded-lg border p-3 text-left transition ${
+              isActive
+                ? "border-cyan-300/60 bg-cyan-400/15 text-white"
+                : "border-transparent bg-transparent text-slate-300 hover:border-white/10 hover:bg-white/5"
+            }`}
+          >
+            <span className="block text-sm font-semibold">
+              {view.label}
+            </span>
+            <span className="mt-1 block text-xs leading-5 text-slate-400">
+              {view.description}
+            </span>
+          </button>
+        );
+      })}
+    </nav>
+  );
 }
 
 function RiskBadge({ value }: { value: string }) {
@@ -379,6 +450,199 @@ function TodayHealthBrief({
   );
 }
 
+function RiskTransparencyPanel({
+  score,
+  items,
+  topDrivers,
+  categoryScores,
+  methodology,
+}: {
+  score: number;
+  items: RiskModelItem[];
+  topDrivers: RiskModelItem[];
+  categoryScores: RiskCategoryScore[];
+  methodology: string[];
+}) {
+  return (
+    <section className="mt-5">
+      <article className="rounded-lg border border-white/10 bg-[#101934]/90 p-5 shadow-xl shadow-black/25">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <p className="text-sm font-semibold uppercase tracking-wide text-slate-400">
+              Why This Score?
+            </p>
+            <h3 className="mt-1 text-xl font-semibold text-white">
+              Transparent risk index
+            </h3>
+            <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-300">
+              A simple 0-100 explanation of which local signals are pushing the
+              snapshot higher.
+            </p>
+          </div>
+          <p className="text-3xl font-bold text-white">{score}/100</p>
+        </div>
+        <div className="mt-5 h-3 overflow-hidden rounded-full bg-white/10">
+          <div
+            className="h-full rounded-full bg-gradient-to-r from-cyan-300 via-violet-400 to-fuchsia-400"
+            style={{ width: `${score}%` }}
+          />
+        </div>
+        {topDrivers.length > 0 && (
+          <div className="mt-5 rounded-lg border border-cyan-300/20 bg-cyan-400/10 p-4">
+            <p className="text-xs font-semibold uppercase tracking-wide text-cyan-100">
+              Top drivers
+            </p>
+            <div className="mt-3 grid gap-3 md:grid-cols-2">
+              {topDrivers.map((driver) => (
+                <div
+                  className="rounded-lg border border-cyan-200/10 bg-black/10 p-3"
+                  key={driver.label}
+                >
+                  <div className="flex items-center justify-between gap-3">
+                    <p className="text-sm font-semibold text-white">
+                      {driver.label}
+                    </p>
+                    <p className="text-sm font-semibold text-cyan-100">
+                      +{driver.points}
+                    </p>
+                  </div>
+                  <p className="mt-1 text-xs leading-5 text-cyan-100/80">
+                    {driver.detail} · {driver.category}
+                  </p>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        <div className="mt-5 grid gap-3 md:grid-cols-4">
+          {categoryScores.map((category) => (
+            <div
+              className="rounded-lg border border-white/10 bg-white/5 p-3"
+              key={category.label}
+            >
+              <div className="flex items-center justify-between gap-3">
+                <p className="text-sm font-semibold text-white">
+                  {category.label}
+                </p>
+                <p className="text-sm font-semibold text-cyan-100">
+                  {category.score}
+                </p>
+              </div>
+              <div className="mt-3 h-2 overflow-hidden rounded-full bg-white/10">
+                <div
+                  className="h-full rounded-full bg-cyan-300"
+                  style={{ width: `${category.score}%` }}
+                />
+              </div>
+              <p className="mt-3 text-xs leading-5 text-slate-400">
+                {category.detail}
+              </p>
+            </div>
+          ))}
+        </div>
+
+        <div className="mt-5 grid gap-3">
+          {items.map((item) => (
+            <div
+              className="grid gap-2 rounded-lg border border-white/10 bg-white/5 p-3 sm:grid-cols-[1fr_auto]"
+              key={item.label}
+            >
+              <div>
+                <p className="text-sm font-semibold text-white">
+                  {item.label}
+                </p>
+                <p className="mt-1 text-xs leading-5 text-slate-400">
+                  {item.detail}
+                </p>
+                <p className="mt-1 text-xs leading-5 text-slate-500">
+                  {item.category} · Weight: {item.weight} · Max{" "}
+                  {item.maxPoints} points
+                </p>
+              </div>
+              <p className="text-sm font-semibold text-cyan-100">
+                +{item.points}
+              </p>
+            </div>
+          ))}
+        </div>
+        <div className="mt-5 rounded-lg border border-white/10 bg-black/10 p-4">
+          <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">
+            How this score is calculated
+          </p>
+          <ul className="mt-3 grid gap-2 text-xs leading-5 text-slate-300">
+            {methodology.map((item) => (
+              <li key={item}>{item}</li>
+            ))}
+          </ul>
+        </div>
+      </article>
+    </section>
+  );
+}
+
+function DataConfidencePanel({
+  confidence,
+}: {
+  confidence: RiskModelConfidence;
+}) {
+  return (
+    <section className="mt-5 rounded-lg border border-white/10 bg-[#101934]/90 p-5 shadow-xl shadow-black/25">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+          <p className="text-sm font-semibold uppercase tracking-wide text-slate-400">
+            Data Confidence
+          </p>
+          <h3 className="mt-1 text-xl font-semibold text-white">
+            Source completeness
+          </h3>
+        </div>
+        <RiskBadge value={confidence.label} />
+      </div>
+      <p className="mt-4 text-sm leading-6 text-slate-300">
+        {confidence.availableCount} of {confidence.totalCount} source groups
+        loaded for this snapshot.
+      </p>
+      <div className="mt-5 grid gap-2 md:grid-cols-2">
+        {confidence.sources.map((source) => (
+          <div
+            className="flex items-center justify-between gap-3 rounded-lg border border-white/10 bg-white/5 px-3 py-2"
+            key={source.label}
+          >
+            <div>
+              <p className="text-sm font-semibold text-white">
+                {source.label}
+              </p>
+              <p className="text-xs text-slate-400">{source.source}</p>
+            </div>
+            <span
+              className={`rounded-full border px-2 py-1 text-xs font-semibold ${
+                source.available
+                  ? "border-cyan-300/30 bg-cyan-400/10 text-cyan-100"
+                  : "border-fuchsia-300/30 bg-fuchsia-500/10 text-fuchsia-100"
+              }`}
+            >
+              {source.available ? "Loaded" : "Missing"}
+            </span>
+          </div>
+        ))}
+      </div>
+      {confidence.caveats.length > 0 && (
+        <div className="mt-4 rounded-lg border border-violet-300/30 bg-violet-500/10 p-3">
+          <p className="text-xs font-semibold uppercase tracking-wide text-violet-100">
+            Caveats
+          </p>
+          <ul className="mt-2 grid gap-1 text-xs leading-5 text-violet-100">
+            {confidence.caveats.map((caveat) => (
+              <li key={caveat}>{caveat}</li>
+            ))}
+          </ul>
+        </div>
+      )}
+    </section>
+  );
+}
+
 function HealthChatPanel({ context }: { context: HealthChatContext }) {
   const [question, setQuestion] = useState("");
   const [messages, setMessages] = useState<ChatMessage[]>([
@@ -520,6 +784,8 @@ export default function Home() {
   const [user, setUser] = useState<User | null>(null);
   const [zipCode, setZipCode] = useState("");
   const [searched, setSearched] = useState(false);
+  const [dashboardView, setDashboardView] =
+    useState<DashboardView>("overview");
 
   const [city, setCity] = useState("");
   const [state, setState] = useState("");
@@ -544,6 +810,15 @@ export default function Home() {
     []
   );
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
+  const [dataStatus, setDataStatus] = useState<DataStatus>({
+    airQuality: false,
+    pollutants: false,
+    heatUv: false,
+    weatherAlerts: false,
+    flu: false,
+    covid: false,
+    news: false,
+  });
 
   const covidActivity = covidData?.activity ?? "Unknown";
   const heatRisk = getHeatRiskLabel(
@@ -555,38 +830,25 @@ export default function Home() {
   const alertRisk = summarizeAlertRisk(weatherAlerts);
   const pollutantRisk = getPollutantRiskLabel(airComponents);
   const dominantPollutant = getDominantPollutant(airComponents);
-  const baseHealthRisk = calculateHealthRisk(
+  const airQualityLabel = getAirQualityLabel(aqi);
+  const riskModel = evaluateRiskModel({
     aqi,
+    airQualityLabel,
+    pollutantRisk,
+    heatRisk,
+    uvRisk,
+    alertRisk,
     fluActivity,
     covidActivity,
-    {
-      heatRisk,
-      uvRisk,
-      alertRisk,
-      pollutantRisk,
-    }
-  );
-  const baseRespiratoryRisk = calculateRespiratoryRisk(
-    aqi,
-    fluActivity,
-    covidActivity,
-    {
-      alertRisk,
-      pollutantRisk,
-    }
-  );
-  const personalizedRisk = personalizeRisk(
-    baseHealthRisk,
-    baseRespiratoryRisk,
-    userProfile
-  );
-  const healthRisk = personalizedRisk.healthRisk;
-  const respiratoryRisk = personalizedRisk.respiratoryRisk;
-  const personalizationSummary = personalizedRisk.isPersonalized
-    ? personalizedRisk.reasons.length > 0
-      ? `Personalized based on ${personalizedRisk.reasons.join(", ")}.`
-      : "Personalized with your saved profile. No added exposure factors were found."
-    : "Based on public local data only.";
+    covidCoverage: covidData?.coverage ?? "Unknown",
+    dataStatus,
+    profile: userProfile,
+  });
+  const healthRisk = riskModel.healthRisk;
+  const respiratoryRisk = riskModel.respiratoryRisk;
+  const personalizationSummary = riskModel.personalizationSummary;
+  const scoreBreakdown = riskModel.scoreBreakdown;
+  const dataConfidence = riskModel.dataConfidence;
   const latitudeValue = Number(latitude);
   const longitudeValue = Number(longitude);
   const hasMapLocation =
@@ -598,7 +860,6 @@ export default function Home() {
         latitudeValue + 0.05
       }&layer=mapnik&marker=${latitudeValue}%2C${longitudeValue}`
     : "";
-  const airQualityLabel = getAirQualityLabel(aqi);
   const healthBrief = buildHealthBrief({
     healthRisk,
     respiratoryRisk,
@@ -611,8 +872,8 @@ export default function Home() {
     weatherAlerts,
     fluActivity,
     covidActivity,
-    personalizedRiskReasons: personalizedRisk.reasons,
-    isPersonalized: personalizedRisk.isPersonalized,
+    personalizedRiskReasons: riskModel.personalizedRiskReasons,
+    isPersonalized: riskModel.isPersonalized,
   });
   const chatContext: HealthChatContext = {
     zipCode,
@@ -630,7 +891,7 @@ export default function Home() {
     healthRisk,
     respiratoryRisk,
     profileSummary: personalizationSummary,
-    profileReasons: personalizedRisk.reasons,
+    profileReasons: riskModel.personalizedRiskReasons,
     heatRisk,
     uvRisk,
     alertRisk,
@@ -688,7 +949,17 @@ export default function Home() {
     setEnvironmentData(null);
     setWeatherAlerts([]);
     setAirComponents(undefined);
+    setDataStatus({
+      airQuality: false,
+      pollutants: false,
+      heatUv: false,
+      weatherAlerts: false,
+      flu: false,
+      covid: false,
+      news: false,
+    });
     setSearched(false);
+    setDashboardView("overview");
     setLoading(true);
 
     try {
@@ -701,9 +972,11 @@ export default function Home() {
 
       const fluData = await getFluData(location.state);
       setFluActivity(fluData);
+      setDataStatus((current) => ({ ...current, flu: true }));
 
       const covidActivityData = await getCovidData(location.state);
       setCovidData(covidActivityData);
+      setDataStatus((current) => ({ ...current, covid: true }));
 
       const [airData, environment, alerts] = await Promise.all([
         getAirQuality(location.latitude, location.longitude),
@@ -715,6 +988,13 @@ export default function Home() {
       setAirComponents(airData.list?.[0]?.components);
       setEnvironmentData(environment);
       setWeatherAlerts(alerts);
+      setDataStatus((current) => ({
+        ...current,
+        airQuality: airData.list?.[0]?.main.aqi !== undefined,
+        pollutants: Boolean(airData.list?.[0]?.components),
+        heatUv: true,
+        weatherAlerts: true,
+      }));
       setSearched(true);
 
       setNewsLoading(true);
@@ -724,6 +1004,7 @@ export default function Home() {
           location.state
         );
         setLocalNews(news);
+        setDataStatus((current) => ({ ...current, news: true }));
       } catch {
         setNewsError(
           "Local health news is temporarily unavailable."
@@ -901,6 +1182,13 @@ export default function Home() {
               </p>
             </div>
 
+            <DashboardNav
+              activeView={dashboardView}
+              onChange={setDashboardView}
+            />
+
+            {dashboardView === "overview" && (
+              <>
             <TodayHealthBrief
               healthRisk={healthRisk}
               headline={healthBrief.headline}
@@ -927,10 +1215,16 @@ export default function Home() {
                   <p className="mt-3 text-sm leading-6 text-cyan-100">
                     {personalizationSummary}
                   </p>
-                  {personalizedRisk.isPersonalized && (
+                  {riskModel.isPersonalized && (
                     <p className="mt-2 text-xs leading-5 text-slate-400">
-                      Base environmental risk: {baseHealthRisk}. Personalized
-                      risk is informational only.
+                      Model: {riskModel.modelVersion}. Base environmental
+                      risk: {riskModel.baseHealthRisk}. Personalized risk is
+                      informational only.
+                    </p>
+                  )}
+                  {!riskModel.isPersonalized && (
+                    <p className="mt-2 text-xs leading-5 text-slate-400">
+                      Model: {riskModel.modelVersion}.
                     </p>
                   )}
                 </div>
@@ -955,8 +1249,23 @@ export default function Home() {
                 </Link>
               </div>
             </section>
+              </>
+            )}
 
-            {hasMapLocation && (
+            {dashboardView === "model" && (
+              <>
+            <RiskTransparencyPanel
+              score={scoreBreakdown.score}
+              items={scoreBreakdown.items}
+              topDrivers={scoreBreakdown.topDrivers}
+              categoryScores={scoreBreakdown.categoryScores}
+              methodology={riskModel.methodology}
+            />
+                <DataConfidencePanel confidence={dataConfidence} />
+              </>
+            )}
+
+            {dashboardView === "overview" && hasMapLocation && (
               <section className="mt-5 overflow-hidden rounded-lg border border-white/10 bg-[#101934]/90 shadow-xl shadow-black/25">
                 <div className="flex flex-col gap-2 border-b border-white/10 p-5 sm:flex-row sm:items-end sm:justify-between">
                   <div>
@@ -980,6 +1289,7 @@ export default function Home() {
               </section>
             )}
 
+            {dashboardView === "signals" && (
             <section className="mt-5 grid gap-5 md:grid-cols-2">
               <SignalCard
                 title="Air Quality"
@@ -1055,7 +1365,9 @@ export default function Home() {
                 href={detailHref("data-coverage")}
               />
             </section>
+            )}
 
+            {dashboardView === "news" && (
             <section className="mt-5 rounded-lg border border-white/10 bg-[#101934]/90 p-5 shadow-xl shadow-black/25">
               <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
                 <div>
@@ -1115,8 +1427,11 @@ export default function Home() {
                 </div>
               )}
             </section>
+            )}
 
+            {dashboardView === "assistant" && (
             <HealthChatPanel context={chatContext} />
+            )}
           </section>
         )}
       </section>
