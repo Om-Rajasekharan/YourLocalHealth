@@ -13,7 +13,7 @@ import { getAirQuality } from "../services/airsQuality";
 import { getFluData } from "../services/flu";
 import {
   getCovidData,
-  type CovidActivityData,
+type CovidActivityData,
 } from "../services/covid";
 import {
   getLocalHealthNews,
@@ -23,12 +23,57 @@ import {
   deleteSavedLocation,
   getSavedLocations,
   saveLocation,
+  type LocationType,
   type SavedLocation,
 } from "../services/savedLocations";
 import {
   isSupabaseConfigured,
   supabase,
 } from "../lib/supabaseClient";
+
+type ChatMessage = {
+  role: "user" | "assistant";
+  content: string;
+};
+
+type HealthChatContext = {
+  zipCode: string;
+  city: string;
+  state: string;
+  aqi: number | null;
+  airQuality: string;
+  fluActivity: string;
+  covidActivity: string;
+  covidValue: number | null;
+  covidSites: number | null;
+  covidCoverage: string;
+  covidTimePeriod: string;
+  covidUpdatedAt: string;
+  healthRisk: string;
+  respiratoryRisk: string;
+  news: {
+    title: string;
+    source: string;
+    publishedAt: string;
+    url: string;
+  }[];
+};
+
+const locationTypes: LocationType[] = [
+  "Home",
+  "Work",
+  "School",
+  "Caregiving",
+  "Other",
+];
+
+function normalizeLocationType(value: string): LocationType {
+  return (
+    locationTypes.find(
+      (type) => type.toLowerCase() === value.trim().toLowerCase()
+    ) ?? "Other"
+  );
+}
 
 function riskBadgeClass(risk: string) {
   switch (risk) {
@@ -245,7 +290,8 @@ function SavedLocationsPanel({
       )}
       {locations.length === 0 ? (
         <p className="mt-2 text-sm leading-5 text-slate-300">
-          Search a ZIP code, then save it here for quick access.
+          Search a ZIP code, then save it as home, work, school, caregiving,
+          or another important place.
         </p>
       ) : (
         <div className="mt-3 grid gap-2">
@@ -259,8 +305,13 @@ function SavedLocationsPanel({
                 onClick={() => onSelect(location.zip_code)}
                 className="block w-full text-left"
               >
-                <span className="block text-sm font-semibold text-white">
-                  {location.label}
+                <span className="flex flex-wrap items-center gap-2">
+                  <span className="text-sm font-semibold text-white">
+                    {location.label}
+                  </span>
+                  <span className="rounded-full border border-cyan-300/30 bg-cyan-400/10 px-2 py-0.5 text-[0.68rem] font-semibold uppercase tracking-wide text-cyan-100">
+                    {location.location_type}
+                  </span>
                 </span>
                 <span className="mt-1 block text-xs text-slate-400">
                   {location.city}, {location.state} · {location.zip_code}
@@ -277,6 +328,142 @@ function SavedLocationsPanel({
           ))}
         </div>
       )}
+    </section>
+  );
+}
+
+function HealthChatPanel({ context }: { context: HealthChatContext }) {
+  const [question, setQuestion] = useState("");
+  const [messages, setMessages] = useState<ChatMessage[]>([
+    {
+      role: "assistant",
+      content:
+        "Ask me about the local respiratory risk, air quality, flu activity, COVID wastewater signal, or nearby health news for this ZIP code.",
+    },
+  ]);
+  const [chatLoading, setChatLoading] = useState(false);
+
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+
+    const trimmedQuestion = question.trim();
+    if (!trimmedQuestion || chatLoading) return;
+
+    const nextMessages: ChatMessage[] = [
+      ...messages,
+      { role: "user", content: trimmedQuestion },
+    ];
+
+    setMessages(nextMessages);
+    setQuestion("");
+    setChatLoading(true);
+
+    try {
+      const response = await fetch("/api/health-chat", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          question: trimmedQuestion,
+          messages: nextMessages,
+          context,
+        }),
+      });
+      const data = (await response.json()) as { answer?: string };
+
+      setMessages([
+        ...nextMessages,
+        {
+          role: "assistant",
+          content:
+            data.answer ??
+            "I could not answer that from the current health context.",
+        },
+      ]);
+    } catch {
+      setMessages([
+        ...nextMessages,
+        {
+          role: "assistant",
+          content:
+            "The health assistant is temporarily unavailable. Try again in a moment.",
+        },
+      ]);
+    } finally {
+      setChatLoading(false);
+    }
+  };
+
+  return (
+    <section className="mt-5 rounded-lg border border-cyan-300/20 bg-[#101934]/90 p-5 shadow-xl shadow-black/25">
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+          <p className="text-sm font-semibold uppercase tracking-wide text-cyan-300">
+            Health Assistant
+          </p>
+          <h3 className="mt-1 text-xl font-semibold text-white">
+            Ask about {context.city}, {context.state}
+          </h3>
+        </div>
+        <p className="text-sm text-slate-400">
+          Uses this dashboard&apos;s data and local news context
+        </p>
+      </div>
+
+      <div className="mt-5 max-h-96 space-y-3 overflow-y-auto rounded-lg border border-white/10 bg-black/15 p-4">
+        {messages.map((message, index) => (
+          <div
+            key={`${message.role}-${index}`}
+            className={`rounded-lg border p-3 ${
+              message.role === "user"
+                ? "ml-auto max-w-[85%] border-violet-300/30 bg-violet-500/15 text-violet-50"
+                : "mr-auto max-w-[90%] border-cyan-300/20 bg-cyan-400/10 text-slate-100"
+            }`}
+          >
+            <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">
+              {message.role === "user" ? "You" : "YourLocalHealth"}
+            </p>
+            <p className="mt-2 whitespace-pre-wrap text-sm leading-6">
+              {message.content}
+            </p>
+          </div>
+        ))}
+        {chatLoading && (
+          <p className="text-sm text-slate-300">
+            Thinking through the local health context...
+          </p>
+        )}
+      </div>
+
+      <form
+        onSubmit={handleSubmit}
+        className="mt-4 flex flex-col gap-3 sm:flex-row"
+      >
+        <label className="sr-only" htmlFor="health-chat-question">
+          Ask a health question
+        </label>
+        <input
+          id="health-chat-question"
+          type="text"
+          value={question}
+          onChange={(event) => setQuestion(event.target.value)}
+          placeholder="Example: Should I worry about outdoor exercise today?"
+          className="h-12 min-w-0 flex-1 rounded-lg border border-white/15 bg-white/10 px-4 text-base text-white outline-none transition placeholder:text-slate-400 focus:border-cyan-300 focus:ring-4 focus:ring-cyan-400/20"
+        />
+        <button
+          type="submit"
+          disabled={chatLoading}
+          className="h-12 rounded-lg bg-cyan-500 px-5 text-sm font-semibold text-slate-950 transition hover:bg-cyan-300 disabled:cursor-not-allowed disabled:bg-slate-700 disabled:text-slate-300"
+        >
+          {chatLoading ? "Asking" : "Ask"}
+        </button>
+      </form>
+
+      <p className="mt-3 text-xs leading-5 text-slate-400">
+        This assistant is informational only and is not medical advice. Avoid
+        entering sensitive personal medical details here.
+      </p>
     </section>
   );
 }
@@ -331,6 +518,28 @@ export default function Home() {
       }&layer=mapnik&marker=${latitudeValue}%2C${longitudeValue}`
     : "";
   const airQualityLabel = getAirQualityLabel(aqi);
+  const chatContext: HealthChatContext = {
+    zipCode,
+    city,
+    state,
+    aqi,
+    airQuality: airQualityLabel,
+    fluActivity,
+    covidActivity,
+    covidValue: covidData?.value ?? null,
+    covidSites: covidData?.numberOfSites ?? null,
+    covidCoverage: covidData?.coverage ?? "Unknown",
+    covidTimePeriod: covidData?.timePeriod ?? "Unknown",
+    covidUpdatedAt: covidData?.updatedAt ?? "Unknown",
+    healthRisk,
+    respiratoryRisk,
+    news: localNews.map((article) => ({
+      title: article.title,
+      source: article.source,
+      publishedAt: article.publishedAt,
+      url: article.url,
+    })),
+  };
   const detailHref = (topic: string) => {
     const params = new URLSearchParams({
       zipCode,
@@ -433,6 +642,15 @@ export default function Home() {
 
     if (!label.trim()) return;
 
+    const defaultLocationType =
+      savedLocations.length === 0 ? "Home" : "Work";
+    const locationTypeInput =
+      window.prompt(
+        "What type of location is this? Home, Work, School, Caregiving, or Other",
+        defaultLocationType
+      ) ?? "";
+    const locationType = normalizeLocationType(locationTypeInput);
+
     setSavingLocation(true);
     setSavedLocationMessage("");
 
@@ -440,6 +658,7 @@ export default function Home() {
       await saveLocation({
         userId: user.id,
         label: label.trim(),
+        locationType,
         zipCode,
         city,
         state,
@@ -794,6 +1013,8 @@ export default function Home() {
                 </div>
               )}
             </section>
+
+            <HealthChatPanel context={chatContext} />
           </section>
         )}
       </section>

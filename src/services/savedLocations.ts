@@ -1,9 +1,17 @@
 import { supabase } from "../lib/supabaseClient";
 
+export type LocationType =
+  | "Home"
+  | "Work"
+  | "School"
+  | "Caregiving"
+  | "Other";
+
 export type SavedLocation = {
   id: string;
   user_id: string;
   label: string;
+  location_type: LocationType;
   zip_code: string;
   city: string;
   state: string;
@@ -15,6 +23,7 @@ export type SavedLocation = {
 export type NewSavedLocation = {
   userId: string;
   label: string;
+  locationType: LocationType;
   zipCode: string;
   city: string;
   state: string;
@@ -54,6 +63,7 @@ export async function saveLocation(
     .insert({
       user_id: location.userId,
       label: location.label,
+      location_type: location.locationType,
       zip_code: location.zipCode,
       city: location.city,
       state: location.state,
