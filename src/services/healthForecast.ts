@@ -8,6 +8,13 @@ export type ForecastHour = {
   ozone: number | null;
   apparentTemperature: number | null;
   uvIndex: number | null;
+  alderPollen: number | null;
+  birchPollen: number | null;
+  grassPollen: number | null;
+  mugwortPollen: number | null;
+  ragweedPollen: number | null;
+  pollenIndex: number | null;
+  pollenRisk: "Low" | "Moderate" | "High" | "Unknown";
   drivers: string[];
 };
 
@@ -17,6 +24,8 @@ export type HealthForecastData = {
   peakScore: number;
   bestWindow: ForecastHour | null;
   worstWindow: ForecastHour | null;
+  allergyPeakWindow: ForecastHour | null;
+  allergyPeakScore: number | null;
   trends: ForecastTrend[];
   summary: string;
 };
@@ -45,6 +54,11 @@ type AirQualityForecastResponse = {
     us_aqi?: number[];
     pm2_5?: number[];
     ozone?: number[];
+    alder_pollen?: (number | null)[];
+    birch_pollen?: (number | null)[];
+    grass_pollen?: (number | null)[];
+    mugwort_pollen?: (number | null)[];
+    ragweed_pollen?: (number | null)[];
   };
 };
 
@@ -65,6 +79,23 @@ function componentScore(
   return 15;
 }
 
+function pollenRiskFromIndex(
+  pollenIndex: number | null
+): ForecastHour["pollenRisk"] {
+  if (pollenIndex === null) return "Unknown";
+  if (pollenIndex >= 50) return "High";
+  if (pollenIndex >= 15) return "Moderate";
+  return "Low";
+}
+
+function getPollenIndex(values: (number | null)[]) {
+  const knownValues = values.filter((value) => value !== null);
+
+  if (knownValues.length === 0) return null;
+
+  return Math.round(Math.max(...knownValues));
+}
+
 function formatForecastTime(value: string) {
   const date = new Date(value);
 
@@ -82,6 +113,8 @@ function buildDrivers(hour: {
   ozone: number | null;
   apparentTemperature: number | null;
   uvIndex: number | null;
+  pollenIndex: number | null;
+  pollenRisk: ForecastHour["pollenRisk"];
 }) {
   return [
     hour.usAqi !== null && hour.usAqi > 100
@@ -99,6 +132,12 @@ function buildDrivers(hour: {
       : "",
     hour.uvIndex !== null && hour.uvIndex >= 6
       ? "UV forecast elevated"
+      : "",
+    hour.pollenRisk === "High"
+      ? "Pollen forecast high"
+      : "",
+    hour.pollenRisk === "Moderate"
+      ? "Pollen forecast elevated"
       : "",
   ].filter(Boolean);
 }
@@ -178,7 +217,8 @@ export async function getHealthForecast(
   const airParams = new URLSearchParams({
     latitude,
     longitude,
-    hourly: "us_aqi,pm2_5,ozone",
+    hourly:
+      "us_aqi,pm2_5,ozone,alder_pollen,birch_pollen,grass_pollen,mugwort_pollen,ragweed_pollen",
     timezone: "auto",
     forecast_days: "2",
   });
@@ -215,6 +255,34 @@ export async function getHealthForecast(
       airIndex === undefined
         ? null
         : airData.hourly?.ozone?.[airIndex] ?? null;
+    const alderPollen =
+      airIndex === undefined
+        ? null
+        : airData.hourly?.alder_pollen?.[airIndex] ?? null;
+    const birchPollen =
+      airIndex === undefined
+        ? null
+        : airData.hourly?.birch_pollen?.[airIndex] ?? null;
+    const grassPollen =
+      airIndex === undefined
+        ? null
+        : airData.hourly?.grass_pollen?.[airIndex] ?? null;
+    const mugwortPollen =
+      airIndex === undefined
+        ? null
+        : airData.hourly?.mugwort_pollen?.[airIndex] ?? null;
+    const ragweedPollen =
+      airIndex === undefined
+        ? null
+        : airData.hourly?.ragweed_pollen?.[airIndex] ?? null;
+    const pollenIndex = getPollenIndex([
+      alderPollen,
+      birchPollen,
+      grassPollen,
+      mugwortPollen,
+      ragweedPollen,
+    ]);
+    const pollenRisk = pollenRiskFromIndex(pollenIndex);
     const apparentTemperature =
       weatherData.hourly?.apparent_temperature?.[index] ?? null;
     const uvIndex = weatherData.hourly?.uv_index?.[index] ?? null;
@@ -236,6 +304,8 @@ export async function getHealthForecast(
       ozone,
       apparentTemperature,
       uvIndex,
+      pollenIndex,
+      pollenRisk,
     });
 
     return {
@@ -248,6 +318,13 @@ export async function getHealthForecast(
       ozone,
       apparentTemperature,
       uvIndex,
+      alderPollen,
+      birchPollen,
+      grassPollen,
+      mugwortPollen,
+      ragweedPollen,
+      pollenIndex,
+      pollenRisk,
       drivers,
     };
   });
@@ -262,6 +339,11 @@ export async function getHealthForecast(
   const bestWindow = sortedByScore[0] ?? null;
   const worstWindow = sortedByScore.at(-1) ?? null;
   const peakScore = worstWindow?.score ?? 0;
+  const sortedByPollen = [...hours]
+    .filter((hour) => hour.pollenIndex !== null)
+    .sort((a, b) => (b.pollenIndex ?? 0) - (a.pollenIndex ?? 0));
+  const allergyPeakWindow = sortedByPollen[0] ?? null;
+  const allergyPeakScore = allergyPeakWindow?.pollenIndex ?? null;
   const trends = [
     buildTrend("Risk score", "/100", hours, (hour) => hour.score),
     buildTrend("U.S. AQI", "AQI", hours, (hour) => hour.usAqi),
@@ -269,6 +351,7 @@ export async function getHealthForecast(
     buildTrend("Ozone", "ug/m3", hours, (hour) => hour.ozone),
     buildTrend("Feels like", "F", hours, (hour) => hour.apparentTemperature),
     buildTrend("UV index", "UV", hours, (hour) => hour.uvIndex),
+    buildTrend("Pollen index", "grains/m3", hours, (hour) => hour.pollenIndex),
   ];
 
   return {
@@ -277,6 +360,8 @@ export async function getHealthForecast(
     peakScore,
     bestWindow,
     worstWindow,
+    allergyPeakWindow,
+    allergyPeakScore,
     trends,
     summary: summarizeForecast(bestWindow, worstWindow, peakScore),
   };

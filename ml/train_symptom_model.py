@@ -12,7 +12,14 @@ select
   s.aqi,
   s.forecast_average_score,
   s.forecast_peak_score,
+  s.forecast_allergy_peak_score,
   s.equity_score,
+  s.places_chronic_burden_score,
+  s.places_asthma,
+  s.places_copd,
+  s.places_smoking,
+  s.places_obesity,
+  s.places_diabetes,
   s.health_risk,
   s.respiratory_risk,
   s.air_quality,
@@ -22,7 +29,8 @@ select
   s.alert_risk,
   s.flu_activity,
   s.covid_activity,
-  s.covid_coverage
+  s.covid_coverage,
+  s.forecast_pollen_risk
 from public.symptom_checkins c
 left join public.health_snapshots s on s.id = c.snapshot_id;
 
@@ -53,7 +61,14 @@ NUMERIC_FEATURES = [
     "aqi",
     "forecast_average_score",
     "forecast_peak_score",
+    "forecast_allergy_peak_score",
     "equity_score",
+    "places_chronic_burden_score",
+    "places_asthma",
+    "places_copd",
+    "places_smoking",
+    "places_obesity",
+    "places_diabetes",
 ]
 
 CATEGORICAL_FEATURES = [
@@ -67,6 +82,7 @@ CATEGORICAL_FEATURES = [
     "flu_activity",
     "covid_activity",
     "covid_coverage",
+    "forecast_pollen_risk",
 ]
 
 

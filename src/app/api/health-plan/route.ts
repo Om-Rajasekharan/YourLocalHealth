@@ -51,6 +51,9 @@ type HealthPlanRequest = {
     bestWindowScore?: number | null;
     worstWindow?: string;
     worstWindowScore?: number | null;
+    allergyPeakWindow?: string;
+    allergyPeakScore?: number | null;
+    pollenRisk?: string;
     trends?: {
       label: string;
       direction: string;
@@ -163,6 +166,11 @@ Forecast context:
 - Worst exposure window: ${forecast?.worstWindow ?? "Unknown"} at ${
     forecast?.worstWindowScore ?? "unknown"
   }/100
+- Allergy/pollen peak window: ${
+    forecast?.allergyPeakWindow ?? "Unknown"
+  } at ${forecast?.allergyPeakScore ?? "unknown"} grains/m3, risk ${
+    forecast?.pollenRisk ?? "Unknown"
+  }
 - Forecast trends:
 ${forecastTrends}
 

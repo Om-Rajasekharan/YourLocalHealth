@@ -25,8 +25,17 @@ export type HealthSnapshotInput = {
   forecastPeakScore: number | null;
   forecastBestWindow: string | null;
   forecastWorstWindow: string | null;
+  forecastAllergyPeakScore: number | null;
+  forecastAllergyPeakWindow: string | null;
+  forecastPollenRisk: string | null;
   equityScore: number | null;
   equityLevel: string | null;
+  placesChronicBurdenScore: number | null;
+  placesAsthma: number | null;
+  placesCopd: number | null;
+  placesSmoking: number | null;
+  placesObesity: number | null;
+  placesDiabetes: number | null;
   profileSummary: string;
 };
 
@@ -85,8 +94,17 @@ export async function saveHealthSnapshot(
       forecast_peak_score: snapshot.forecastPeakScore,
       forecast_best_window: snapshot.forecastBestWindow,
       forecast_worst_window: snapshot.forecastWorstWindow,
+      forecast_allergy_peak_score: snapshot.forecastAllergyPeakScore,
+      forecast_allergy_peak_window: snapshot.forecastAllergyPeakWindow,
+      forecast_pollen_risk: snapshot.forecastPollenRisk,
       equity_score: snapshot.equityScore,
       equity_level: snapshot.equityLevel,
+      places_chronic_burden_score: snapshot.placesChronicBurdenScore,
+      places_asthma: snapshot.placesAsthma,
+      places_copd: snapshot.placesCopd,
+      places_smoking: snapshot.placesSmoking,
+      places_obesity: snapshot.placesObesity,
+      places_diabetes: snapshot.placesDiabetes,
       profile_summary: snapshot.profileSummary,
     })
     .select("id, created_at")

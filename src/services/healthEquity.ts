@@ -10,9 +10,18 @@ export type HealthEquityIndicator = {
 export type HealthEquityData = {
   zctaName: string;
   zcta: string;
+  tractFips: string | null;
   equityScore: number;
   equityLevel: "Low" | "Moderate" | "High" | "Unknown";
   indicators: HealthEquityIndicator[];
+  cdcPlaces: {
+    chronicBurdenScore: number | null;
+    asthma: number | null;
+    copd: number | null;
+    smoking: number | null;
+    obesity: number | null;
+    diabetes: number | null;
+  } | null;
   summary: string;
   caveats: string[];
 };
@@ -23,9 +32,17 @@ type HealthEquityResponse = {
 };
 
 export async function getHealthEquityData(
-  zipCode: string
+  zipCode: string,
+  latitude?: string,
+  longitude?: string
 ): Promise<HealthEquityData> {
   const params = new URLSearchParams({ zipCode });
+
+  if (latitude && longitude) {
+    params.set("latitude", latitude);
+    params.set("longitude", longitude);
+  }
+
   const response = await fetch(`/api/health-equity?${params.toString()}`);
   const data = (await response.json()) as HealthEquityResponse;
 

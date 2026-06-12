@@ -117,6 +117,9 @@ type HealthPlanContext = {
     bestWindowScore: number | null;
     worstWindow: string;
     worstWindowScore: number | null;
+    allergyPeakWindow: string;
+    allergyPeakScore: number | null;
+    pollenRisk: string;
     trends: {
       label: string;
       direction: string;
@@ -785,6 +788,119 @@ function DataConfidencePanel({
   );
 }
 
+function ModelDataSourcesPanel({
+  forecastData,
+  equityData,
+}: {
+  forecastData: HealthForecastData | null;
+  equityData: HealthEquityData | null;
+}) {
+  const sources = [
+    {
+      label: "Current air quality",
+      status: "Live",
+      source: "OpenWeather Air Pollution API",
+      use: "AQI category, dominant pollutant, and pollutant-specific respiratory context.",
+    },
+    {
+      label: "Weather, heat, UV, and pollen forecast",
+      status: forecastData ? "Loaded" : "Missing",
+      source: "Open-Meteo weather and air-quality forecast APIs",
+      use: "24-hour exposure forecast, best/worst outdoor windows, UV, heat, PM2.5, ozone, and pollen/allergy timing.",
+    },
+    {
+      label: "Respiratory illness activity",
+      status: "Live",
+      source: "CDC respiratory illness activity dataset",
+      use: "State-level flu and respiratory illness activity used in respiratory risk context.",
+    },
+    {
+      label: "COVID wastewater",
+      status: "Live",
+      source: "CDC National Wastewater Surveillance System",
+      use: "State wastewater viral activity, reporting-site count, and coverage confidence.",
+    },
+    {
+      label: "Social determinants",
+      status: equityData ? "Loaded" : "Missing",
+      source: "U.S. Census ACS 5-year profile",
+      use: "ZIP/ZCTA poverty, uninsured, and vehicle-access estimates for structural vulnerability.",
+    },
+    {
+      label: "Chronic disease prevalence",
+      status: equityData?.cdcPlaces ? "Loaded" : "Missing",
+      source: "CDC PLACES 2025 census tract estimates",
+      use: "Asthma, COPD, smoking, diabetes, obesity, physical health, activity, and social-needs estimates.",
+    },
+    {
+      label: "Local health news",
+      status: "Live",
+      source: "GDELT and Google News RSS",
+      use: "Recent nearby public-health article context for the AI assistant and plan.",
+    },
+    {
+      label: "User check-ins",
+      status: "Optional",
+      source: "YourLocalHealth symptom check-ins",
+      use: "Outcome labels that can train future symptom-risk models when users opt in.",
+    },
+  ];
+
+  return (
+    <section className="mt-5 rounded-lg border border-white/10 bg-[#101934]/90 p-5 shadow-xl shadow-black/25">
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+          <p className="text-sm font-semibold uppercase tracking-wide text-slate-400">
+            Model Data Sources
+          </p>
+          <h3 className="mt-1 text-xl font-semibold text-white">
+            What the app is using
+          </h3>
+          <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-300">
+            These sources feed the dashboard, AI context, and training dataset.
+            Some sources affect the current risk index directly; others provide
+            explainability and future ML features.
+          </p>
+        </div>
+      </div>
+
+      <div className="mt-5 grid gap-3 md:grid-cols-2">
+        {sources.map((source) => (
+          <article
+            className="rounded-lg border border-white/10 bg-white/5 p-4"
+            key={source.label}
+          >
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <p className="text-sm font-semibold text-white">
+                  {source.label}
+                </p>
+                <p className="mt-1 text-xs leading-5 text-slate-400">
+                  {source.source}
+                </p>
+              </div>
+              <span
+                className={`rounded-full border px-2 py-1 text-xs font-semibold ${
+                  source.status === "Loaded" || source.status === "Live"
+                    ? "border-cyan-300/30 bg-cyan-400/10 text-cyan-100"
+                    : source.status === "Optional"
+                    ? "border-violet-300/30 bg-violet-400/10 text-violet-100"
+                    : "border-fuchsia-300/30 bg-fuchsia-500/10 text-fuchsia-100"
+                }`}
+              >
+                {source.status}
+              </span>
+            </div>
+            <p className="mt-3 text-sm leading-6 text-slate-300">
+              {source.use}
+            </p>
+          </article>
+        ))}
+      </div>
+    </section>
+  );
+}
+
 function equityBadgeClass(level: string) {
   if (level === "High") {
     return "border-fuchsia-300/40 bg-fuchsia-500/15 text-fuchsia-100";
@@ -824,7 +940,11 @@ function HealthEquityPanel({
   const pollutionAmplifiers =
     equityData?.indicators.filter(
       (indicator) =>
-        (indicator.label === "Poverty" || indicator.label === "Uninsured") &&
+        (indicator.label === "Poverty" ||
+          indicator.label === "Uninsured" ||
+          indicator.label === "Asthma prevalence" ||
+          indicator.label === "COPD prevalence" ||
+          indicator.label === "Current smoking") &&
         (indicator.level === "Moderate" || indicator.level === "High")
     ) ?? [];
 
@@ -840,8 +960,9 @@ function HealthEquityPanel({
           </h3>
           <p className="mt-3 max-w-3xl text-sm leading-6 text-slate-300">
             This layer combines current environmental signals with Census ACS
-            social determinants to show where heat, pollution, and illness may
-            be harder to avoid or recover from.
+            social determinants and CDC PLACES chronic disease estimates to show
+            where heat, pollution, and illness may be harder to avoid or recover
+            from.
           </p>
         </div>
         {equityData && (
@@ -886,8 +1007,74 @@ function HealthEquityPanel({
             </p>
             <p className="mt-2 text-xs leading-5 text-slate-400">
               Census area: {equityData.zctaName} · ZCTA {equityData.zcta}
+              {equityData.tractFips
+                ? ` · CDC PLACES tract ${equityData.tractFips}`
+                : ""}
             </p>
           </div>
+
+          {equityData.cdcPlaces && (
+            <div className="mt-5 grid gap-4 lg:grid-cols-3">
+              <article className="rounded-lg border border-cyan-300/20 bg-cyan-400/10 p-4">
+                <p className="text-xs font-semibold uppercase tracking-wide text-cyan-100">
+                  Chronic burden
+                </p>
+                <p className="mt-3 text-3xl font-bold text-white">
+                  {equityData.cdcPlaces.chronicBurdenScore === null
+                    ? "n/a"
+                    : `${equityData.cdcPlaces.chronicBurdenScore}/100`}
+                </p>
+                <p className="mt-2 text-xs leading-5 text-cyan-50/80">
+                  Composite from CDC PLACES asthma, COPD, smoking, diabetes,
+                  obesity, physical health, and activity estimates.
+                </p>
+              </article>
+              <article className="rounded-lg border border-white/10 bg-white/5 p-4">
+                <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">
+                  Respiratory baseline
+                </p>
+                <p className="mt-3 text-sm leading-6 text-slate-200">
+                  Asthma{" "}
+                  <span className="font-semibold text-white">
+                    {equityData.cdcPlaces.asthma === null
+                      ? "n/a"
+                      : `${equityData.cdcPlaces.asthma.toFixed(1)}%`}
+                  </span>{" "}
+                  · COPD{" "}
+                  <span className="font-semibold text-white">
+                    {equityData.cdcPlaces.copd === null
+                      ? "n/a"
+                      : `${equityData.cdcPlaces.copd.toFixed(1)}%`}
+                  </span>{" "}
+                  · Smoking{" "}
+                  <span className="font-semibold text-white">
+                    {equityData.cdcPlaces.smoking === null
+                      ? "n/a"
+                      : `${equityData.cdcPlaces.smoking.toFixed(1)}%`}
+                  </span>
+                </p>
+              </article>
+              <article className="rounded-lg border border-white/10 bg-white/5 p-4">
+                <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">
+                  Metabolic baseline
+                </p>
+                <p className="mt-3 text-sm leading-6 text-slate-200">
+                  Diabetes{" "}
+                  <span className="font-semibold text-white">
+                    {equityData.cdcPlaces.diabetes === null
+                      ? "n/a"
+                      : `${equityData.cdcPlaces.diabetes.toFixed(1)}%`}
+                  </span>{" "}
+                  · Obesity{" "}
+                  <span className="font-semibold text-white">
+                    {equityData.cdcPlaces.obesity === null
+                      ? "n/a"
+                      : `${equityData.cdcPlaces.obesity.toFixed(1)}%`}
+                  </span>
+                </p>
+              </article>
+            </div>
+          )}
 
           <div className="mt-5 grid gap-4 md:grid-cols-3">
             {equityData.indicators.map((indicator) => (
@@ -945,7 +1132,7 @@ function HealthEquityPanel({
                 <span className="font-semibold">{pollutantRisk}</span>, with{" "}
                 {dominantPollutant} as the main signal.
                 {pollutionAmplifiers.length > 0
-                  ? " Poverty or uninsured rates may increase the community impact of respiratory exposures."
+                  ? " Poverty, insurance access, or elevated respiratory baseline estimates may increase the community impact of respiratory exposures."
                   : " The loaded ACS indicators do not add a strong pollution vulnerability signal."}
               </p>
             </article>
@@ -956,7 +1143,6 @@ function HealthEquityPanel({
               Next equity layers
             </p>
             <div className="mt-3 grid gap-2 text-sm leading-6 text-violet-100 md:grid-cols-2">
-              <p>CDC asthma and chronic disease prevalence</p>
               <p>EPA EJScreen PM2.5 and environmental justice burden</p>
               <p>Tree canopy and heat island vulnerability</p>
               <p>Nearby clinics, hospitals, and transit access</p>
@@ -1009,7 +1195,7 @@ function ForecastPanel({
           </h3>
           <p className="mt-3 max-w-3xl text-sm leading-6 text-slate-300">
             This forecast estimates the next 24 hours in {city}, {state} using
-            predicted U.S. AQI, PM2.5, ozone, heat index, and UV.
+            predicted U.S. AQI, PM2.5, ozone, heat index, UV, and pollen.
           </p>
         </div>
         {forecastData && (
@@ -1039,7 +1225,7 @@ function ForecastPanel({
 
       {forecastData && (
         <>
-          <div className="mt-5 grid gap-4 lg:grid-cols-3">
+          <div className="mt-5 grid gap-4 lg:grid-cols-4">
             <article className="rounded-lg border border-white/10 bg-white/5 p-4">
               <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">
                 Forecast summary
@@ -1074,6 +1260,21 @@ function ForecastPanel({
                 {forecastData.worstWindow
                   ? `${forecastData.worstWindow.score}/100`
                   : "unavailable"}
+              </p>
+            </article>
+            <article className="rounded-lg border border-white/10 bg-white/5 p-4">
+              <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">
+                Allergy peak
+              </p>
+              <p className="mt-3 text-lg font-semibold text-white">
+                {forecastData.allergyPeakWindow?.displayTime ?? "Unavailable"}
+              </p>
+              <p className="mt-2 text-sm leading-6 text-slate-300">
+                Pollen{" "}
+                {forecastData.allergyPeakScore !== null
+                  ? `${forecastData.allergyPeakScore} grains/m3`
+                  : "unavailable"}{" "}
+                · {forecastData.allergyPeakWindow?.pollenRisk ?? "Unknown"}
               </p>
             </article>
           </div>
@@ -1215,7 +1416,8 @@ function ForecastPanel({
                           {hour.pm25?.toFixed(1) ?? "n/a"} · Ozone{" "}
                           {hour.ozone?.toFixed(1) ?? "n/a"} · Feels{" "}
                           {hour.apparentTemperature?.toFixed(0) ?? "n/a"}°F ·
-                          UV {hour.uvIndex?.toFixed(1) ?? "n/a"}
+                          UV {hour.uvIndex?.toFixed(1) ?? "n/a"} · Pollen{" "}
+                          {hour.pollenIndex ?? "n/a"} ({hour.pollenRisk})
                         </p>
                       </div>
                       <RiskBadge value={hour.risk} />
@@ -2391,6 +2593,12 @@ export default function Home() {
           worstWindow:
             healthForecastData.worstWindow?.displayTime ?? "Unavailable",
           worstWindowScore: healthForecastData.worstWindow?.score ?? null,
+          allergyPeakWindow:
+            healthForecastData.allergyPeakWindow?.displayTime ??
+            "Unavailable",
+          allergyPeakScore: healthForecastData.allergyPeakScore,
+          pollenRisk:
+            healthForecastData.allergyPeakWindow?.pollenRisk ?? "Unknown",
           trends: healthForecastData.trends.map((trend) => ({
             label: trend.label,
             direction: trend.direction,
@@ -2431,6 +2639,26 @@ export default function Home() {
       apparentTemperatureMax:
         environmentData?.apparentTemperatureMax?.toString() ?? "",
       activeAlerts: weatherAlerts.map((alert) => alert.event).join("|"),
+      allergyPeakWindow:
+        healthForecastData?.allergyPeakWindow?.displayTime ?? "",
+      allergyPeakScore:
+        healthForecastData?.allergyPeakScore?.toString() ?? "",
+      pollenRisk:
+        healthForecastData?.allergyPeakWindow?.pollenRisk ?? "",
+      equityScore: healthEquityData?.equityScore.toString() ?? "",
+      equityLevel: healthEquityData?.equityLevel ?? "",
+      placesChronicBurdenScore:
+        healthEquityData?.cdcPlaces?.chronicBurdenScore?.toString() ??
+        "",
+      placesAsthma:
+        healthEquityData?.cdcPlaces?.asthma?.toString() ?? "",
+      placesCopd: healthEquityData?.cdcPlaces?.copd?.toString() ?? "",
+      placesSmoking:
+        healthEquityData?.cdcPlaces?.smoking?.toString() ?? "",
+      placesObesity:
+        healthEquityData?.cdcPlaces?.obesity?.toString() ?? "",
+      placesDiabetes:
+        healthEquityData?.cdcPlaces?.diabetes?.toString() ?? "",
       healthRisk,
       respiratoryRisk,
     });
@@ -2514,7 +2742,11 @@ export default function Home() {
       let loadedEquityData: HealthEquityData | null = null;
 
       try {
-        const equityData = await getHealthEquityData(zipToSearch);
+        const equityData = await getHealthEquityData(
+          zipToSearch,
+          location.latitude,
+          location.longitude
+        );
         setHealthEquityData(equityData);
         loadedEquityData = equityData;
       } catch (error) {
@@ -2589,8 +2821,21 @@ export default function Home() {
               forecast?.bestWindow?.displayTime ?? null,
             forecastWorstWindow:
               forecast?.worstWindow?.displayTime ?? null,
+            forecastAllergyPeakScore:
+              forecast?.allergyPeakScore ?? null,
+            forecastAllergyPeakWindow:
+              forecast?.allergyPeakWindow?.displayTime ?? null,
+            forecastPollenRisk:
+              forecast?.allergyPeakWindow?.pollenRisk ?? null,
             equityScore: loadedEquityData?.equityScore ?? null,
             equityLevel: loadedEquityData?.equityLevel ?? null,
+            placesChronicBurdenScore:
+              loadedEquityData?.cdcPlaces?.chronicBurdenScore ?? null,
+            placesAsthma: loadedEquityData?.cdcPlaces?.asthma ?? null,
+            placesCopd: loadedEquityData?.cdcPlaces?.copd ?? null,
+            placesSmoking: loadedEquityData?.cdcPlaces?.smoking ?? null,
+            placesObesity: loadedEquityData?.cdcPlaces?.obesity ?? null,
+            placesDiabetes: loadedEquityData?.cdcPlaces?.diabetes ?? null,
             profileSummary: nextRiskModel.personalizationSummary,
           });
           setLatestSnapshot(snapshot);
@@ -2871,6 +3116,10 @@ export default function Home() {
               methodology={riskModel.methodology}
             />
                 <DataConfidencePanel confidence={dataConfidence} />
+                <ModelDataSourcesPanel
+                  forecastData={healthForecastData}
+                  equityData={healthEquityData}
+                />
               </>
             )}
 
@@ -3014,11 +3263,48 @@ export default function Home() {
                 href={detailHref("covid-wastewater")}
               />
               <SignalCard
-                title="Data Coverage"
-                value={covidData?.coverage ?? "Unknown"}
-                detail="Coverage describes how representative the wastewater data is for the state or territory."
-                source="Source: CDC National Wastewater Surveillance System"
-                href={detailHref("data-coverage")}
+                title="Pollen Forecast"
+                value={
+                  healthForecastData?.allergyPeakWindow?.pollenRisk ??
+                  "Unknown"
+                }
+                detail={
+                  healthForecastData?.allergyPeakWindow
+                    ? `Highest pollen signal is around ${healthForecastData.allergyPeakWindow.displayTime}, estimated at ${healthForecastData.allergyPeakScore ?? "n/a"} grains/m3.`
+                    : "Pollen forecast data was unavailable for this search."
+                }
+                source="Source: Open-Meteo air-quality forecast API"
+                href={detailHref("pollen-forecast")}
+              />
+              <SignalCard
+                title="Health Equity"
+                value={healthEquityData?.equityLevel ?? "Unknown"}
+                detail={
+                  healthEquityData
+                    ? `Structural vulnerability score ${healthEquityData.equityScore}/100 from ACS social determinants and CDC PLACES context.`
+                    : "Health equity data was unavailable for this search."
+                }
+                source="Sources: Census ACS and CDC PLACES"
+                href={detailHref("health-equity")}
+              />
+              <SignalCard
+                title="Chronic Disease Baseline"
+                value={
+                  healthEquityData?.cdcPlaces?.chronicBurdenScore === null ||
+                  healthEquityData?.cdcPlaces?.chronicBurdenScore ===
+                    undefined
+                    ? "Unknown"
+                    : exposureLabel(
+                        healthEquityData.cdcPlaces.chronicBurdenScore
+                      )
+                }
+                detail={
+                  healthEquityData?.cdcPlaces
+                    ? `Asthma ${healthEquityData.cdcPlaces.asthma?.toFixed(1) ?? "n/a"}%, COPD ${healthEquityData.cdcPlaces.copd?.toFixed(1) ?? "n/a"}%, smoking ${healthEquityData.cdcPlaces.smoking?.toFixed(1) ?? "n/a"}% in the local census tract.`
+                    : "CDC PLACES tract estimates were unavailable for this search."
+                }
+                source="Source: CDC PLACES 2025"
+                href={detailHref("cdc-places")}
               />
             </section>
             )}

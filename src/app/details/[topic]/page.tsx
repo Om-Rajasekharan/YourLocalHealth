@@ -47,6 +47,10 @@ function RiskMeter({
   ticks: { label: string; at: number }[];
   unit?: string;
 }) {
+  const [sensitivity, setSensitivity] = useState(1);
+  const adjustedValue =
+    value === null ? null : Math.min(value * sensitivity, max);
+
   return (
     <article className="rounded-lg border border-white/10 bg-[#101934]/90 p-5 shadow-xl shadow-black/25">
       <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
@@ -59,14 +63,16 @@ function RiskMeter({
           </h2>
         </div>
         <p className="text-2xl font-bold text-white">
-          {value === null ? "Unavailable" : `${value.toFixed(1)}${unit ?? ""}`}
+          {adjustedValue === null
+            ? "Unavailable"
+            : `${adjustedValue.toFixed(1)}${unit ?? ""}`}
         </p>
       </div>
 
       <div className="mt-5 h-4 overflow-hidden rounded-full bg-white/10">
         <div
           className="h-full rounded-full bg-gradient-to-r from-cyan-300 via-violet-400 to-fuchsia-400"
-          style={{ width: `${meterPercent(value, max)}%` }}
+          style={{ width: `${meterPercent(adjustedValue, max)}%` }}
         />
       </div>
       <div className="relative mt-3 h-9">
@@ -83,6 +89,97 @@ function RiskMeter({
           </div>
         ))}
       </div>
+      <label className="mt-4 block text-sm font-medium text-slate-200">
+        Sensitivity overlay: {sensitivity.toFixed(1)}x
+        <input
+          type="range"
+          min="0.7"
+          max="1.4"
+          step="0.1"
+          value={sensitivity}
+          onChange={(event) => setSensitivity(Number(event.target.value))}
+          className="mt-2 block w-full accent-cyan-300"
+        />
+      </label>
+      <p className="mt-2 text-xs leading-5 text-slate-500">
+        Drag the slider to see how the same reading may matter more or less for
+        sensitive people. It does not change the stored dashboard value.
+      </p>
+    </article>
+  );
+}
+
+function InteractiveBars({
+  title,
+  subtitle,
+  bars,
+  unit = "%",
+}: {
+  title: string;
+  subtitle: string;
+  bars: { label: string; value: number | null; detail: string }[];
+  unit?: string;
+}) {
+  const firstKnown = bars.find((bar) => bar.value !== null);
+  const [selectedLabel, setSelectedLabel] = useState(
+    firstKnown?.label ?? bars[0]?.label ?? ""
+  );
+  const selected =
+    bars.find((bar) => bar.label === selectedLabel) ?? firstKnown;
+  const maxValue = Math.max(1, ...bars.map((bar) => bar.value ?? 0));
+
+  return (
+    <article className="rounded-lg border border-white/10 bg-[#101934]/90 p-5 shadow-xl shadow-black/25">
+      <p className="text-sm font-semibold uppercase tracking-wide text-slate-400">
+        Interactive Visual
+      </p>
+      <h2 className="mt-1 text-xl font-semibold text-white">{title}</h2>
+      <p className="mt-2 text-sm leading-6 text-slate-300">{subtitle}</p>
+
+      <div className="mt-5 grid gap-3">
+        {bars.map((bar) => {
+          const width =
+            bar.value === null ? 4 : Math.max((bar.value / maxValue) * 100, 4);
+          const isSelected = selectedLabel === bar.label;
+
+          return (
+            <button
+              type="button"
+              onClick={() => setSelectedLabel(bar.label)}
+              className={`rounded-lg border p-3 text-left transition ${
+                isSelected
+                  ? "border-cyan-300/60 bg-cyan-400/10"
+                  : "border-white/10 bg-white/5 hover:border-cyan-300/40"
+              }`}
+              key={bar.label}
+            >
+              <div className="flex items-center justify-between gap-3">
+                <span className="text-sm font-semibold text-white">
+                  {bar.label}
+                </span>
+                <span className="text-sm font-semibold text-cyan-100">
+                  {bar.value === null
+                    ? "n/a"
+                    : `${bar.value.toFixed(1)}${unit}`}
+                </span>
+              </div>
+              <div className="mt-3 h-3 overflow-hidden rounded-full bg-white/10">
+                <div
+                  className="h-full rounded-full bg-gradient-to-r from-cyan-300 to-violet-400"
+                  style={{ width: `${width}%` }}
+                />
+              </div>
+            </button>
+          );
+        })}
+      </div>
+
+      {selected && (
+        <p className="mt-4 rounded-lg border border-cyan-300/20 bg-cyan-400/10 p-3 text-sm leading-6 text-cyan-50">
+          <span className="font-semibold">{selected.label}:</span>{" "}
+          {selected.detail}
+        </p>
+      )}
     </article>
   );
 }
@@ -95,6 +192,20 @@ function TopicVisualization({
   alertNames,
   dominantPollutant,
   pollutantRisk,
+  aqiValue,
+  respiratoryRisk,
+  fluActivity,
+  covidActivity,
+  airQuality,
+  allergyPeakScore,
+  pollenRisk,
+  equityScore,
+  placesChronicBurdenScore,
+  placesAsthma,
+  placesCopd,
+  placesSmoking,
+  placesObesity,
+  placesDiabetes,
 }: {
   topic: string;
   heatIndex: number | null;
@@ -103,7 +214,33 @@ function TopicVisualization({
   alertNames: string[];
   dominantPollutant: string;
   pollutantRisk: string;
+  aqiValue: number | null;
+  respiratoryRisk: string;
+  fluActivity: string;
+  covidActivity: string;
+  airQuality: string;
+  allergyPeakScore: number | null;
+  pollenRisk: string;
+  equityScore: number | null;
+  placesChronicBurdenScore: number | null;
+  placesAsthma: number | null;
+  placesCopd: number | null;
+  placesSmoking: number | null;
+  placesObesity: number | null;
+  placesDiabetes: number | null;
 }) {
+  const [selectedAlert, setSelectedAlert] = useState(alertNames[0] ?? "");
+  const categoryScore = (value: string) => {
+    if (value === "High" || value === "Very High" || value === "Poor") {
+      return 90;
+    }
+    if (value === "Moderate" || value === "Fair") return 55;
+    if (value === "Low" || value === "Very Low" || value === "Good") {
+      return 20;
+    }
+    return null;
+  };
+
   if (topic === "heat-risk") {
     return (
       <RiskMeter
@@ -136,55 +273,182 @@ function TopicVisualization({
   }
 
   if (topic === "weather-alerts") {
+    if (alertNames.length === 0) {
+      return (
+        <RiskMeter
+          label="Active alert count"
+          value={0}
+          max={5}
+          ticks={[
+            { label: "None", at: 0 },
+            { label: "Watch", at: 1 },
+            { label: "Multiple", at: 3 },
+          ]}
+        />
+      );
+    }
+
     return (
       <article className="rounded-lg border border-white/10 bg-[#101934]/90 p-5 shadow-xl shadow-black/25">
         <p className="text-sm font-semibold uppercase tracking-wide text-slate-400">
           Active Alert Events
         </p>
-        {alertNames.length > 0 ? (
-          <div className="mt-4 flex flex-wrap gap-2">
-            {alertNames.map((alert) => (
-              <span
-                className="rounded-full border border-fuchsia-300/30 bg-fuchsia-500/10 px-3 py-1 text-sm font-semibold text-fuchsia-100"
-                key={alert}
-              >
-                {alert}
-              </span>
-            ))}
-          </div>
-        ) : (
-          <p className="mt-4 text-sm leading-6 text-slate-300">
-            No active National Weather Service alerts were found for this
-            point when the dashboard was generated.
-          </p>
-        )}
+        <div className="mt-4 flex flex-wrap gap-2">
+          {alertNames.map((alert) => (
+            <button
+              type="button"
+              onClick={() => setSelectedAlert(alert)}
+              className={`rounded-full border px-3 py-1 text-sm font-semibold transition ${
+                selectedAlert === alert
+                  ? "border-cyan-300/50 bg-cyan-400/10 text-cyan-100"
+                  : "border-fuchsia-300/30 bg-fuchsia-500/10 text-fuchsia-100 hover:border-cyan-300/40"
+              }`}
+              key={alert}
+            >
+              {alert}
+            </button>
+          ))}
+        </div>
+        <p className="mt-4 rounded-lg border border-white/10 bg-white/5 p-3 text-sm leading-6 text-slate-200">
+          Selected alert:{" "}
+          <span className="font-semibold text-white">
+            {selectedAlert || alertNames[0]}
+          </span>
+        </p>
       </article>
     );
   }
 
   if (topic === "air-quality") {
     return (
-      <article className="rounded-lg border border-white/10 bg-[#101934]/90 p-5 shadow-xl shadow-black/25">
-        <p className="text-sm font-semibold uppercase tracking-wide text-slate-400">
-          Pollutant Context
-        </p>
-        <h2 className="mt-2 text-xl font-semibold text-white">
-          {dominantPollutant}
-        </h2>
-        <p className="mt-3 text-sm leading-6 text-slate-300">
-          This is the pollutant signal closest to its moderate-risk threshold
-          among the pollutants available from the air quality API.
-        </p>
-        <div className="mt-4">
-          <span
-            className={`inline-flex rounded-full border px-3 py-1 text-sm font-semibold ${getRiskTone(
-              pollutantRisk
-            )}`}
-          >
-            Pollutant risk: {pollutantRisk}
-          </span>
-        </div>
-      </article>
+      <RiskMeter
+        label={`AQI category with ${dominantPollutant} context`}
+        value={aqiValue}
+        max={5}
+        ticks={[
+          { label: "Good", at: 1 },
+          { label: "Fair", at: 2 },
+          { label: "Moderate", at: 3 },
+          { label: "Poor", at: 4 },
+          { label: "Very Poor", at: 5 },
+        ]}
+      />
+    );
+  }
+
+  if (topic === "respiratory-risk") {
+    return (
+      <InteractiveBars
+        title="Respiratory risk ingredients"
+        subtitle="Click a bar to see how each signal contributes context to the combined breathing-related reading."
+        unit="/100"
+        bars={[
+          {
+            label: "Respiratory risk",
+            value: categoryScore(respiratoryRisk),
+            detail: "Combined local breathing-related signal.",
+          },
+          {
+            label: "Flu activity",
+            value: categoryScore(fluActivity),
+            detail: "CDC respiratory illness activity at the state level.",
+          },
+          {
+            label: "COVID wastewater",
+            value: categoryScore(covidActivity),
+            detail: "CDC wastewater viral activity signal.",
+          },
+          {
+            label: "Air quality",
+            value: categoryScore(airQuality),
+            detail: "Current AQI category from the local air quality reading.",
+          },
+          {
+            label: "Pollutants",
+            value: categoryScore(pollutantRisk),
+            detail: `Pollutant-specific context, with ${dominantPollutant} as the main signal.`,
+          },
+        ]}
+      />
+    );
+  }
+
+  if (topic === "pollen-forecast") {
+    return (
+      <RiskMeter
+        label={`Peak pollen forecast (${pollenRisk})`}
+        value={allergyPeakScore}
+        max={80}
+        unit=" grains/m3"
+        ticks={[
+          { label: "Low", at: 5 },
+          { label: "Moderate", at: 15 },
+          { label: "High", at: 50 },
+        ]}
+      />
+    );
+  }
+
+  if (topic === "health-equity") {
+    return (
+      <RiskMeter
+        label="Structural vulnerability score"
+        value={equityScore}
+        max={100}
+        unit="/100"
+        ticks={[
+          { label: "Low", at: 20 },
+          { label: "Moderate", at: 55 },
+          { label: "High", at: 80 },
+        ]}
+      />
+    );
+  }
+
+  if (topic === "cdc-places") {
+    return (
+      <InteractiveBars
+        title="CDC PLACES chronic disease context"
+        subtitle="Click each baseline estimate to understand the community context behind the chronic burden signal."
+        bars={[
+          {
+            label: "Chronic burden score",
+            value: placesChronicBurdenScore,
+            detail:
+              "Composite YourLocalHealth score from available CDC PLACES baseline estimates.",
+          },
+          {
+            label: "Asthma",
+            value: placesAsthma,
+            detail:
+              "Estimated adult current asthma prevalence in the local census tract.",
+          },
+          {
+            label: "COPD",
+            value: placesCopd,
+            detail:
+              "Estimated adult COPD prevalence in the local census tract.",
+          },
+          {
+            label: "Smoking",
+            value: placesSmoking,
+            detail:
+              "Estimated adult current smoking prevalence in the local census tract.",
+          },
+          {
+            label: "Obesity",
+            value: placesObesity,
+            detail:
+              "Estimated adult obesity prevalence in the local census tract.",
+          },
+          {
+            label: "Diabetes",
+            value: placesDiabetes,
+            detail:
+              "Estimated adult diagnosed diabetes prevalence in the local census tract.",
+          },
+        ]}
+      />
     );
   }
 
@@ -217,6 +481,12 @@ function titleFromTopic(topic: string) {
     .split("-")
     .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
     .join(" ");
+}
+
+function scoreLabel(score: number) {
+  if (score >= 67) return "High";
+  if (score >= 34) return "Moderate";
+  return "Low";
 }
 
 function TrendChart({
@@ -508,7 +778,6 @@ function DetailsContent() {
   const covidActivity = searchParams.get("covidActivity") || "Unknown";
   const covidValue = searchParams.get("covidValue") || "Unavailable";
   const covidSites = searchParams.get("covidSites") || "Unavailable";
-  const covidCoverage = searchParams.get("covidCoverage") || "Unknown";
   const covidTimePeriod =
     searchParams.get("covidTimePeriod") || "Unavailable";
   const covidUpdatedAt =
@@ -538,6 +807,20 @@ function DetailsContent() {
   const heatIndexValue =
     parseNumber(apparentTemperatureMax) ?? parseNumber(apparentTemperature);
   const uvIndexValue = parseNumber(uvIndexMax);
+  const allergyPeakWindow =
+    searchParams.get("allergyPeakWindow") || "Unavailable";
+  const allergyPeakScore =
+    searchParams.get("allergyPeakScore") || "";
+  const pollenRisk = searchParams.get("pollenRisk") || "Unknown";
+  const equityScore = searchParams.get("equityScore") || "";
+  const equityLevel = searchParams.get("equityLevel") || "Unknown";
+  const placesChronicBurdenScore =
+    searchParams.get("placesChronicBurdenScore") || "";
+  const placesAsthma = searchParams.get("placesAsthma") || "";
+  const placesCopd = searchParams.get("placesCopd") || "";
+  const placesSmoking = searchParams.get("placesSmoking") || "";
+  const placesObesity = searchParams.get("placesObesity") || "";
+  const placesDiabetes = searchParams.get("placesDiabetes") || "";
 
   const detailsByTopic: Record<string, DetailContent> = {
     "air-quality": {
@@ -652,21 +935,70 @@ function DetailsContent() {
       interpretation:
         "Wastewater data can show viral activity even when testing patterns change. YourLocalHealth uses this as the COVID input for respiratory risk.",
     },
-    "data-coverage": {
-      title: "Data Coverage",
-      eyebrow: "Data quality context",
-      value: covidCoverage,
+    "pollen-forecast": {
+      title: "Pollen Forecast",
+      eyebrow: "Allergy exposure signal",
+      value: pollenRisk,
       summary:
-        "Coverage describes how representative the CDC wastewater data is for the state or territory.",
-      source: "CDC National Wastewater Surveillance System",
+        "This estimates the strongest pollen signal in the next 24-hour forecast window using available tree, grass, mugwort, and ragweed pollen data.",
+      source: "Open-Meteo air-quality forecast API",
       rows: [
-        { label: "Coverage", value: covidCoverage },
-        { label: "Reporting sites", value: covidSites },
-        { label: "Time period", value: covidTimePeriod },
-        { label: "Updated", value: covidUpdatedAt },
+        { label: "Pollen risk", value: pollenRisk },
+        { label: "Peak pollen window", value: allergyPeakWindow },
+        {
+          label: "Peak pollen index",
+          value: allergyPeakScore
+            ? `${formatNumber(allergyPeakScore)} grains/m3`
+            : "Unavailable",
+        },
+        { label: "Location", value: location },
       ],
       interpretation:
-        "Limited coverage means the wastewater result may be based on a smaller share of the population and should be interpreted with extra caution.",
+        "Pollen forecasts are useful context for allergy-like symptoms, asthma flares, and outdoor planning, especially when combined with air quality and respiratory illness activity.",
+    },
+    "health-equity": {
+      title: "Health Equity",
+      eyebrow: "Structural vulnerability context",
+      value: equityLevel,
+      summary:
+        "This combines ZIP/ZCTA social determinants with local CDC PLACES context to show whether environmental risks may be harder to avoid or recover from.",
+      source: "U.S. Census ACS and CDC PLACES 2025",
+      rows: [
+        { label: "Equity level", value: equityLevel },
+        {
+          label: "Equity score",
+          value: equityScore ? `${equityScore}/100` : "Unavailable",
+        },
+        { label: "ZIP searched", value: zipCode },
+        { label: "Location", value: location },
+      ],
+      interpretation:
+        "The same heat, pollution, or illness signal may have a larger community impact where poverty, insurance access, transportation access, or baseline disease burden are less favorable.",
+    },
+    "cdc-places": {
+      title: "Chronic Disease Baseline",
+      eyebrow: "CDC PLACES context",
+      value: placesChronicBurdenScore
+        ? scoreLabel(parseNumber(placesChronicBurdenScore) ?? 0)
+        : "Unknown",
+      summary:
+        "CDC PLACES provides modeled local prevalence estimates for chronic disease and health-related factors at small geographic levels.",
+      source: "CDC PLACES 2025 census tract estimates",
+      rows: [
+        {
+          label: "Chronic burden score",
+          value: placesChronicBurdenScore
+            ? `${placesChronicBurdenScore}/100`
+            : "Unavailable",
+        },
+        { label: "Asthma", value: formatNumber(placesAsthma, "%") },
+        { label: "COPD", value: formatNumber(placesCopd, "%") },
+        { label: "Smoking", value: formatNumber(placesSmoking, "%") },
+        { label: "Obesity", value: formatNumber(placesObesity, "%") },
+        { label: "Diabetes", value: formatNumber(placesDiabetes, "%") },
+      ],
+      interpretation:
+        "These estimates do not describe any individual person. They help YourLocalHealth understand community baseline vulnerability when interpreting air, heat, pollen, and respiratory illness signals.",
     },
     "respiratory-risk": {
       title: "Respiratory Risk",
@@ -791,6 +1123,20 @@ function DetailsContent() {
             alertNames={alertNames}
             dominantPollutant={dominantPollutant}
             pollutantRisk={pollutantRisk}
+            aqiValue={parseNumber(aqi)}
+            respiratoryRisk={respiratoryRisk}
+            fluActivity={fluActivity}
+            covidActivity={covidActivity}
+            airQuality={airQuality}
+            allergyPeakScore={parseNumber(allergyPeakScore)}
+            pollenRisk={pollenRisk}
+            equityScore={parseNumber(equityScore)}
+            placesChronicBurdenScore={parseNumber(placesChronicBurdenScore)}
+            placesAsthma={parseNumber(placesAsthma)}
+            placesCopd={parseNumber(placesCopd)}
+            placesSmoking={parseNumber(placesSmoking)}
+            placesObesity={parseNumber(placesObesity)}
+            placesDiabetes={parseNumber(placesDiabetes)}
           />
         </section>
 

@@ -24,8 +24,17 @@ create table if not exists public.health_snapshots (
   forecast_peak_score integer,
   forecast_best_window text,
   forecast_worst_window text,
+  forecast_allergy_peak_score integer,
+  forecast_allergy_peak_window text,
+  forecast_pollen_risk text,
   equity_score integer,
   equity_level text,
+  places_chronic_burden_score integer,
+  places_asthma numeric,
+  places_copd numeric,
+  places_smoking numeric,
+  places_obesity numeric,
+  places_diabetes numeric,
   profile_summary text,
   created_at timestamptz not null default now()
 );
@@ -50,6 +59,19 @@ create table if not exists public.symptom_checkins (
 
 alter table public.health_snapshots enable row level security;
 alter table public.symptom_checkins enable row level security;
+
+alter table public.health_snapshots
+add column if not exists forecast_allergy_peak_score integer,
+add column if not exists forecast_allergy_peak_window text,
+add column if not exists forecast_pollen_risk text;
+
+alter table public.health_snapshots
+add column if not exists places_chronic_burden_score integer,
+add column if not exists places_asthma numeric,
+add column if not exists places_copd numeric,
+add column if not exists places_smoking numeric,
+add column if not exists places_obesity numeric,
+add column if not exists places_diabetes numeric;
 
 drop policy if exists "Users can view their own health snapshots"
 on public.health_snapshots;
