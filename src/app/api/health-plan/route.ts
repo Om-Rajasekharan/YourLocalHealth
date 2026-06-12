@@ -43,6 +43,23 @@ type HealthPlanRequest = {
       detail: string;
     }[];
   };
+  forecast?: {
+    summary?: string;
+    averageScore?: number;
+    peakScore?: number;
+    bestWindow?: string;
+    bestWindowScore?: number | null;
+    worstWindow?: string;
+    worstWindowScore?: number | null;
+    trends?: {
+      label: string;
+      direction: string;
+      peakTime: string;
+      min: number | null;
+      max: number | null;
+      unit: string;
+    }[];
+  };
 };
 
 type OpenAIResponse = {
@@ -72,6 +89,7 @@ function getResponseText(data: OpenAIResponse) {
 function formatPlanContext(body: HealthPlanRequest) {
   const context = body.context;
   const model = body.model;
+  const forecast = body.forecast;
   const news = context?.news?.length
     ? context.news
         .slice(0, 5)
@@ -99,6 +117,18 @@ function formatPlanContext(body: HealthPlanRequest) {
         )
         .join("\n")
     : "No category scores were provided.";
+  const forecastTrends = forecast?.trends?.length
+    ? forecast.trends
+        .map(
+          (trend) =>
+            `- ${trend.label}: ${trend.direction}, peaks around ${
+              trend.peakTime
+            }, range ${trend.min ?? "unknown"} to ${
+              trend.max ?? "unknown"
+            } ${trend.unit}`
+        )
+        .join("\n")
+    : "No forecast trend data was provided.";
 
   return `
 Location:
@@ -122,6 +152,19 @@ ${categories}
 
 Top model drivers:
 ${topDrivers}
+
+Forecast context:
+- Summary: ${forecast?.summary ?? "No forecast summary was provided"}
+- Average forecast risk: ${forecast?.averageScore ?? "Unknown"}/100
+- Peak forecast risk: ${forecast?.peakScore ?? "Unknown"}/100
+- Best outdoor window: ${forecast?.bestWindow ?? "Unknown"} at ${
+    forecast?.bestWindowScore ?? "unknown"
+  }/100
+- Worst exposure window: ${forecast?.worstWindow ?? "Unknown"} at ${
+    forecast?.worstWindowScore ?? "unknown"
+  }/100
+- Forecast trends:
+${forecastTrends}
 
 Environmental and respiratory signals:
 - Air quality: ${context?.airQuality ?? "Unknown"}
@@ -189,9 +232,9 @@ Return only valid JSON with this exact shape:
 {
   "headline": "short location-specific headline",
   "summary": "2 sentence plain-English explanation",
-  "priority": "the single most important thing to pay attention to today",
-  "actions": ["3 to 5 practical, non-medical actions"],
-  "watch": ["2 to 4 signals or situations to monitor"],
+      "priority": "the single most important thing to pay attention to today, including timing if forecast data is available",
+      "actions": ["3 to 5 practical, non-medical actions; include best/worst timing if forecast data is available"],
+      "watch": ["2 to 4 signals or situations to monitor, including forecast peaks when relevant"],
   "uncertainty": "one sentence about data limits"
 }
 

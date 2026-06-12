@@ -5,7 +5,7 @@ import {
 } from "./healthRisk";
 import { personalizeRisk } from "./personalizedRisk";
 
-export const RISK_MODEL_VERSION = "YourLocalHealth Risk Model v1.1";
+export const RISK_MODEL_VERSION = "YourLocalHealth Risk Model v1.2";
 
 export type DataStatus = {
   airQuality: boolean;
@@ -382,8 +382,9 @@ export function evaluateRiskModel(input: RiskModelInput) {
     scoreBreakdown,
     dataConfidence,
     methodology: [
-      "Risk Model v1.1 uses weighted public-health signals instead of treating every source equally.",
+      "Risk Model v1.2 uses weighted public-health signals instead of treating every source equally.",
       "Air quality, pollutant levels, flu activity, COVID wastewater, heat, official alerts, UV, and profile factors each contribute to the 0-100 index.",
+      "The Forecast tab uses a separate hourly prediction layer for expected air quality, PM2.5, ozone, heat, and UV conditions.",
       "The model is transparent and informational; it is not a clinically validated diagnostic or prediction tool.",
     ],
   };

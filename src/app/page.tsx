@@ -41,6 +41,19 @@ import {
   getUserProfile,
   type UserProfile,
 } from "../services/userProfile";
+import {
+  getHealthEquityData,
+  type HealthEquityData,
+} from "../services/healthEquity";
+import {
+  getHealthForecast,
+  type HealthForecastData,
+} from "../services/healthForecast";
+import {
+  saveHealthSnapshot,
+  saveSymptomCheckin,
+  type SavedHealthSnapshot,
+} from "../services/mlTrainingData";
 import { supabase } from "../lib/supabaseClient";
 
 type ChatMessage = {
@@ -96,6 +109,23 @@ type HealthPlanContext = {
     topDrivers: RiskModelItem[];
     categoryScores: RiskCategoryScore[];
   };
+  forecast?: {
+    summary: string;
+    averageScore: number;
+    peakScore: number;
+    bestWindow: string;
+    bestWindowScore: number | null;
+    worstWindow: string;
+    worstWindowScore: number | null;
+    trends: {
+      label: string;
+      direction: string;
+      peakTime: string;
+      min: number | null;
+      max: number | null;
+      unit: string;
+    }[];
+  };
 };
 
 type TimelineSetting = "Indoors" | "Outdoors";
@@ -126,7 +156,10 @@ type TimelineLocationSnapshot = {
 type DashboardView =
   | "overview"
   | "plan"
+  | "forecast"
   | "timeline"
+  | "equity"
+  | "checkin"
   | "signals"
   | "news"
   | "assistant"
@@ -144,9 +177,24 @@ const dashboardViews: { id: DashboardView; label: string; description: string }[
     description: "Personalized daily guidance",
   },
   {
+    id: "forecast",
+    label: "Forecast",
+    description: "Next 24-hour risk prediction",
+  },
+  {
     id: "timeline",
     label: "Timeline",
     description: "Daily exposure estimate",
+  },
+  {
+    id: "equity",
+    label: "Equity",
+    description: "Social vulnerability overlay",
+  },
+  {
+    id: "checkin",
+    label: "Check-in",
+    description: "Label symptoms for future ML",
   },
   {
     id: "signals",
@@ -192,35 +240,44 @@ function DashboardNav({
   activeView: DashboardView;
   onChange: (view: DashboardView) => void;
 }) {
-  return (
-    <nav
-      aria-label="Dashboard sections"
-      className="mb-5 grid gap-2 rounded-lg border border-white/10 bg-[#101934]/90 p-2 shadow-xl shadow-black/25 sm:grid-cols-2 lg:grid-cols-3"
-    >
-      {dashboardViews.map((view) => {
-        const isActive = activeView === view.id;
+  const activeDashboardView =
+    dashboardViews.find((view) => view.id === activeView) ??
+    dashboardViews[0];
 
-        return (
-          <button
-            key={view.id}
-            type="button"
-            onClick={() => onChange(view.id)}
-            className={`rounded-lg border p-3 text-left transition ${
-              isActive
-                ? "border-cyan-300/60 bg-cyan-400/15 text-white"
-                : "border-transparent bg-transparent text-slate-300 hover:border-white/10 hover:bg-white/5"
-            }`}
-          >
-            <span className="block text-sm font-semibold">
+  return (
+    <div className="mb-5 rounded-lg border border-white/10 bg-[#101934]/90 p-2 shadow-xl shadow-black/25">
+      <nav
+        aria-label="Dashboard sections"
+        className="flex gap-2 overflow-x-auto pb-1"
+      >
+        {dashboardViews.map((view) => {
+          const isActive = activeView === view.id;
+
+          return (
+            <button
+              key={view.id}
+              type="button"
+              onClick={() => onChange(view.id)}
+              className={`h-10 shrink-0 rounded-lg border px-4 text-sm font-semibold transition ${
+                isActive
+                  ? "border-cyan-300/60 bg-cyan-400/15 text-white"
+                  : "border-transparent bg-transparent text-slate-300 hover:border-white/10 hover:bg-white/5"
+              }`}
+            >
               {view.label}
-            </span>
-            <span className="mt-1 block text-xs leading-5 text-slate-400">
-              {view.description}
-            </span>
-          </button>
-        );
-      })}
-    </nav>
+            </button>
+          );
+        })}
+      </nav>
+      <div className="border-t border-white/10 px-2 py-3">
+        <p className="text-xs font-semibold uppercase tracking-wide text-cyan-300">
+          {activeDashboardView.label}
+        </p>
+        <p className="mt-1 text-sm leading-6 text-slate-300">
+          {activeDashboardView.description}
+        </p>
+      </div>
+    </div>
   );
 }
 
@@ -254,25 +311,25 @@ function SignalCard({
       href={href}
       className="group block rounded-lg outline-none transition focus:ring-4 focus:ring-cyan-400/20"
     >
-    <article className="rounded-lg border border-white/10 bg-[#111a33]/85 p-5 shadow-lg shadow-black/20 transition group-hover:-translate-y-0.5 group-hover:border-cyan-300/50 group-hover:bg-[#16213f] group-hover:shadow-cyan-950/40">
-      <div className="flex min-h-24 flex-col justify-between gap-4">
+    <article className="rounded-lg border border-white/10 bg-[#111a33]/85 p-4 shadow-lg shadow-black/20 transition group-hover:-translate-y-0.5 group-hover:border-cyan-300/50 group-hover:bg-[#16213f] group-hover:shadow-cyan-950/40">
+      <div className="flex min-h-24 flex-col justify-between gap-3">
         <div>
-          <h3 className="text-sm font-semibold uppercase tracking-wide text-slate-400 transition group-hover:text-cyan-200">
-            {title}
-          </h3>
-          <div className="mt-3">
+          <div className="flex items-start justify-between gap-3">
+            <h3 className="text-sm font-semibold uppercase tracking-wide text-slate-400 transition group-hover:text-cyan-200">
+              {title}
+            </h3>
             <RiskBadge value={value} />
           </div>
-          <p className="mt-3 text-sm leading-6 text-slate-300">
+          <p className="mt-3 line-clamp-3 text-sm leading-6 text-slate-300">
             {detail}
           </p>
         </div>
-        <p className="border-t border-white/10 pt-3 text-xs text-slate-400">
-          {source}
-        </p>
-        <p className="text-xs font-semibold text-cyan-200">
-          View details
-        </p>
+        <div className="flex items-center justify-between gap-3 border-t border-white/10 pt-3">
+          <p className="truncate text-xs text-slate-400">{source}</p>
+          <p className="shrink-0 text-xs font-semibold text-cyan-200">
+            Details
+          </p>
+        </div>
       </div>
     </article>
     </Link>
@@ -524,6 +581,8 @@ function RiskTransparencyPanel({
   categoryScores: RiskCategoryScore[];
   methodology: string[];
 }) {
+  const [showWeights, setShowWeights] = useState(false);
+
   return (
     <section className="mt-5">
       <article className="rounded-lg border border-white/10 bg-[#101934]/90 p-5 shadow-xl shadow-black/25">
@@ -603,29 +662,51 @@ function RiskTransparencyPanel({
           ))}
         </div>
 
-        <div className="mt-5 grid gap-3">
-          {items.map((item) => (
-            <div
-              className="grid gap-2 rounded-lg border border-white/10 bg-white/5 p-3 sm:grid-cols-[1fr_auto]"
-              key={item.label}
-            >
-              <div>
-                <p className="text-sm font-semibold text-white">
-                  {item.label}
-                </p>
-                <p className="mt-1 text-xs leading-5 text-slate-400">
-                  {item.detail}
-                </p>
-                <p className="mt-1 text-xs leading-5 text-slate-500">
-                  {item.category} · Weight: {item.weight} · Max{" "}
-                  {item.maxPoints} points
-                </p>
-              </div>
-              <p className="text-sm font-semibold text-cyan-100">
-                +{item.points}
+        <div className="mt-5 rounded-lg border border-white/10 bg-black/10 p-4">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">
+                Weighted inputs
+              </p>
+              <p className="mt-1 text-sm leading-6 text-slate-300">
+                Expand the scoring table when you want the full calculation.
               </p>
             </div>
-          ))}
+            <button
+              type="button"
+              onClick={() => setShowWeights((current) => !current)}
+              className="h-10 rounded-lg border border-white/15 px-4 text-sm font-semibold text-white transition hover:border-cyan-300/50 hover:bg-white/10"
+            >
+              {showWeights ? "Hide weights" : "Show weights"}
+            </button>
+          </div>
+
+          {showWeights && (
+            <div className="mt-4 grid gap-3">
+              {items.map((item) => (
+                <div
+                  className="grid gap-2 rounded-lg border border-white/10 bg-white/5 p-3 sm:grid-cols-[1fr_auto]"
+                  key={item.label}
+                >
+                  <div>
+                    <p className="text-sm font-semibold text-white">
+                      {item.label}
+                    </p>
+                    <p className="mt-1 text-xs leading-5 text-slate-400">
+                      {item.detail}
+                    </p>
+                    <p className="mt-1 text-xs leading-5 text-slate-500">
+                      {item.category} · Weight: {item.weight} · Max{" "}
+                      {item.maxPoints} points
+                    </p>
+                  </div>
+                  <p className="text-sm font-semibold text-cyan-100">
+                    +{item.points}
+                  </p>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
         <div className="mt-5 rounded-lg border border-white/10 bg-black/10 p-4">
           <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">
@@ -699,6 +780,457 @@ function DataConfidencePanel({
             ))}
           </ul>
         </div>
+      )}
+    </section>
+  );
+}
+
+function equityBadgeClass(level: string) {
+  if (level === "High") {
+    return "border-fuchsia-300/40 bg-fuchsia-500/15 text-fuchsia-100";
+  }
+
+  if (level === "Moderate") {
+    return "border-violet-300/40 bg-violet-400/15 text-violet-100";
+  }
+
+  if (level === "Low") {
+    return "border-cyan-300/40 bg-cyan-400/15 text-cyan-100";
+  }
+
+  return "border-white/15 bg-white/10 text-slate-200";
+}
+
+function HealthEquityPanel({
+  equityData,
+  equityError,
+  heatRisk,
+  pollutantRisk,
+  dominantPollutant,
+}: {
+  equityData: HealthEquityData | null;
+  equityError: string;
+  heatRisk: string;
+  pollutantRisk: string;
+  dominantPollutant: string;
+}) {
+  const heatAmplifiers =
+    equityData?.indicators.filter(
+      (indicator) =>
+        (indicator.label === "Poverty" ||
+          indicator.label === "No vehicle access") &&
+        (indicator.level === "Moderate" || indicator.level === "High")
+    ) ?? [];
+  const pollutionAmplifiers =
+    equityData?.indicators.filter(
+      (indicator) =>
+        (indicator.label === "Poverty" || indicator.label === "Uninsured") &&
+        (indicator.level === "Moderate" || indicator.level === "High")
+    ) ?? [];
+
+  return (
+    <section className="rounded-lg border border-white/10 bg-[#101934]/90 p-5 shadow-xl shadow-black/25">
+      <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+        <div>
+          <p className="text-sm font-semibold uppercase tracking-wide text-cyan-300">
+            Health Equity Overlay
+          </p>
+          <h3 className="mt-2 text-2xl font-semibold text-white">
+            Structural vulnerability can change what local risk means
+          </h3>
+          <p className="mt-3 max-w-3xl text-sm leading-6 text-slate-300">
+            This layer combines current environmental signals with Census ACS
+            social determinants to show where heat, pollution, and illness may
+            be harder to avoid or recover from.
+          </p>
+        </div>
+        {equityData && (
+          <div className="rounded-lg border border-cyan-300/20 bg-cyan-400/10 p-4">
+            <p className="text-xs font-semibold uppercase tracking-wide text-cyan-100">
+              Equity vulnerability
+            </p>
+            <p className="mt-2 text-3xl font-bold text-white">
+              {equityData.equityScore}/100
+            </p>
+            <span
+              className={`mt-2 inline-flex rounded-full border px-3 py-1 text-sm font-semibold ${equityBadgeClass(
+                equityData.equityLevel
+              )}`}
+            >
+              {equityData.equityLevel}
+            </span>
+          </div>
+        )}
+      </div>
+
+      {equityError && (
+        <p className="mt-5 rounded-lg border border-fuchsia-300/30 bg-fuchsia-500/10 p-4 text-sm text-fuchsia-100">
+          {equityError}
+        </p>
+      )}
+
+      {!equityData && !equityError && (
+        <p className="mt-5 rounded-lg border border-white/10 bg-white/5 p-4 text-sm leading-6 text-slate-300">
+          Health equity data will appear here after a ZIP code search.
+        </p>
+      )}
+
+      {equityData && (
+        <>
+          <div className="mt-5 rounded-lg border border-white/10 bg-white/5 p-4">
+            <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">
+              Area summary
+            </p>
+            <p className="mt-3 text-sm leading-6 text-slate-200">
+              {equityData.summary}
+            </p>
+            <p className="mt-2 text-xs leading-5 text-slate-400">
+              Census area: {equityData.zctaName} · ZCTA {equityData.zcta}
+            </p>
+          </div>
+
+          <div className="mt-5 grid gap-4 md:grid-cols-3">
+            {equityData.indicators.map((indicator) => (
+              <article
+                className="rounded-lg border border-white/10 bg-white/5 p-4"
+                key={indicator.label}
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <p className="text-sm font-semibold text-white">
+                      {indicator.label}
+                    </p>
+                    <p className="mt-1 text-xs leading-5 text-slate-400">
+                      {indicator.detail}
+                    </p>
+                  </div>
+                  <span
+                    className={`rounded-full border px-2 py-1 text-xs font-semibold ${equityBadgeClass(
+                      indicator.level
+                    )}`}
+                  >
+                    {indicator.level}
+                  </span>
+                </div>
+                <p className="mt-4 text-3xl font-bold text-white">
+                  {indicator.value === null
+                    ? "Unavailable"
+                    : `${indicator.value.toFixed(1)}${indicator.unit}`}
+                </p>
+                <p className="mt-3 text-xs leading-5 text-slate-500">
+                  {indicator.source}
+                </p>
+              </article>
+            ))}
+          </div>
+
+          <div className="mt-5 grid gap-4 lg:grid-cols-2">
+            <article className="rounded-lg border border-white/10 bg-black/10 p-4">
+              <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">
+                Heat vulnerability lens
+              </p>
+              <p className="mt-3 text-sm leading-6 text-slate-200">
+                Current heat risk is <span className="font-semibold">{heatRisk}</span>.
+                {heatAmplifiers.length > 0
+                  ? ` Poverty or limited vehicle access may make cooling, transportation, or avoiding heat harder in this area.`
+                  : " The loaded ACS indicators do not add a strong heat vulnerability signal."}
+              </p>
+            </article>
+            <article className="rounded-lg border border-white/10 bg-black/10 p-4">
+              <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">
+                Pollution burden lens
+              </p>
+              <p className="mt-3 text-sm leading-6 text-slate-200">
+                Current pollutant risk is{" "}
+                <span className="font-semibold">{pollutantRisk}</span>, with{" "}
+                {dominantPollutant} as the main signal.
+                {pollutionAmplifiers.length > 0
+                  ? " Poverty or uninsured rates may increase the community impact of respiratory exposures."
+                  : " The loaded ACS indicators do not add a strong pollution vulnerability signal."}
+              </p>
+            </article>
+          </div>
+
+          <div className="mt-5 rounded-lg border border-violet-300/30 bg-violet-500/10 p-4">
+            <p className="text-xs font-semibold uppercase tracking-wide text-violet-100">
+              Next equity layers
+            </p>
+            <div className="mt-3 grid gap-2 text-sm leading-6 text-violet-100 md:grid-cols-2">
+              <p>CDC asthma and chronic disease prevalence</p>
+              <p>EPA EJScreen PM2.5 and environmental justice burden</p>
+              <p>Tree canopy and heat island vulnerability</p>
+              <p>Nearby clinics, hospitals, and transit access</p>
+            </div>
+          </div>
+
+          <div className="mt-5 grid gap-2 text-xs leading-5 text-slate-400">
+            {equityData.caveats.map((caveat) => (
+              <p key={caveat}>{caveat}</p>
+            ))}
+          </div>
+        </>
+      )}
+    </section>
+  );
+}
+
+function ForecastPanel({
+  forecastData,
+  forecastError,
+  city,
+  state,
+}: {
+  forecastData: HealthForecastData | null;
+  forecastError: string;
+  city: string;
+  state: string;
+}) {
+  const formatTrendValue = (
+    value: number | null,
+    unit: string,
+    digits = 0
+  ) => {
+    if (value === null) return "n/a";
+    if (unit === "/100") return `${value.toFixed(0)}${unit}`;
+    if (unit === "F") return `${value.toFixed(0)}°F`;
+    return `${value.toFixed(digits)} ${unit}`;
+  };
+  const [showHourlyDetails, setShowHourlyDetails] = useState(false);
+
+  return (
+    <section className="rounded-lg border border-white/10 bg-[#101934]/90 p-5 shadow-xl shadow-black/25">
+      <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+        <div>
+          <p className="text-sm font-semibold uppercase tracking-wide text-cyan-300">
+            Health Risk Forecast
+          </p>
+          <h3 className="mt-2 text-2xl font-semibold text-white">
+            Predict the best and worst outdoor windows
+          </h3>
+          <p className="mt-3 max-w-3xl text-sm leading-6 text-slate-300">
+            This forecast estimates the next 24 hours in {city}, {state} using
+            predicted U.S. AQI, PM2.5, ozone, heat index, and UV.
+          </p>
+        </div>
+        {forecastData && (
+          <div className="rounded-lg border border-cyan-300/20 bg-cyan-400/10 p-4">
+            <p className="text-xs font-semibold uppercase tracking-wide text-cyan-100">
+              Peak forecast risk
+            </p>
+            <p className="mt-2 text-3xl font-bold text-white">
+              {forecastData.peakScore}/100
+            </p>
+            <RiskBadge value={exposureLabel(forecastData.peakScore)} />
+          </div>
+        )}
+      </div>
+
+      {forecastError && (
+        <p className="mt-5 rounded-lg border border-fuchsia-300/30 bg-fuchsia-500/10 p-4 text-sm text-fuchsia-100">
+          {forecastError}
+        </p>
+      )}
+
+      {!forecastData && !forecastError && (
+        <p className="mt-5 rounded-lg border border-white/10 bg-white/5 p-4 text-sm leading-6 text-slate-300">
+          Forecast data will appear here after a ZIP code search.
+        </p>
+      )}
+
+      {forecastData && (
+        <>
+          <div className="mt-5 grid gap-4 lg:grid-cols-3">
+            <article className="rounded-lg border border-white/10 bg-white/5 p-4">
+              <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">
+                Forecast summary
+              </p>
+              <p className="mt-3 text-sm leading-6 text-slate-200">
+                {forecastData.summary}
+              </p>
+            </article>
+            <article className="rounded-lg border border-white/10 bg-white/5 p-4">
+              <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">
+                Best outdoor window
+              </p>
+              <p className="mt-3 text-lg font-semibold text-white">
+                {forecastData.bestWindow?.displayTime ?? "Unavailable"}
+              </p>
+              <p className="mt-2 text-sm leading-6 text-slate-300">
+                Estimated risk{" "}
+                {forecastData.bestWindow
+                  ? `${forecastData.bestWindow.score}/100`
+                  : "unavailable"}
+              </p>
+            </article>
+            <article className="rounded-lg border border-white/10 bg-white/5 p-4">
+              <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">
+                Worst exposure window
+              </p>
+              <p className="mt-3 text-lg font-semibold text-white">
+                {forecastData.worstWindow?.displayTime ?? "Unavailable"}
+              </p>
+              <p className="mt-2 text-sm leading-6 text-slate-300">
+                Estimated risk{" "}
+                {forecastData.worstWindow
+                  ? `${forecastData.worstWindow.score}/100`
+                  : "unavailable"}
+              </p>
+            </article>
+          </div>
+
+          <div className="mt-5 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+            {forecastData.trends.map((trend) => {
+              const range =
+                trend.max !== null && trend.min !== null
+                  ? trend.max - trend.min
+                  : 0;
+
+              return (
+                <article
+                  className="rounded-lg border border-white/10 bg-white/5 p-4"
+                  key={trend.label}
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <p className="text-sm font-semibold text-white">
+                        {trend.label}
+                      </p>
+                      <p className="mt-1 text-xs leading-5 text-slate-400">
+                        {trend.direction} · peak around {trend.peakTime}
+                      </p>
+                    </div>
+                    <span className="rounded-full border border-white/10 bg-black/20 px-2 py-1 text-xs font-semibold text-slate-200">
+                      {formatTrendValue(trend.max, trend.unit, 1)}
+                    </span>
+                  </div>
+                  <div className="mt-4 flex h-14 items-end gap-1">
+                    {trend.values.map((value, index) => {
+                      const normalized =
+                        value === null || trend.min === null || range === 0
+                          ? 20
+                          : 16 + ((value - trend.min) / range) * 84;
+
+                      return (
+                        <div
+                          className="flex flex-1 items-end rounded bg-white/5"
+                          key={`${trend.label}-${index}`}
+                          title={
+                            value === null
+                              ? "No value"
+                              : formatTrendValue(value, trend.unit, 1)
+                          }
+                        >
+                          <div
+                            className="w-full rounded bg-cyan-300/80"
+                            style={{ height: `${normalized}%` }}
+                          />
+                        </div>
+                      );
+                    })}
+                  </div>
+                  <p className="mt-3 text-xs leading-5 text-slate-500">
+                    Range: {formatTrendValue(trend.min, trend.unit, 1)} to{" "}
+                    {formatTrendValue(trend.max, trend.unit, 1)}
+                  </p>
+                </article>
+              );
+            })}
+          </div>
+
+          <div className="mt-5 rounded-lg border border-white/10 bg-black/10 p-4">
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">
+                  24-hour forecast curve
+                </p>
+                <p className="mt-1 text-sm text-slate-300">
+                  Average forecast risk: {forecastData.averageScore}/100
+                </p>
+              </div>
+              <p className="text-xs text-slate-500">
+                Source: Open-Meteo weather and air-quality forecasts
+              </p>
+            </div>
+            <div className="mt-5 grid grid-cols-12 gap-2 lg:[grid-template-columns:repeat(24,minmax(0,1fr))]">
+              {forecastData.hours.map((hour) => (
+                <div
+                  className="group flex min-h-36 flex-col justify-end gap-2"
+                  key={hour.time}
+                  title={`${hour.displayTime}: ${hour.score}/100`}
+                >
+                  <div className="flex h-24 items-end rounded bg-white/5 p-1">
+                    <div
+                      className={`w-full rounded ${
+                        hour.score >= 67
+                          ? "bg-fuchsia-400"
+                          : hour.score >= 34
+                          ? "bg-violet-400"
+                          : "bg-cyan-300"
+                      }`}
+                      style={{ height: `${Math.max(8, hour.score)}%` }}
+                    />
+                  </div>
+                  <p className="truncate text-[10px] leading-4 text-slate-500 group-hover:text-slate-200">
+                    {hour.displayTime.replace(/^[A-Za-z]+,?\s?/, "")}
+                  </p>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="mt-5 rounded-lg border border-white/10 bg-white/5 p-4">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">
+                  Hourly details
+                </p>
+                <p className="mt-1 text-sm leading-6 text-slate-300">
+                  Expand when you want to inspect the underlying forecast
+                  values.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowHourlyDetails((current) => !current)}
+                className="h-10 rounded-lg border border-white/15 px-4 text-sm font-semibold text-white transition hover:border-cyan-300/50 hover:bg-white/10"
+              >
+                {showHourlyDetails ? "Hide details" : "Show details"}
+              </button>
+            </div>
+
+            {showHourlyDetails && (
+              <div className="mt-4 grid gap-3 md:grid-cols-2">
+                {forecastData.hours.slice(0, 12).map((hour) => (
+                  <article
+                    className="rounded-lg border border-white/10 bg-black/10 p-3"
+                    key={hour.time}
+                  >
+                    <div className="flex items-start justify-between gap-3">
+                      <div>
+                        <p className="text-sm font-semibold text-white">
+                          {hour.displayTime}
+                        </p>
+                        <p className="mt-1 text-xs leading-5 text-slate-400">
+                          AQI {hour.usAqi ?? "n/a"} · PM2.5{" "}
+                          {hour.pm25?.toFixed(1) ?? "n/a"} · Ozone{" "}
+                          {hour.ozone?.toFixed(1) ?? "n/a"} · Feels{" "}
+                          {hour.apparentTemperature?.toFixed(0) ?? "n/a"}°F ·
+                          UV {hour.uvIndex?.toFixed(1) ?? "n/a"}
+                        </p>
+                      </div>
+                      <RiskBadge value={hour.risk} />
+                    </div>
+                    <p className="mt-2 text-xs leading-5 text-slate-500">
+                      {hour.drivers.length > 0
+                        ? hour.drivers.join(", ")
+                        : "No major forecast driver."}
+                    </p>
+                  </article>
+                ))}
+              </div>
+            )}
+          </div>
+        </>
       )}
     </section>
   );
@@ -1358,6 +1890,217 @@ function AiHealthPlanPanel({
   );
 }
 
+function SymptomCheckinPanel({
+  user,
+  zipCode,
+  latestSnapshot,
+  snapshotStatus,
+}: {
+  user: User | null;
+  zipCode: string;
+  latestSnapshot: SavedHealthSnapshot | null;
+  snapshotStatus: string;
+}) {
+  const [feltImpact, setFeltImpact] = useState(false);
+  const [respiratorySymptoms, setRespiratorySymptoms] = useState(false);
+  const [allergySymptoms, setAllergySymptoms] = useState(false);
+  const [heatSymptoms, setHeatSymptoms] = useState(false);
+  const [headacheOrFatigue, setHeadacheOrFatigue] = useState(false);
+  const [avoidedOutdoorActivity, setAvoidedOutdoorActivity] =
+    useState(false);
+  const [usedRescueMedication, setUsedRescueMedication] = useState(false);
+  const [
+    missedWorkSchoolActivity,
+    setMissedWorkSchoolActivity,
+  ] = useState(false);
+  const [symptomSeverity, setSymptomSeverity] = useState(0);
+  const [notes, setNotes] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [message, setMessage] = useState("");
+
+  const submitCheckin = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+
+    if (!user) {
+      setMessage("Sign in to save symptom labels for future ML training.");
+      return;
+    }
+
+    setSaving(true);
+    setMessage("");
+
+    try {
+      await saveSymptomCheckin({
+        userId: user.id,
+        snapshotId: latestSnapshot?.id ?? null,
+        zipCode,
+        feltImpact,
+        respiratorySymptoms,
+        allergySymptoms,
+        heatSymptoms,
+        headacheOrFatigue,
+        avoidedOutdoorActivity,
+        usedRescueMedication,
+        missedWorkSchoolActivity,
+        symptomSeverity,
+        notes,
+      });
+      setMessage(
+        "Check-in saved. Thanks for helping YourLocalHealth learn from real experiences."
+      );
+    } catch (error) {
+      setMessage(
+        error instanceof Error
+          ? error.message
+          : "Unable to save this check-in."
+      );
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const checkboxClass =
+    "h-4 w-4 rounded border-white/20 bg-white/10 text-cyan-400";
+
+  return (
+    <section className="rounded-lg border border-white/10 bg-[#101934]/90 p-5 shadow-xl shadow-black/25">
+      <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+        <div>
+          <p className="text-sm font-semibold uppercase tracking-wide text-cyan-300">
+            Symptom Check-in
+          </p>
+          <h3 className="mt-2 text-2xl font-semibold text-white">
+            How are you feeling today?
+          </h3>
+          <p className="mt-3 max-w-3xl text-sm leading-6 text-slate-300">
+            This optional check-in helps connect today&apos;s local conditions
+            with how people actually feel. Your responses can improve future
+            risk estimates.
+          </p>
+        </div>
+        <div className="rounded-lg border border-cyan-300/20 bg-cyan-400/10 p-4 text-sm leading-6 text-cyan-100">
+          Snapshot: {latestSnapshot ? "linked" : "not saved yet"}
+        </div>
+      </div>
+
+      {snapshotStatus && (
+        <p className="mt-5 rounded-lg border border-white/10 bg-white/5 p-3 text-sm leading-6 text-slate-300">
+          {snapshotStatus}
+        </p>
+      )}
+
+      {!user && (
+        <p className="mt-5 rounded-lg border border-violet-300/30 bg-violet-500/10 p-4 text-sm text-violet-100">
+          Sign in to save check-ins. Anonymous check-ins are not stored.
+        </p>
+      )}
+
+      <form onSubmit={submitCheckin} className="mt-5 grid gap-5">
+        <div className="grid gap-3 md:grid-cols-2">
+          {[
+            {
+              label: "Local conditions affected me today",
+              checked: feltImpact,
+              setChecked: setFeltImpact,
+            },
+            {
+              label: "Coughing, wheezing, or breathing symptoms",
+              checked: respiratorySymptoms,
+              setChecked: setRespiratorySymptoms,
+            },
+            {
+              label: "Allergy-like symptoms",
+              checked: allergySymptoms,
+              setChecked: setAllergySymptoms,
+            },
+            {
+              label: "Heat discomfort",
+              checked: heatSymptoms,
+              setChecked: setHeatSymptoms,
+            },
+            {
+              label: "Headache or fatigue",
+              checked: headacheOrFatigue,
+              setChecked: setHeadacheOrFatigue,
+            },
+            {
+              label: "Avoided outdoor activity",
+              checked: avoidedOutdoorActivity,
+              setChecked: setAvoidedOutdoorActivity,
+            },
+            {
+              label: "Used rescue medication more than usual",
+              checked: usedRescueMedication,
+              setChecked: setUsedRescueMedication,
+            },
+            {
+              label: "Missed work, school, or activity",
+              checked: missedWorkSchoolActivity,
+              setChecked: setMissedWorkSchoolActivity,
+            },
+          ].map((item) => (
+            <label
+              className="flex items-center gap-3 rounded-lg border border-white/10 bg-white/5 p-3 text-sm text-slate-200"
+              key={item.label}
+            >
+              <input
+                type="checkbox"
+                checked={item.checked}
+                onChange={(event) => item.setChecked(event.target.checked)}
+                className={checkboxClass}
+              />
+              {item.label}
+            </label>
+          ))}
+        </div>
+
+        <label className="grid gap-2 text-sm font-semibold text-slate-300">
+          Symptom severity: {symptomSeverity}/10
+          <input
+            type="range"
+            min="0"
+            max="10"
+            value={symptomSeverity}
+            onChange={(event) =>
+              setSymptomSeverity(Number(event.target.value))
+            }
+          />
+        </label>
+
+        <label className="grid gap-2 text-sm font-semibold text-slate-300">
+          Notes
+          <textarea
+            value={notes}
+            onChange={(event) => setNotes(event.target.value)}
+            placeholder="Optional context, such as outdoor time or symptoms noticed."
+            className="min-h-24 rounded-lg border border-white/15 bg-white/10 px-3 py-2 text-sm font-normal text-white outline-none transition placeholder:text-slate-500 focus:border-cyan-300"
+          />
+        </label>
+
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <button
+            type="submit"
+            disabled={saving || !user}
+            className="h-12 rounded-lg bg-cyan-500 px-5 text-sm font-semibold text-slate-950 transition hover:bg-cyan-300 disabled:cursor-not-allowed disabled:bg-slate-700 disabled:text-slate-300"
+          >
+            {saving ? "Saving" : "Save check-in"}
+          </button>
+          <p className="text-xs leading-5 text-slate-400">
+            Do not enter urgent symptoms here. Seek medical care for serious
+            symptoms.
+          </p>
+        </div>
+
+        {message && (
+          <p className="rounded-lg border border-cyan-300/20 bg-cyan-400/10 p-3 text-sm text-cyan-100">
+            {message}
+          </p>
+        )}
+      </form>
+    </section>
+  );
+}
+
 function HealthChatPanel({ context }: { context: HealthChatContext }) {
   const [question, setQuestion] = useState("");
   const [messages, setMessages] = useState<ChatMessage[]>([
@@ -1500,7 +2243,7 @@ export default function Home() {
   const [zipCode, setZipCode] = useState("");
   const [searched, setSearched] = useState(false);
   const [dashboardView, setDashboardView] =
-    useState<DashboardView>("overview");
+    useState<DashboardView>("forecast");
 
   const [city, setCity] = useState("");
   const [state, setState] = useState("");
@@ -1511,6 +2254,8 @@ export default function Home() {
   const [loading, setLoading] = useState(false);
   const [newsLoading, setNewsLoading] = useState(false);
   const [newsError, setNewsError] = useState("");
+  const [equityError, setEquityError] = useState("");
+  const [forecastError, setForecastError] = useState("");
   const [fluActivity, setFluActivity] = useState("Unknown");
   const [covidData, setCovidData] =
     useState<CovidActivityData | null>(null);
@@ -1524,6 +2269,13 @@ export default function Home() {
   const [localNews, setLocalNews] = useState<LocalHealthNewsArticle[]>(
     []
   );
+  const [healthEquityData, setHealthEquityData] =
+    useState<HealthEquityData | null>(null);
+  const [healthForecastData, setHealthForecastData] =
+    useState<HealthForecastData | null>(null);
+  const [latestSnapshot, setLatestSnapshot] =
+    useState<SavedHealthSnapshot | null>(null);
+  const [snapshotStatus, setSnapshotStatus] = useState("");
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [dataStatus, setDataStatus] = useState<DataStatus>({
     airQuality: false,
@@ -1628,6 +2380,27 @@ export default function Home() {
       topDrivers: scoreBreakdown.topDrivers,
       categoryScores: scoreBreakdown.categoryScores,
     },
+    forecast: healthForecastData
+      ? {
+          summary: healthForecastData.summary,
+          averageScore: healthForecastData.averageScore,
+          peakScore: healthForecastData.peakScore,
+          bestWindow:
+            healthForecastData.bestWindow?.displayTime ?? "Unavailable",
+          bestWindowScore: healthForecastData.bestWindow?.score ?? null,
+          worstWindow:
+            healthForecastData.worstWindow?.displayTime ?? "Unavailable",
+          worstWindowScore: healthForecastData.worstWindow?.score ?? null,
+          trends: healthForecastData.trends.map((trend) => ({
+            label: trend.label,
+            direction: trend.direction,
+            peakTime: trend.peakTime,
+            min: trend.min,
+            max: trend.max,
+            unit: trend.unit,
+          })),
+        }
+      : undefined,
   };
   const detailHref = (topic: string) => {
     const params = new URLSearchParams({
@@ -1669,7 +2442,13 @@ export default function Home() {
     setZipCode(zipToSearch);
     setError("");
     setNewsError("");
+    setEquityError("");
+    setForecastError("");
     setLocalNews([]);
+    setHealthEquityData(null);
+    setHealthForecastData(null);
+    setLatestSnapshot(null);
+    setSnapshotStatus("");
     setEnvironmentData(null);
     setWeatherAlerts([]);
     setAirComponents(undefined);
@@ -1683,7 +2462,7 @@ export default function Home() {
       news: false,
     });
     setSearched(false);
-    setDashboardView("overview");
+    setDashboardView("forecast");
     setLoading(true);
 
     try {
@@ -1702,16 +2481,27 @@ export default function Home() {
       setCovidData(covidActivityData);
       setDataStatus((current) => ({ ...current, covid: true }));
 
-      const [airData, environment, alerts] = await Promise.all([
+      const [airData, environment, alerts, forecast] = await Promise.all([
         getAirQuality(location.latitude, location.longitude),
         getEnvironmentData(location.latitude, location.longitude),
         getWeatherAlerts(location.latitude, location.longitude),
+        getHealthForecast(location.latitude, location.longitude).catch(
+          (error) => {
+            setForecastError(
+              error instanceof Error
+                ? error.message
+                : "Forecast data is temporarily unavailable."
+            );
+            return null;
+          }
+        ),
       ]);
 
       setAqi(airData.list?.[0]?.main.aqi ?? null);
       setAirComponents(airData.list?.[0]?.components);
       setEnvironmentData(environment);
       setWeatherAlerts(alerts);
+      setHealthForecastData(forecast);
       setDataStatus((current) => ({
         ...current,
         airQuality: airData.list?.[0]?.main.aqi !== undefined,
@@ -1720,6 +2510,99 @@ export default function Home() {
         weatherAlerts: true,
       }));
       setSearched(true);
+
+      let loadedEquityData: HealthEquityData | null = null;
+
+      try {
+        const equityData = await getHealthEquityData(zipToSearch);
+        setHealthEquityData(equityData);
+        loadedEquityData = equityData;
+      } catch (error) {
+        setEquityError(
+          error instanceof Error
+            ? error.message
+            : "Health equity data is temporarily unavailable."
+        );
+      }
+
+      if (user) {
+        const nextAqi = airData.list?.[0]?.main.aqi ?? null;
+        const nextAirQualityLabel = getAirQualityLabel(nextAqi);
+        const nextAirComponents = airData.list?.[0]?.components;
+        const nextPollutantRisk = getPollutantRiskLabel(nextAirComponents);
+        const nextDominantPollutant =
+          getDominantPollutant(nextAirComponents);
+        const nextHeatRisk = getHeatRiskLabel(
+          environment.apparentTemperatureMax ??
+            environment.apparentTemperature ??
+            null
+        );
+        const nextUvRisk = getUvRiskLabel(environment.uvIndexMax ?? null);
+        const nextAlertRisk = summarizeAlertRisk(alerts);
+        const nextRiskModel = evaluateRiskModel({
+          aqi: nextAqi,
+          airQualityLabel: nextAirQualityLabel,
+          pollutantRisk: nextPollutantRisk,
+          heatRisk: nextHeatRisk,
+          uvRisk: nextUvRisk,
+          alertRisk: nextAlertRisk,
+          fluActivity: fluData,
+          covidActivity: covidActivityData.activity,
+          covidCoverage: covidActivityData.coverage,
+          dataStatus: {
+            airQuality: nextAqi !== null,
+            pollutants: Boolean(nextAirComponents),
+            heatUv: true,
+            weatherAlerts: true,
+            flu: true,
+            covid: true,
+            news: false,
+          },
+          profile: userProfile,
+        });
+
+        try {
+          const snapshot = await saveHealthSnapshot({
+            userId: user.id,
+            zipCode: zipToSearch,
+            city: location.city,
+            state: location.state,
+            latitude: location.latitude,
+            longitude: location.longitude,
+            modelVersion: nextRiskModel.modelVersion,
+            modelScore: nextRiskModel.scoreBreakdown.score,
+            healthRisk: nextRiskModel.healthRisk,
+            respiratoryRisk: nextRiskModel.respiratoryRisk,
+            airQuality: nextAirQualityLabel,
+            aqi: nextAqi,
+            dominantPollutant: nextDominantPollutant,
+            pollutantRisk: nextPollutantRisk,
+            heatRisk: nextHeatRisk,
+            uvRisk: nextUvRisk,
+            alertRisk: nextAlertRisk,
+            fluActivity: fluData,
+            covidActivity: covidActivityData.activity,
+            covidCoverage: covidActivityData.coverage,
+            forecastAverageScore: forecast?.averageScore ?? null,
+            forecastPeakScore: forecast?.peakScore ?? null,
+            forecastBestWindow:
+              forecast?.bestWindow?.displayTime ?? null,
+            forecastWorstWindow:
+              forecast?.worstWindow?.displayTime ?? null,
+            equityScore: loadedEquityData?.equityScore ?? null,
+            equityLevel: loadedEquityData?.equityLevel ?? null,
+            profileSummary: nextRiskModel.personalizationSummary,
+          });
+          setLatestSnapshot(snapshot);
+          setSnapshotStatus("Today's local conditions were saved for this check-in.");
+        } catch (error) {
+          setSnapshotStatus(
+            error instanceof Error
+              ? `Snapshot not saved: ${error.message}`
+              : "Snapshot not saved."
+          );
+        }
+      }
 
       setNewsLoading(true);
       try {
@@ -1769,6 +2652,8 @@ export default function Home() {
       setZipCode(restoredZipCode);
       void searchZipCode(restoredZipCode);
     }
+    // This runs once to restore a shared summary URL without re-triggering searches.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
@@ -1993,6 +2878,15 @@ export default function Home() {
               <AiHealthPlanPanel planContext={healthPlanContext} />
             )}
 
+            {dashboardView === "forecast" && (
+              <ForecastPanel
+                forecastData={healthForecastData}
+                forecastError={forecastError}
+                city={city}
+                state={state}
+              />
+            )}
+
             {dashboardView === "timeline" && (
               <ExposureTimelinePanel
                 zipCode={zipCode}
@@ -2005,6 +2899,25 @@ export default function Home() {
                 heatRisk={heatRisk}
                 uvRisk={uvRisk}
                 profile={userProfile}
+              />
+            )}
+
+            {dashboardView === "equity" && (
+              <HealthEquityPanel
+                equityData={healthEquityData}
+                equityError={equityError}
+                heatRisk={heatRisk}
+                pollutantRisk={pollutantRisk}
+                dominantPollutant={dominantPollutant}
+              />
+            )}
+
+            {dashboardView === "checkin" && (
+              <SymptomCheckinPanel
+                user={user}
+                zipCode={zipCode}
+                latestSnapshot={latestSnapshot}
+                snapshotStatus={snapshotStatus}
               />
             )}
 
