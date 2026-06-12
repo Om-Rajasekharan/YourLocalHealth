@@ -79,13 +79,74 @@ type HealthChatContext = {
   }[];
 };
 
-type DashboardView = "overview" | "signals" | "news" | "assistant" | "model";
+type HealthPlan = {
+  headline: string;
+  summary: string;
+  priority: string;
+  actions: string[];
+  watch: string[];
+  uncertainty: string;
+};
+
+type HealthPlanContext = {
+  context: HealthChatContext;
+  model: {
+    version: string;
+    score: number;
+    topDrivers: RiskModelItem[];
+    categoryScores: RiskCategoryScore[];
+  };
+};
+
+type TimelineSetting = "Indoors" | "Outdoors";
+type TimelineIntensity = "Resting" | "Light" | "Moderate" | "Intense";
+
+type TimelineBlock = {
+  id: string;
+  label: string;
+  zipCode: string;
+  start: string;
+  end: string;
+  setting: TimelineSetting;
+  intensity: TimelineIntensity;
+};
+
+type TimelineLocationSnapshot = {
+  zipCode: string;
+  city: string;
+  state: string;
+  baseScore: number;
+  healthRisk: string;
+  respiratoryRisk: string;
+  airQuality: string;
+  heatRisk: string;
+  uvRisk: string;
+};
+
+type DashboardView =
+  | "overview"
+  | "plan"
+  | "timeline"
+  | "signals"
+  | "news"
+  | "assistant"
+  | "model";
 
 const dashboardViews: { id: DashboardView; label: string; description: string }[] = [
   {
     id: "overview",
     label: "Overview",
     description: "Brief, risk score, and map",
+  },
+  {
+    id: "plan",
+    label: "AI Plan",
+    description: "Personalized daily guidance",
+  },
+  {
+    id: "timeline",
+    label: "Timeline",
+    description: "Daily exposure estimate",
   },
   {
     id: "signals",
@@ -134,7 +195,7 @@ function DashboardNav({
   return (
     <nav
       aria-label="Dashboard sections"
-      className="mb-5 grid gap-2 rounded-lg border border-white/10 bg-[#101934]/90 p-2 shadow-xl shadow-black/25 sm:grid-cols-2 lg:grid-cols-5"
+      className="mb-5 grid gap-2 rounded-lg border border-white/10 bg-[#101934]/90 p-2 shadow-xl shadow-black/25 sm:grid-cols-2 lg:grid-cols-3"
     >
       {dashboardViews.map((view) => {
         const isActive = activeView === view.id;
@@ -643,6 +704,660 @@ function DataConfidencePanel({
   );
 }
 
+function timeToMinutes(time: string) {
+  const [hours, minutes] = time.split(":").map(Number);
+
+  return hours * 60 + minutes;
+}
+
+function formatDuration(hours: number) {
+  if (hours < 1) {
+    return `${Math.round(hours * 60)} min`;
+  }
+
+  return `${hours.toFixed(hours % 1 === 0 ? 0 : 1)} hr`;
+}
+
+function exposureLabel(score: number) {
+  if (score >= 67) return "High";
+  if (score >= 34) return "Moderate";
+  return "Low";
+}
+
+function exposureClass(score: number) {
+  if (score >= 67) {
+    return "border-fuchsia-300/40 bg-fuchsia-500/15 text-fuchsia-100";
+  }
+
+  if (score >= 34) {
+    return "border-violet-300/40 bg-violet-400/15 text-violet-100";
+  }
+
+  return "border-cyan-300/40 bg-cyan-400/15 text-cyan-100";
+}
+
+function ExposureTimelinePanel({
+  zipCode,
+  city,
+  state,
+  baseScore,
+  healthRisk,
+  respiratoryRisk,
+  airQuality,
+  heatRisk,
+  uvRisk,
+  profile,
+}: {
+  zipCode: string;
+  city: string;
+  state: string;
+  baseScore: number;
+  healthRisk: string;
+  respiratoryRisk: string;
+  airQuality: string;
+  heatRisk: string;
+  uvRisk: string;
+  profile: UserProfile | null;
+}) {
+  const defaultSnapshot: TimelineLocationSnapshot = {
+    zipCode,
+    city,
+    state,
+    baseScore,
+    healthRisk,
+    respiratoryRisk,
+    airQuality,
+    heatRisk,
+    uvRisk,
+  };
+  const [blocks, setBlocks] = useState<TimelineBlock[]>([
+    {
+      id: "morning",
+      label: "Morning routine",
+      zipCode,
+      start: "07:00",
+      end: "09:00",
+      setting: "Indoors",
+      intensity: "Light",
+    },
+    {
+      id: "workday",
+      label: "Work or school",
+      zipCode,
+      start: "09:00",
+      end: "17:00",
+      setting: "Indoors",
+      intensity: "Light",
+    },
+    {
+      id: "exercise",
+      label: "Outdoor activity",
+      zipCode,
+      start: "17:00",
+      end: "18:00",
+      setting: "Outdoors",
+      intensity: "Moderate",
+    },
+    {
+      id: "evening",
+      label: "Evening",
+      zipCode,
+      start: "18:00",
+      end: "22:00",
+      setting: "Indoors",
+      intensity: "Resting",
+    },
+  ]);
+  const [blockSnapshots, setBlockSnapshots] = useState<
+    Record<string, TimelineLocationSnapshot>
+  >({});
+  const [loadingBlockId, setLoadingBlockId] = useState("");
+  const [timelineError, setTimelineError] = useState("");
+
+  const settingFactors: Record<TimelineSetting, number> = {
+    Indoors: 0.55,
+    Outdoors: 1.25,
+  };
+  const intensityFactors: Record<TimelineIntensity, number> = {
+    Resting: 0.7,
+    Light: 0.9,
+    Moderate: 1.2,
+    Intense: 1.5,
+  };
+  const timeline = blocks.map((block) => {
+    const snapshot = blockSnapshots[block.id] ?? defaultSnapshot;
+    const startMinutes = timeToMinutes(block.start);
+    const endMinutes = timeToMinutes(block.end);
+    const durationHours = Math.max(0.25, (endMinutes - startMinutes) / 60);
+    const exposureScore = Math.min(
+      100,
+      Math.round(
+        snapshot.baseScore *
+          settingFactors[block.setting] *
+          intensityFactors[block.intensity]
+      )
+    );
+    const contribution = Math.round(exposureScore * durationHours);
+
+    return {
+      ...block,
+      durationHours,
+      exposureScore,
+      contribution,
+      snapshot,
+      exposureLevel: exposureLabel(exposureScore),
+    };
+  });
+  const totalHours = timeline.reduce(
+    (total, block) => total + block.durationHours,
+    0
+  );
+  const dailyScore =
+    totalHours > 0
+      ? Math.min(
+          100,
+          Math.round(
+            timeline.reduce(
+              (total, block) => total + block.contribution,
+              0
+            ) / totalHours
+          )
+        )
+      : 0;
+  const highestBlock = [...timeline].sort(
+    (a, b) => b.exposureScore - a.exposureScore
+  )[0];
+  const safestOutdoorBlock = timeline
+    .filter((block) => block.setting === "Outdoors")
+    .sort((a, b) => a.exposureScore - b.exposureScore)[0];
+
+  const updateBlock = (
+    id: string,
+    field: keyof TimelineBlock,
+    value: string
+  ) => {
+    setBlocks((current) =>
+      current.map((block) =>
+        block.id === id ? { ...block, [field]: value } : block
+      )
+    );
+  };
+
+  const addBlock = () => {
+    setBlocks((current) => [
+      ...current,
+      {
+        id: crypto.randomUUID(),
+        label: "New block",
+        zipCode,
+        start: "12:00",
+        end: "13:00",
+        setting: "Outdoors",
+        intensity: "Light",
+      },
+    ]);
+  };
+
+  const removeBlock = (id: string) => {
+    setBlocks((current) =>
+      current.length > 1
+        ? current.filter((block) => block.id !== id)
+        : current
+    );
+    setBlockSnapshots((current) => {
+      const next = { ...current };
+      delete next[id];
+      return next;
+    });
+  };
+
+  const loadBlockZip = async (block: TimelineBlock) => {
+    const trimmedZip = block.zipCode.trim();
+
+    if (!trimmedZip) {
+      setTimelineError("Enter a ZIP code for that timeline block first.");
+      return;
+    }
+
+    setLoadingBlockId(block.id);
+    setTimelineError("");
+
+    try {
+      const location = await getLocation(trimmedZip);
+      const fluData = await getFluData(location.state);
+      const covidActivityData = await getCovidData(location.state);
+      const [airData, environment, alerts] = await Promise.all([
+        getAirQuality(location.latitude, location.longitude),
+        getEnvironmentData(location.latitude, location.longitude),
+        getWeatherAlerts(location.latitude, location.longitude),
+      ]);
+      const nextAqi = airData.list?.[0]?.main.aqi ?? null;
+      const nextAirQuality = getAirQualityLabel(nextAqi);
+      const nextHeatRisk = getHeatRiskLabel(
+        environment.apparentTemperatureMax ??
+          environment.apparentTemperature ??
+          null
+      );
+      const nextUvRisk = getUvRiskLabel(environment.uvIndexMax ?? null);
+      const nextAlertRisk = summarizeAlertRisk(alerts);
+      const nextPollutantRisk = getPollutantRiskLabel(
+        airData.list?.[0]?.components
+      );
+      const nextRiskModel = evaluateRiskModel({
+        aqi: nextAqi,
+        airQualityLabel: nextAirQuality,
+        pollutantRisk: nextPollutantRisk,
+        heatRisk: nextHeatRisk,
+        uvRisk: nextUvRisk,
+        alertRisk: nextAlertRisk,
+        fluActivity: fluData,
+        covidActivity: covidActivityData.activity,
+        covidCoverage: covidActivityData.coverage,
+        dataStatus: {
+          airQuality: airData.list?.[0]?.main.aqi !== undefined,
+          pollutants: Boolean(airData.list?.[0]?.components),
+          heatUv: true,
+          weatherAlerts: true,
+          flu: true,
+          covid: true,
+          news: false,
+        },
+        profile,
+      });
+
+      setBlockSnapshots((current) => ({
+        ...current,
+        [block.id]: {
+          zipCode: trimmedZip,
+          city: location.city,
+          state: location.state,
+          baseScore: nextRiskModel.scoreBreakdown.score,
+          healthRisk: nextRiskModel.healthRisk,
+          respiratoryRisk: nextRiskModel.respiratoryRisk,
+          airQuality: nextAirQuality,
+          heatRisk: nextHeatRisk,
+          uvRisk: nextUvRisk,
+        },
+      }));
+    } catch (error) {
+      setTimelineError(
+        error instanceof Error
+          ? error.message
+          : "Unable to load that timeline ZIP code."
+      );
+    } finally {
+      setLoadingBlockId("");
+    }
+  };
+
+  return (
+    <section className="rounded-lg border border-white/10 bg-[#101934]/90 p-5 shadow-xl shadow-black/25">
+      <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+        <div>
+          <p className="text-sm font-semibold uppercase tracking-wide text-cyan-300">
+            Exposure Timeline
+          </p>
+          <h3 className="mt-2 text-2xl font-semibold text-white">
+            Estimate how today&apos;s routine changes exposure
+          </h3>
+          <p className="mt-3 max-w-3xl text-sm leading-6 text-slate-300">
+            Each block can use the current {city}, {state} snapshot or a
+            different ZIP code, then adjusts exposure by time, indoor/outdoor
+            setting, and activity intensity.
+          </p>
+        </div>
+        <div className="rounded-lg border border-cyan-300/20 bg-cyan-400/10 p-4">
+          <p className="text-xs font-semibold uppercase tracking-wide text-cyan-100">
+            Estimated day score
+          </p>
+          <p className="mt-2 text-3xl font-bold text-white">
+            {dailyScore}/100
+          </p>
+          <RiskBadge value={exposureLabel(dailyScore)} />
+        </div>
+      </div>
+
+      <div className="mt-5 grid gap-4 lg:grid-cols-3">
+        <div className="rounded-lg border border-white/10 bg-white/5 p-4">
+          <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">
+            Local signals used
+          </p>
+          <div className="mt-3 grid gap-2 text-sm leading-6 text-slate-200">
+            <p>Base risk index: {baseScore}/100</p>
+            <p>Default ZIP: {zipCode}</p>
+            <p>Overall risk: {healthRisk}</p>
+            <p>Respiratory risk: {respiratoryRisk}</p>
+            <p>Air quality: {airQuality}</p>
+            <p>Heat: {heatRisk}</p>
+            <p>UV: {uvRisk}</p>
+          </div>
+        </div>
+        <div className="rounded-lg border border-white/10 bg-white/5 p-4">
+          <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">
+            Highest exposure block
+          </p>
+          <p className="mt-3 text-lg font-semibold text-white">
+            {highestBlock?.label ?? "Unavailable"}
+          </p>
+          <p className="mt-2 text-sm leading-6 text-slate-300">
+            {highestBlock
+              ? `${highestBlock.start}-${highestBlock.end}, ${highestBlock.snapshot.city}, ${highestBlock.snapshot.state}, ${highestBlock.setting.toLowerCase()}, ${highestBlock.intensity.toLowerCase()} intensity.`
+              : "Add a timeline block to estimate exposure."}
+          </p>
+        </div>
+        <div className="rounded-lg border border-white/10 bg-white/5 p-4">
+          <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">
+            Outdoor suggestion
+          </p>
+          <p className="mt-3 text-sm leading-6 text-slate-300">
+            {safestOutdoorBlock
+              ? `${safestOutdoorBlock.label} in ${safestOutdoorBlock.snapshot.city}, ${safestOutdoorBlock.snapshot.state} is currently the lowest outdoor exposure block in this schedule.`
+              : "Add an outdoor block to compare outdoor exposure windows."}
+          </p>
+        </div>
+      </div>
+
+      {timelineError && (
+        <p className="mt-5 rounded-lg border border-fuchsia-300/30 bg-fuchsia-500/10 p-4 text-sm text-fuchsia-100">
+          {timelineError}
+        </p>
+      )}
+
+      <div className="mt-5 grid gap-3">
+        {timeline.map((block) => (
+          <article
+            className="rounded-lg border border-white/10 bg-white/5 p-4"
+            key={block.id}
+          >
+            <div className="grid gap-3 lg:grid-cols-[1.2fr_0.7fr_0.7fr_0.8fr_0.8fr_0.8fr_auto] lg:items-end">
+              <label className="grid gap-2 text-xs font-semibold uppercase tracking-wide text-slate-400">
+                Activity
+                <input
+                  value={block.label}
+                  onChange={(event) =>
+                    updateBlock(block.id, "label", event.target.value)
+                  }
+                  className="h-11 rounded-lg border border-white/15 bg-white/10 px-3 text-sm font-normal normal-case tracking-normal text-white outline-none focus:border-cyan-300"
+                />
+              </label>
+              <label className="grid gap-2 text-xs font-semibold uppercase tracking-wide text-slate-400">
+                ZIP
+                <input
+                  inputMode="numeric"
+                  value={block.zipCode}
+                  onChange={(event) =>
+                    updateBlock(block.id, "zipCode", event.target.value)
+                  }
+                  className="h-11 rounded-lg border border-white/15 bg-white/10 px-3 text-sm font-normal tracking-normal text-white outline-none focus:border-cyan-300"
+                />
+              </label>
+              <label className="grid gap-2 text-xs font-semibold uppercase tracking-wide text-slate-400">
+                Start
+                <input
+                  type="time"
+                  value={block.start}
+                  onChange={(event) =>
+                    updateBlock(block.id, "start", event.target.value)
+                  }
+                  className="h-11 rounded-lg border border-white/15 bg-white/10 px-3 text-sm font-normal tracking-normal text-white outline-none focus:border-cyan-300"
+                />
+              </label>
+              <label className="grid gap-2 text-xs font-semibold uppercase tracking-wide text-slate-400">
+                End
+                <input
+                  type="time"
+                  value={block.end}
+                  onChange={(event) =>
+                    updateBlock(block.id, "end", event.target.value)
+                  }
+                  className="h-11 rounded-lg border border-white/15 bg-white/10 px-3 text-sm font-normal tracking-normal text-white outline-none focus:border-cyan-300"
+                />
+              </label>
+              <label className="grid gap-2 text-xs font-semibold uppercase tracking-wide text-slate-400">
+                Setting
+                <select
+                  value={block.setting}
+                  onChange={(event) =>
+                    updateBlock(
+                      block.id,
+                      "setting",
+                      event.target.value as TimelineSetting
+                    )
+                  }
+                  className="h-11 rounded-lg border border-white/15 bg-[#111a33] px-3 text-sm font-normal normal-case tracking-normal text-white outline-none focus:border-cyan-300"
+                >
+                  <option>Indoors</option>
+                  <option>Outdoors</option>
+                </select>
+              </label>
+              <label className="grid gap-2 text-xs font-semibold uppercase tracking-wide text-slate-400">
+                Intensity
+                <select
+                  value={block.intensity}
+                  onChange={(event) =>
+                    updateBlock(
+                      block.id,
+                      "intensity",
+                      event.target.value as TimelineIntensity
+                    )
+                  }
+                  className="h-11 rounded-lg border border-white/15 bg-[#111a33] px-3 text-sm font-normal normal-case tracking-normal text-white outline-none focus:border-cyan-300"
+                >
+                  <option>Resting</option>
+                  <option>Light</option>
+                  <option>Moderate</option>
+                  <option>Intense</option>
+                </select>
+              </label>
+              <button
+                type="button"
+                onClick={() => loadBlockZip(block)}
+                disabled={loadingBlockId === block.id}
+                className="h-11 rounded-lg bg-cyan-500 px-3 text-sm font-semibold text-slate-950 transition hover:bg-cyan-300 disabled:cursor-not-allowed disabled:bg-slate-700 disabled:text-slate-300"
+              >
+                {loadingBlockId === block.id ? "Loading" : "Load ZIP"}
+              </button>
+              <button
+                type="button"
+                onClick={() => removeBlock(block.id)}
+                className="h-11 rounded-lg border border-white/15 px-3 text-sm font-semibold text-slate-200 transition hover:border-fuchsia-300/50 hover:bg-fuchsia-500/10"
+              >
+                Remove
+              </button>
+            </div>
+
+            <div className="mt-4 grid gap-3 rounded-lg border border-white/10 bg-black/10 p-3 text-xs leading-5 text-slate-300 md:grid-cols-3">
+              <p>
+                Location: {block.snapshot.city}, {block.snapshot.state} · ZIP{" "}
+                {block.snapshot.zipCode}
+              </p>
+              <p>Location risk index: {block.snapshot.baseScore}/100</p>
+              <p>
+                Air {block.snapshot.airQuality} · Heat{" "}
+                {block.snapshot.heatRisk} · UV {block.snapshot.uvRisk}
+              </p>
+            </div>
+
+            <div className="mt-4 grid gap-3 md:grid-cols-[1fr_auto] md:items-center">
+              <div className="h-3 overflow-hidden rounded-full bg-white/10">
+                <div
+                  className="h-full rounded-full bg-gradient-to-r from-cyan-300 via-violet-400 to-fuchsia-400"
+                  style={{ width: `${block.exposureScore}%` }}
+                />
+              </div>
+              <div
+                className={`rounded-full border px-3 py-1 text-sm font-semibold ${exposureClass(
+                  block.exposureScore
+                )}`}
+              >
+                {block.label}: {block.exposureLevel} ·{" "}
+                {block.exposureScore}/100 ·{" "}
+                {formatDuration(block.durationHours)}
+              </div>
+            </div>
+          </article>
+        ))}
+      </div>
+
+      <div className="mt-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <button
+          type="button"
+          onClick={addBlock}
+          className="h-12 rounded-lg bg-cyan-500 px-5 text-sm font-semibold text-slate-950 transition hover:bg-cyan-300"
+        >
+          Add timeline block
+        </button>
+        <p className="text-xs leading-5 text-slate-400">
+          This is an estimated exposure planning tool, not a clinical risk
+          assessment.
+        </p>
+      </div>
+    </section>
+  );
+}
+
+function AiHealthPlanPanel({
+  planContext,
+}: {
+  planContext: HealthPlanContext;
+}) {
+  const [plan, setPlan] = useState<HealthPlan | null>(null);
+  const [loadingPlan, setLoadingPlan] = useState(false);
+  const [planError, setPlanError] = useState("");
+
+  const generatePlan = async () => {
+    setLoadingPlan(true);
+    setPlanError("");
+
+    try {
+      const response = await fetch("/api/health-plan", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(planContext),
+      });
+      const data = (await response.json()) as {
+        plan?: HealthPlan;
+        error?: string;
+      };
+
+      if (!response.ok || !data.plan) {
+        throw new Error(
+          data.error ?? "The AI health plan could not be generated."
+        );
+      }
+
+      setPlan(data.plan);
+    } catch (error) {
+      setPlanError(
+        error instanceof Error
+          ? error.message
+          : "The AI health plan could not be generated."
+      );
+    } finally {
+      setLoadingPlan(false);
+    }
+  };
+
+  return (
+    <section className="rounded-lg border border-white/10 bg-[#101934]/90 p-5 shadow-xl shadow-black/25">
+      <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+        <div>
+          <p className="text-sm font-semibold uppercase tracking-wide text-cyan-300">
+            AI Health Plan
+          </p>
+          <h3 className="mt-2 text-2xl font-semibold text-white">
+            Turn this dashboard into a daily action plan
+          </h3>
+          <p className="mt-3 max-w-3xl text-sm leading-6 text-slate-300">
+            This uses the current ZIP code, risk model drivers, public health
+            signals, local news, and your saved profile context when available.
+          </p>
+        </div>
+        <button
+          type="button"
+          onClick={generatePlan}
+          disabled={loadingPlan}
+          className="h-12 rounded-lg bg-cyan-500 px-5 text-sm font-semibold text-slate-950 transition hover:bg-cyan-300 disabled:cursor-not-allowed disabled:bg-slate-700 disabled:text-slate-300"
+        >
+          {loadingPlan ? "Generating" : plan ? "Refresh plan" : "Generate plan"}
+        </button>
+      </div>
+
+      {planError && (
+        <p className="mt-5 rounded-lg border border-fuchsia-300/30 bg-fuchsia-500/10 p-4 text-sm text-fuchsia-100">
+          {planError}
+        </p>
+      )}
+
+      {!plan && !planError && (
+        <div className="mt-5 rounded-lg border border-white/10 bg-white/5 p-4">
+          <p className="text-sm leading-6 text-slate-300">
+            Generate a plan when you want the AI to synthesize the current
+            dashboard into plain-English next steps. This may use a small amount
+            of your OpenAI API credits.
+          </p>
+        </div>
+      )}
+
+      {plan && (
+        <div className="mt-5 grid gap-4">
+          <article className="rounded-lg border border-cyan-300/20 bg-cyan-400/10 p-4">
+            <p className="text-xs font-semibold uppercase tracking-wide text-cyan-100">
+              {plan.headline}
+            </p>
+            <p className="mt-3 text-sm leading-6 text-slate-100">
+              {plan.summary}
+            </p>
+          </article>
+
+          <div className="grid gap-4 lg:grid-cols-[0.9fr_1.1fr]">
+            <article className="rounded-lg border border-white/10 bg-white/5 p-4">
+              <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">
+                Today&apos;s priority
+              </p>
+              <p className="mt-3 text-base leading-7 text-white">
+                {plan.priority}
+              </p>
+            </article>
+
+            <article className="rounded-lg border border-white/10 bg-white/5 p-4">
+              <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">
+                Watch list
+              </p>
+              <ul className="mt-3 grid gap-2 text-sm leading-6 text-slate-200">
+                {plan.watch.map((item) => (
+                  <li key={item}>{item}</li>
+                ))}
+              </ul>
+            </article>
+          </div>
+
+          <article className="rounded-lg border border-white/10 bg-white/5 p-4">
+            <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">
+              Suggested actions
+            </p>
+            <ul className="mt-3 grid gap-3 md:grid-cols-2">
+              {plan.actions.map((item) => (
+                <li
+                  className="rounded-lg border border-white/10 bg-black/10 p-3 text-sm leading-6 text-slate-200"
+                  key={item}
+                >
+                  {item}
+                </li>
+              ))}
+            </ul>
+          </article>
+
+          <p className="rounded-lg border border-violet-300/30 bg-violet-500/10 p-3 text-xs leading-5 text-violet-100">
+            {plan.uncertainty} This is informational only and is not medical
+            advice.
+          </p>
+        </div>
+      )}
+    </section>
+  );
+}
+
 function HealthChatPanel({ context }: { context: HealthChatContext }) {
   const [question, setQuestion] = useState("");
   const [messages, setMessages] = useState<ChatMessage[]>([
@@ -904,6 +1619,15 @@ export default function Home() {
       publishedAt: article.publishedAt,
       url: article.url,
     })),
+  };
+  const healthPlanContext: HealthPlanContext = {
+    context: chatContext,
+    model: {
+      version: riskModel.modelVersion,
+      score: scoreBreakdown.score,
+      topDrivers: scoreBreakdown.topDrivers,
+      categoryScores: scoreBreakdown.categoryScores,
+    },
   };
   const detailHref = (topic: string) => {
     const params = new URLSearchParams({
@@ -1263,6 +1987,25 @@ export default function Home() {
             />
                 <DataConfidencePanel confidence={dataConfidence} />
               </>
+            )}
+
+            {dashboardView === "plan" && (
+              <AiHealthPlanPanel planContext={healthPlanContext} />
+            )}
+
+            {dashboardView === "timeline" && (
+              <ExposureTimelinePanel
+                zipCode={zipCode}
+                city={city}
+                state={state}
+                baseScore={scoreBreakdown.score}
+                healthRisk={healthRisk}
+                respiratoryRisk={respiratoryRisk}
+                airQuality={airQualityLabel}
+                heatRisk={heatRisk}
+                uvRisk={uvRisk}
+                profile={userProfile}
+              />
             )}
 
             {dashboardView === "overview" && hasMapLocation && (
