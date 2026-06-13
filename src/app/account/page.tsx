@@ -92,15 +92,15 @@ function AuthPanel({
 
   if (user) {
     return (
-      <section className="rounded-lg border border-white/10 bg-white/5 p-5">
-        <p className="text-xs font-semibold uppercase tracking-wide text-cyan-300">
+      <section className="quiet-surface rounded-lg p-5">
+        <p className="text-xs font-semibold uppercase tracking-wide text-teal-200">
           Account
         </p>
         <p className="mt-2 text-sm text-slate-200">{user.email}</p>
         <button
           type="button"
           onClick={handleSignOut}
-          className="mt-4 rounded-lg border border-white/15 px-4 py-2 text-sm font-semibold text-white transition hover:border-cyan-300/50 hover:bg-white/10"
+          className="mt-4 rounded-lg border border-white/15 px-4 py-2 text-sm font-semibold text-white transition hover:border-emerald-300/50 hover:bg-white/10"
         >
           Sign out
         </button>
@@ -114,8 +114,8 @@ function AuthPanel({
   }
 
   return (
-    <section className="rounded-lg border border-white/10 bg-white/5 p-5">
-      <p className="text-xs font-semibold uppercase tracking-wide text-cyan-300">
+    <section className="quiet-surface rounded-lg p-5">
+      <p className="text-xs font-semibold uppercase tracking-wide text-teal-200">
         Sign In
       </p>
       <h2 className="mt-2 text-2xl font-semibold text-white">
@@ -135,14 +135,14 @@ function AuthPanel({
           placeholder="Email"
           value={email}
           onChange={(event) => setEmail(event.target.value)}
-          className="h-11 rounded-lg border border-white/15 bg-white/10 px-3 text-sm text-white outline-none placeholder:text-slate-400 focus:border-cyan-300"
+          className="h-11 rounded-lg border border-white/15 bg-white/10 px-3 text-sm text-white outline-none placeholder:text-slate-400 focus:border-emerald-300"
         />
         <input
           type="password"
           placeholder="Password"
           value={password}
           onChange={(event) => setPassword(event.target.value)}
-          className="h-11 rounded-lg border border-white/15 bg-white/10 px-3 text-sm text-white outline-none placeholder:text-slate-400 focus:border-cyan-300"
+          className="h-11 rounded-lg border border-white/15 bg-white/10 px-3 text-sm text-white outline-none placeholder:text-slate-400 focus:border-emerald-300"
         />
       </div>
       <div className="mt-4 flex flex-wrap gap-2">
@@ -150,13 +150,13 @@ function AuthPanel({
           type="button"
           disabled={authLoading}
           onClick={() => void handleSignIn()}
-          className="rounded-lg bg-indigo-500 px-4 py-2 text-sm font-semibold text-white transition hover:bg-amber-500 disabled:bg-slate-700"
+          className="rounded-lg bg-teal-500 px-4 py-2 text-sm font-semibold text-[#07110f] transition hover:bg-teal-300 disabled:bg-slate-700 disabled:text-slate-300"
         >
           Sign in
         </button>
         <Link
           href="/signup"
-          className="rounded-lg border border-white/15 px-4 py-2 text-sm font-semibold text-white transition hover:border-cyan-300/50 hover:bg-white/10"
+          className="rounded-lg border border-white/15 px-4 py-2 text-sm font-semibold text-white transition hover:border-emerald-300/50 hover:bg-white/10"
         >
           Create account
         </Link>
@@ -253,8 +253,8 @@ function ProfilePanel({
   };
 
   return (
-    <section className="rounded-lg border border-white/10 bg-white/5 p-5">
-      <p className="text-xs font-semibold uppercase tracking-wide text-cyan-300">
+    <section className="quiet-surface rounded-lg p-5">
+      <p className="text-xs font-semibold uppercase tracking-wide text-teal-200">
         Health Profile
       </p>
       <h2 className="mt-2 text-2xl font-semibold text-white">
@@ -272,7 +272,7 @@ function ProfilePanel({
             value={fullName}
             onChange={(event) => setFullName(event.target.value)}
             placeholder="Optional"
-            className="h-11 rounded-lg border border-white/15 bg-white/10 px-3 text-sm font-normal normal-case tracking-normal text-white outline-none placeholder:text-slate-400 focus:border-cyan-300"
+            className="h-11 rounded-lg border border-white/15 bg-white/10 px-3 text-sm font-normal normal-case tracking-normal text-white outline-none placeholder:text-slate-400 focus:border-emerald-300"
           />
         </label>
 
@@ -284,7 +284,7 @@ function ProfilePanel({
               onChange={(event) =>
                 setAgeRange(event.target.value as AgeRange)
               }
-              className="h-11 rounded-lg border border-white/15 bg-[#111a33] px-3 text-sm font-normal normal-case tracking-normal text-white outline-none focus:border-cyan-300"
+              className="h-11 rounded-lg border border-white/15 bg-[#12322c] px-3 text-sm font-normal normal-case tracking-normal text-white outline-none focus:border-emerald-300"
             >
               {ageRanges.map((range) => (
                 <option key={range}>{range}</option>
@@ -297,7 +297,7 @@ function ProfilePanel({
             <select
               value={carType}
               onChange={(event) => setCarType(event.target.value)}
-              className="h-11 rounded-lg border border-white/15 bg-[#111a33] px-3 text-sm font-normal normal-case tracking-normal text-white outline-none focus:border-cyan-300"
+              className="h-11 rounded-lg border border-white/15 bg-[#12322c] px-3 text-sm font-normal normal-case tracking-normal text-white outline-none focus:border-emerald-300"
             >
               {carTypes.map((type) => (
                 <option key={type}>{type}</option>
@@ -314,7 +314,7 @@ function ProfilePanel({
               onChange={(event) =>
                 setOutdoorExposure(event.target.value as ExposureLevel)
               }
-              className="h-11 rounded-lg border border-white/15 bg-[#111a33] px-3 text-sm font-normal normal-case tracking-normal text-white outline-none focus:border-cyan-300"
+              className="h-11 rounded-lg border border-white/15 bg-[#12322c] px-3 text-sm font-normal normal-case tracking-normal text-white outline-none focus:border-emerald-300"
             >
               {exposureLevels.map((level) => (
                 <option key={level}>{level}</option>
@@ -329,7 +329,7 @@ function ProfilePanel({
               onChange={(event) =>
                 setActivityLevel(event.target.value as ActivityLevel)
               }
-              className="h-11 rounded-lg border border-white/15 bg-[#111a33] px-3 text-sm font-normal normal-case tracking-normal text-white outline-none focus:border-cyan-300"
+              className="h-11 rounded-lg border border-white/15 bg-[#12322c] px-3 text-sm font-normal normal-case tracking-normal text-white outline-none focus:border-emerald-300"
             >
               {activityLevels.map((level) => (
                 <option key={level}>{level}</option>
@@ -346,7 +346,7 @@ function ProfilePanel({
               onChange={(event) =>
                 setCommuteExposure(event.target.value as ExposureLevel)
               }
-              className="h-11 rounded-lg border border-white/15 bg-[#111a33] px-3 text-sm font-normal normal-case tracking-normal text-white outline-none focus:border-cyan-300"
+              className="h-11 rounded-lg border border-white/15 bg-[#12322c] px-3 text-sm font-normal normal-case tracking-normal text-white outline-none focus:border-emerald-300"
             >
               {exposureLevels.map((level) => (
                 <option key={level}>{level}</option>
@@ -363,7 +363,7 @@ function ProfilePanel({
                   event.target.value as RespiratorySensitivity
                 )
               }
-              className="h-11 rounded-lg border border-white/15 bg-[#111a33] px-3 text-sm font-normal normal-case tracking-normal text-white outline-none focus:border-cyan-300"
+              className="h-11 rounded-lg border border-white/15 bg-[#12322c] px-3 text-sm font-normal normal-case tracking-normal text-white outline-none focus:border-emerald-300"
             >
               {respiratorySensitivityLevels.map((level) => (
                 <option key={level}>{level}</option>
@@ -379,14 +379,14 @@ function ProfilePanel({
             value={placeOfBirth}
             onChange={(event) => setPlaceOfBirth(event.target.value)}
             placeholder="Optional"
-            className="h-11 rounded-lg border border-white/15 bg-white/10 px-3 text-sm font-normal normal-case tracking-normal text-white outline-none placeholder:text-slate-400 focus:border-cyan-300"
+            className="h-11 rounded-lg border border-white/15 bg-white/10 px-3 text-sm font-normal normal-case tracking-normal text-white outline-none placeholder:text-slate-400 focus:border-emerald-300"
           />
         </label>
 
         <button
           type="submit"
           disabled={savingProfile}
-          className="rounded-lg bg-cyan-500 px-4 py-2 text-sm font-semibold text-slate-950 transition hover:bg-cyan-300 disabled:bg-slate-700 disabled:text-slate-300"
+          className="rounded-lg bg-teal-500 px-4 py-2 text-sm font-semibold text-[#07110f] transition hover:bg-teal-300 disabled:bg-slate-700 disabled:text-slate-300"
         >
           {savingProfile ? "Saving profile" : "Save profile"}
         </button>
@@ -411,8 +411,8 @@ function SavedLocationsPanel({
   message: string;
 }) {
   return (
-    <section className="rounded-lg border border-white/10 bg-white/5 p-5">
-      <p className="text-xs font-semibold uppercase tracking-wide text-cyan-300">
+    <section className="quiet-surface rounded-lg p-5">
+      <p className="text-xs font-semibold uppercase tracking-wide text-teal-200">
         My Locations
       </p>
       <h2 className="mt-2 text-2xl font-semibold text-white">
@@ -432,7 +432,7 @@ function SavedLocationsPanel({
         <div className="mt-4 grid gap-3">
           {locations.map((location) => (
             <div
-              className="rounded-lg border border-white/10 bg-white/5 p-4"
+              className="inset-surface rounded-lg p-4"
               key={location.id}
             >
               <div className="flex flex-wrap items-start justify-between gap-3">
@@ -444,7 +444,7 @@ function SavedLocationsPanel({
                     <span className="text-sm font-semibold text-white">
                       {location.label}
                     </span>
-                    <span className="rounded-full border border-cyan-300/30 bg-cyan-400/10 px-2 py-0.5 text-[0.68rem] font-semibold uppercase tracking-wide text-cyan-100">
+                    <span className="rounded-full border border-emerald-300/30 bg-emerald-400/10 px-2 py-0.5 text-[0.68rem] font-semibold uppercase tracking-wide text-emerald-100">
                       {location.location_type}
                     </span>
                   </span>
@@ -558,22 +558,22 @@ export default function AccountPage() {
   }, []);
 
   return (
-    <main className="min-h-screen bg-[#070b1d] text-white">
-      <section className="mx-auto flex min-h-screen w-full max-w-5xl flex-col px-5 py-8 sm:px-8 lg:px-10">
+    <main className="min-h-screen public-health-bg text-white">
+      <section className="mx-auto flex min-h-screen w-full max-w-[72rem] flex-col px-5 py-8 sm:px-8 lg:px-10">
         <header className="flex flex-col gap-4 border-b border-white/10 pb-8 sm:flex-row sm:items-end sm:justify-between">
           <div>
-            <p className="text-sm font-semibold uppercase tracking-wide text-cyan-300">
+            <p className="text-sm font-semibold uppercase tracking-wide text-teal-200">
               MyLocalHealth Account
             </p>
-            <h1 className="mt-3 text-4xl font-bold text-white">
+            <h1 className="display-heading mt-3 text-4xl leading-tight text-white sm:text-5xl">
               Profile and saved places
             </h1>
           </div>
           <Link
             href="/"
-            className="w-fit rounded-lg border border-white/15 px-4 py-2 text-sm font-semibold text-white transition hover:border-cyan-300/50 hover:bg-white/10"
+            className="w-fit rounded-lg border border-white/15 px-4 py-2 text-sm font-semibold text-white transition hover:border-emerald-300/50 hover:bg-white/10"
           >
-            Back to dashboard
+            Back home
           </Link>
         </header>
 
@@ -590,8 +590,8 @@ export default function AccountPage() {
               }}
             />
           ) : (
-            <section className="rounded-lg border border-white/10 bg-white/5 p-5">
-              <p className="text-xs font-semibold uppercase tracking-wide text-cyan-300">
+            <section className="quiet-surface rounded-lg p-5">
+              <p className="text-xs font-semibold uppercase tracking-wide text-teal-200">
                 Next
               </p>
               <h2 className="mt-2 text-2xl font-semibold text-white">

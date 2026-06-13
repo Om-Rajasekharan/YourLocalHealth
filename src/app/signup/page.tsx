@@ -114,14 +114,14 @@ export default function SignUpPage() {
   };
 
   return (
-    <main className="min-h-screen bg-[#070b1d] text-white">
-      <section className="mx-auto flex min-h-screen w-full max-w-5xl flex-col px-5 py-8 sm:px-8 lg:px-10">
+    <main className="min-h-screen public-health-bg text-white">
+      <section className="mx-auto flex min-h-screen w-full max-w-[72rem] flex-col px-5 py-8 sm:px-8 lg:px-10">
         <header className="flex flex-col gap-4 border-b border-white/10 pb-8 sm:flex-row sm:items-end sm:justify-between">
           <div>
-            <p className="text-sm font-semibold uppercase tracking-wide text-cyan-300">
+            <p className="text-sm font-semibold uppercase tracking-wide text-teal-200">
               Create Account
             </p>
-            <h1 className="mt-3 text-4xl font-bold text-white">
+            <h1 className="display-heading mt-3 text-4xl leading-tight text-white sm:text-5xl">
               Personalize MyLocalHealth
             </h1>
             <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-300">
@@ -129,21 +129,29 @@ export default function SignUpPage() {
               your informational health snapshot.
             </p>
           </div>
-          <Link
-            href="/account"
-            className="w-fit rounded-lg border border-white/15 px-4 py-2 text-sm font-semibold text-white transition hover:border-cyan-300/50 hover:bg-white/10"
-          >
-            Already have an account?
-          </Link>
+          <div className="flex flex-wrap gap-2">
+            <Link
+              href="/"
+              className="w-fit rounded-lg border border-white/15 px-4 py-2 text-sm font-semibold text-white transition hover:border-emerald-300/50 hover:bg-white/10"
+            >
+              Back home
+            </Link>
+            <Link
+              href="/account"
+              className="w-fit rounded-lg bg-teal-500 px-4 py-2 text-sm font-semibold text-[#07110f] transition hover:bg-teal-300"
+            >
+              Already have an account?
+            </Link>
+          </div>
         </header>
 
         <form
           onSubmit={handleSubmit}
-          className="mt-8 rounded-lg border border-white/10 bg-white/5 p-5"
+          className="mt-8 quiet-surface rounded-lg p-5"
         >
           <div className="grid gap-5 lg:grid-cols-[0.8fr_1.2fr]">
             <section>
-              <p className="text-xs font-semibold uppercase tracking-wide text-cyan-300">
+              <p className="text-xs font-semibold uppercase tracking-wide text-teal-200">
                 Login
               </p>
               <h2 className="mt-2 text-2xl font-semibold text-white">
@@ -157,7 +165,7 @@ export default function SignUpPage() {
                     required
                     value={email}
                     onChange={(event) => setEmail(event.target.value)}
-                    className="h-11 rounded-lg border border-white/15 bg-white/10 px-3 text-sm font-normal normal-case tracking-normal text-white outline-none placeholder:text-slate-400 focus:border-cyan-300"
+                    className="h-11 rounded-lg border border-white/15 bg-white/10 px-3 text-sm font-normal normal-case tracking-normal text-white outline-none placeholder:text-slate-400 focus:border-emerald-300"
                   />
                 </label>
                 <label className="grid gap-1 text-xs font-semibold uppercase tracking-wide text-slate-400">
@@ -168,7 +176,7 @@ export default function SignUpPage() {
                     minLength={6}
                     value={password}
                     onChange={(event) => setPassword(event.target.value)}
-                    className="h-11 rounded-lg border border-white/15 bg-white/10 px-3 text-sm font-normal normal-case tracking-normal text-white outline-none placeholder:text-slate-400 focus:border-cyan-300"
+                    className="h-11 rounded-lg border border-white/15 bg-white/10 px-3 text-sm font-normal normal-case tracking-normal text-white outline-none placeholder:text-slate-400 focus:border-emerald-300"
                   />
                 </label>
               </div>
@@ -180,7 +188,7 @@ export default function SignUpPage() {
             </section>
 
             <section>
-              <p className="text-xs font-semibold uppercase tracking-wide text-cyan-300">
+              <p className="text-xs font-semibold uppercase tracking-wide text-teal-200">
                 Health Profile
               </p>
               <h2 className="mt-2 text-2xl font-semibold text-white">
@@ -198,7 +206,7 @@ export default function SignUpPage() {
                     type="text"
                     value={fullName}
                     onChange={(event) => setFullName(event.target.value)}
-                    className="h-11 rounded-lg border border-white/15 bg-white/10 px-3 text-sm font-normal normal-case tracking-normal text-white outline-none placeholder:text-slate-400 focus:border-cyan-300"
+                    className="h-11 rounded-lg border border-white/15 bg-white/10 px-3 text-sm font-normal normal-case tracking-normal text-white outline-none placeholder:text-slate-400 focus:border-emerald-300"
                   />
                 </label>
 
@@ -210,7 +218,7 @@ export default function SignUpPage() {
                       onChange={(event) =>
                         setAgeRange(event.target.value as AgeRange)
                       }
-                      className="h-11 rounded-lg border border-white/15 bg-[#111a33] px-3 text-sm font-normal normal-case tracking-normal text-white outline-none focus:border-cyan-300"
+                      className="h-11 rounded-lg border border-white/15 bg-[#12322c] px-3 text-sm font-normal normal-case tracking-normal text-white outline-none focus:border-emerald-300"
                     >
                       {ageRanges.map((range) => (
                         <option key={range}>{range}</option>
@@ -223,7 +231,7 @@ export default function SignUpPage() {
                     <select
                       value={carType}
                       onChange={(event) => setCarType(event.target.value)}
-                      className="h-11 rounded-lg border border-white/15 bg-[#111a33] px-3 text-sm font-normal normal-case tracking-normal text-white outline-none focus:border-cyan-300"
+                      className="h-11 rounded-lg border border-white/15 bg-[#12322c] px-3 text-sm font-normal normal-case tracking-normal text-white outline-none focus:border-emerald-300"
                     >
                       {carTypes.map((type) => (
                         <option key={type}>{type}</option>
@@ -240,7 +248,7 @@ export default function SignUpPage() {
                       onChange={(event) =>
                         setOutdoorExposure(event.target.value as ExposureLevel)
                       }
-                      className="h-11 rounded-lg border border-white/15 bg-[#111a33] px-3 text-sm font-normal normal-case tracking-normal text-white outline-none focus:border-cyan-300"
+                      className="h-11 rounded-lg border border-white/15 bg-[#12322c] px-3 text-sm font-normal normal-case tracking-normal text-white outline-none focus:border-emerald-300"
                     >
                       {exposureLevels.map((level) => (
                         <option key={level}>{level}</option>
@@ -255,7 +263,7 @@ export default function SignUpPage() {
                       onChange={(event) =>
                         setActivityLevel(event.target.value as ActivityLevel)
                       }
-                      className="h-11 rounded-lg border border-white/15 bg-[#111a33] px-3 text-sm font-normal normal-case tracking-normal text-white outline-none focus:border-cyan-300"
+                      className="h-11 rounded-lg border border-white/15 bg-[#12322c] px-3 text-sm font-normal normal-case tracking-normal text-white outline-none focus:border-emerald-300"
                     >
                       {activityLevels.map((level) => (
                         <option key={level}>{level}</option>
@@ -272,7 +280,7 @@ export default function SignUpPage() {
                       onChange={(event) =>
                         setCommuteExposure(event.target.value as ExposureLevel)
                       }
-                      className="h-11 rounded-lg border border-white/15 bg-[#111a33] px-3 text-sm font-normal normal-case tracking-normal text-white outline-none focus:border-cyan-300"
+                      className="h-11 rounded-lg border border-white/15 bg-[#12322c] px-3 text-sm font-normal normal-case tracking-normal text-white outline-none focus:border-emerald-300"
                     >
                       {exposureLevels.map((level) => (
                         <option key={level}>{level}</option>
@@ -289,7 +297,7 @@ export default function SignUpPage() {
                           event.target.value as RespiratorySensitivity
                         )
                       }
-                      className="h-11 rounded-lg border border-white/15 bg-[#111a33] px-3 text-sm font-normal normal-case tracking-normal text-white outline-none focus:border-cyan-300"
+                      className="h-11 rounded-lg border border-white/15 bg-[#12322c] px-3 text-sm font-normal normal-case tracking-normal text-white outline-none focus:border-emerald-300"
                     >
                       {respiratorySensitivityLevels.map((level) => (
                         <option key={level}>{level}</option>
@@ -305,7 +313,7 @@ export default function SignUpPage() {
                     value={placeOfBirth}
                     onChange={(event) => setPlaceOfBirth(event.target.value)}
                     placeholder="Optional"
-                    className="h-11 rounded-lg border border-white/15 bg-white/10 px-3 text-sm font-normal normal-case tracking-normal text-white outline-none placeholder:text-slate-400 focus:border-cyan-300"
+                    className="h-11 rounded-lg border border-white/15 bg-white/10 px-3 text-sm font-normal normal-case tracking-normal text-white outline-none placeholder:text-slate-400 focus:border-emerald-300"
                   />
                 </label>
               </div>
@@ -316,7 +324,7 @@ export default function SignUpPage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full rounded-lg bg-cyan-500 px-4 py-3 text-sm font-semibold text-slate-950 transition hover:bg-cyan-300 disabled:bg-slate-700 disabled:text-slate-300"
+              className="w-full rounded-lg bg-teal-500 px-4 py-3 text-sm font-semibold text-[#07110f] transition hover:bg-teal-300 disabled:bg-slate-700 disabled:text-slate-300"
             >
               {loading ? "Creating account" : "Create account"}
             </button>
