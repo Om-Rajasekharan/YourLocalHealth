@@ -264,6 +264,19 @@ function getDashboardView(viewId: DashboardView) {
   );
 }
 
+function isDashboardView(value: string | null): value is DashboardView {
+  return dashboardViews.some((view) => view.id === value);
+}
+
+function getDashboardUrl(zipCode: string, view: DashboardView) {
+  const params = new URLSearchParams({
+    zipCode,
+    view,
+  });
+
+  return `/?${params.toString()}`;
+}
+
 function riskBadgeClass(risk: string) {
   switch (risk) {
     case "Low":
@@ -2923,7 +2936,12 @@ export default function Home() {
     return `/details/${topic}?${params.toString()}`;
   };
 
-  const searchZipCode = async (zipToSearch: string) => {
+  const searchZipCode = async (
+    zipToSearch: string,
+    options: { updateUrl?: boolean; view?: DashboardView } = {}
+  ) => {
+    const nextView = options.view ?? "overview";
+
     setZipCode(zipToSearch);
     setError("");
     setNewsError("");
@@ -2947,7 +2965,7 @@ export default function Home() {
       news: false,
     });
     setSearched(false);
-    setDashboardView("overview");
+    setDashboardView(nextView);
     setLoading(true);
 
     try {
@@ -3034,6 +3052,15 @@ export default function Home() {
         weatherAlerts: true,
       }));
       setSearched(true);
+      restoredZipRef.current = zipToSearch;
+
+      if (options.updateUrl !== false && typeof window !== "undefined") {
+        window.history.pushState(
+          { zipCode: zipToSearch, view: nextView },
+          "",
+          getDashboardUrl(zipToSearch, nextView)
+        );
+      }
 
       let loadedEquityData: HealthEquityData | null = null;
 
@@ -3182,18 +3209,43 @@ export default function Home() {
   };
 
   useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const restoredZipCode = params.get("zipCode");
+    const restoreFromUrl = () => {
+      const params = new URLSearchParams(window.location.search);
+      const restoredZipCode = params.get("zipCode");
+      const viewParam = params.get("view");
+      const restoredView: DashboardView = isDashboardView(viewParam)
+        ? viewParam
+        : "overview";
 
-    if (
-      restoredZipCode &&
-      restoredZipCode !== restoredZipRef.current
-    ) {
-      restoredZipRef.current = restoredZipCode;
-      setZipCode(restoredZipCode);
-      void searchZipCode(restoredZipCode);
-    }
-    // This runs once to restore a shared summary URL without re-triggering searches.
+      if (!restoredZipCode) {
+        restoredZipRef.current = "";
+        setSearched(false);
+        setDashboardView("overview");
+        setError("");
+        setZipCode("");
+        return;
+      }
+
+      if (restoredZipCode !== restoredZipRef.current) {
+        restoredZipRef.current = restoredZipCode;
+        setZipCode(restoredZipCode);
+        void searchZipCode(restoredZipCode, {
+          updateUrl: false,
+          view: restoredView,
+        });
+        return;
+      }
+
+      setDashboardView(restoredView);
+    };
+
+    restoreFromUrl();
+    window.addEventListener("popstate", restoreFromUrl);
+
+    return () => {
+      window.removeEventListener("popstate", restoreFromUrl);
+    };
+    // This restores shared URLs and browser Back/Forward without re-triggering searches unnecessarily.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -3230,15 +3282,29 @@ export default function Home() {
     await searchZipCode(zipCode);
   };
 
+  const navigateDashboardView = (view: DashboardView) => {
+    setDashboardView(view);
+
+    if (searched && zipCode && typeof window !== "undefined") {
+      window.history.pushState(
+        { zipCode, view },
+        "",
+        getDashboardUrl(zipCode, view)
+      );
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+  };
+
   const resetToHome = () => {
     setSearched(false);
     setDashboardView("overview");
     setError("");
     setLoading(false);
     setZipCode("");
+    restoredZipRef.current = "";
 
     if (typeof window !== "undefined") {
-      window.history.replaceState(null, "", "/");
+      window.history.pushState(null, "", "/");
       window.scrollTo({ top: 0, behavior: "smooth" });
     }
   };
@@ -3342,7 +3408,7 @@ export default function Home() {
           <div className="sticky top-0 z-30 border-b border-white/10 bg-[#0b1412]/88 pt-4 backdrop-blur-xl">
             <DashboardNav
               activeView={dashboardView}
-              onChange={setDashboardView}
+              onChange={navigateDashboardView}
             />
           </div>
         )}
@@ -3437,21 +3503,21 @@ export default function Home() {
                       <div className="mt-5 flex flex-wrap gap-3">
                         <button
                           type="button"
-                          onClick={() => setDashboardView("forecast")}
+                          onClick={() => navigateDashboardView("forecast")}
                           className="rounded-lg bg-teal-500 px-4 py-2 text-sm font-semibold text-white transition hover:bg-teal-400"
                         >
                           View forecast
                         </button>
                         <button
                           type="button"
-                          onClick={() => setDashboardView("plan")}
+                          onClick={() => navigateDashboardView("plan")}
                           className="rounded-lg border border-white/15 px-4 py-2 text-sm font-semibold text-white transition hover:border-emerald-300/50 hover:bg-white/10"
                         >
                           Generate AI plan
                         </button>
                         <button
                           type="button"
-                          onClick={() => setDashboardView("assistant")}
+                          onClick={() => navigateDashboardView("assistant")}
                           className="rounded-lg border border-white/15 px-4 py-2 text-sm font-semibold text-white transition hover:border-emerald-300/50 hover:bg-white/10"
                         >
                           Ask a question
@@ -3557,7 +3623,7 @@ export default function Home() {
                       </div>
                       <button
                         type="button"
-                        onClick={() => setDashboardView("model")}
+                        onClick={() => navigateDashboardView("model")}
                         className="shrink-0 text-xs font-semibold text-teal-100 hover:text-white"
                       >
                         See model
@@ -3602,7 +3668,7 @@ export default function Home() {
                       </div>
                       <button
                         type="button"
-                        onClick={() => setDashboardView("equity")}
+                        onClick={() => navigateDashboardView("equity")}
                         className="shrink-0 text-xs font-semibold text-teal-100 hover:text-white"
                       >
                         See context
