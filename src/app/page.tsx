@@ -4,7 +4,7 @@ import Link from "next/link";
 import Image from "next/image";
 import {
   FormEvent,
-  type MouseEvent,
+  type PointerEvent,
   useEffect,
   useRef,
   useState,
@@ -484,20 +484,68 @@ function InteractiveLocationMap({
   message: string;
   onSelectPoint: (latitude: number, longitude: number) => void;
 }) {
-  const tiles = getMapTiles(latitude, longitude);
+  const [mapCenter, setMapCenter] = useState({ latitude, longitude });
+  const [isDragging, setIsDragging] = useState(false);
+  const dragRef = useRef<{
+    pointerId: number;
+    startX: number;
+    startY: number;
+    startCenterX: number;
+    startCenterY: number;
+  } | null>(null);
+  const tiles = getMapTiles(mapCenter.latitude, mapCenter.longitude);
 
-  const handleMapClick = (event: MouseEvent<HTMLButtonElement>) => {
-    const bounds = event.currentTarget.getBoundingClientRect();
-    const center = latLngToWorldPixel(latitude, longitude, MAP_ZOOM);
-    const clickOffsetX = event.clientX - bounds.left - bounds.width / 2;
-    const clickOffsetY = event.clientY - bounds.top - bounds.height / 2;
-    const clickedPoint = worldPixelToLatLng(
-      center.x + clickOffsetX,
-      center.y + clickOffsetY,
+  useEffect(() => {
+    setMapCenter({ latitude, longitude });
+  }, [latitude, longitude]);
+
+  const handlePointerDown = (event: PointerEvent<HTMLDivElement>) => {
+    if (loading) return;
+
+    const center = latLngToWorldPixel(
+      mapCenter.latitude,
+      mapCenter.longitude,
       MAP_ZOOM
     );
 
-    onSelectPoint(clickedPoint.latitude, clickedPoint.longitude);
+    event.currentTarget.setPointerCapture(event.pointerId);
+    dragRef.current = {
+      pointerId: event.pointerId,
+      startX: event.clientX,
+      startY: event.clientY,
+      startCenterX: center.x,
+      startCenterY: center.y,
+    };
+    setIsDragging(true);
+  };
+
+  const handlePointerMove = (event: PointerEvent<HTMLDivElement>) => {
+    const drag = dragRef.current;
+
+    if (!drag || drag.pointerId !== event.pointerId) return;
+
+    const nextCenter = worldPixelToLatLng(
+      drag.startCenterX - (event.clientX - drag.startX),
+      drag.startCenterY - (event.clientY - drag.startY),
+      MAP_ZOOM
+    );
+
+    setMapCenter(nextCenter);
+  };
+
+  const endDrag = (event: PointerEvent<HTMLDivElement>) => {
+    if (dragRef.current?.pointerId === event.pointerId) {
+      dragRef.current = null;
+      setIsDragging(false);
+    }
+  };
+
+  const resetMapCenter = () => {
+    setMapCenter({ latitude, longitude });
+  };
+
+  const searchMapCenter = () => {
+    onSelectPoint(mapCenter.latitude, mapCenter.longitude);
   };
 
   return (
@@ -509,21 +557,27 @@ function InteractiveLocationMap({
             {city}, {state}
           </h3>
           <p className="mt-2 text-sm leading-6 text-stone-300">
-            Click anywhere nearby to load a new local health snapshot for that
-            point.
+            Drag the map to explore nearby areas. Search the center marker when
+            you want a new local health snapshot.
           </p>
         </div>
         <p className="text-sm text-stone-400">
-          ZIP {zipCode} · {latitude.toFixed(4)}, {longitude.toFixed(4)}
+          Current ZIP {zipCode} · center {mapCenter.latitude.toFixed(4)},{" "}
+          {mapCenter.longitude.toFixed(4)}
         </p>
       </div>
 
-      <button
-        type="button"
-        onClick={handleMapClick}
-        disabled={loading}
-        className="group relative block h-80 w-full cursor-crosshair overflow-hidden bg-[#10211e] text-left disabled:cursor-wait"
-        aria-label={`Click the map near ${city}, ${state} to search that location`}
+      <div
+        role="application"
+        tabIndex={0}
+        onPointerDown={handlePointerDown}
+        onPointerMove={handlePointerMove}
+        onPointerUp={endDrag}
+        onPointerCancel={endDrag}
+        className={`group relative h-80 w-full touch-none overflow-hidden bg-[#10211e] text-left outline-none ${
+          isDragging ? "cursor-grabbing" : "cursor-grab"
+        } ${loading ? "cursor-wait" : ""}`}
+        aria-label={`Draggable map near ${city}, ${state}. Drag to move the map, then use Search center point.`}
       >
         <div className="absolute inset-0 overflow-hidden">
           {tiles.map((tile) => (
@@ -544,24 +598,43 @@ function InteractiveLocationMap({
         </div>
 
         <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(7,15,13,0.08),rgba(7,15,13,0.48))]" />
-        <div className="absolute left-1/2 top-1/2 h-8 w-8 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-white bg-emerald-400/90 shadow-[0_0_0_8px_rgba(16,185,129,0.2),0_14px_30px_rgba(0,0,0,0.35)]" />
-        <div className="absolute left-1/2 top-1/2 h-3 w-3 -translate-x-1/2 -translate-y-1/2 rounded-full bg-white" />
+        <div className="pointer-events-none absolute left-1/2 top-1/2 h-10 w-10 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-white bg-emerald-400/90 shadow-[0_0_0_8px_rgba(16,185,129,0.2),0_14px_30px_rgba(0,0,0,0.35)]" />
+        <div className="pointer-events-none absolute left-1/2 top-1/2 h-3 w-3 -translate-x-1/2 -translate-y-1/2 rounded-full bg-white" />
+        <div className="pointer-events-none absolute left-1/2 top-[calc(50%+1.45rem)] h-7 w-px -translate-x-1/2 bg-white/70" />
 
         <div className="absolute bottom-4 left-4 right-4 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
           <div className="max-w-xl rounded-lg border border-white/12 bg-[#0b1715]/85 p-4 shadow-2xl backdrop-blur">
             <p className="text-xs font-semibold uppercase tracking-wide text-emerald-200">
-              Map lookup
+              Map controls
             </p>
             <p className="mt-1 text-sm leading-6 text-stone-200">
               {message ||
-                "Click the map to switch the dashboard to that location."}
+                "Drag the map first. The marker in the center is the point that will be searched."}
             </p>
           </div>
-          <span className="w-fit rounded-full border border-emerald-300/30 bg-emerald-300/10 px-3 py-2 text-xs font-semibold uppercase tracking-wide text-emerald-100">
-            {loading ? "Finding ZIP..." : "Click to search"}
-          </span>
+          <div
+            className="flex flex-wrap gap-2"
+            onPointerDown={(event) => event.stopPropagation()}
+          >
+            <button
+              type="button"
+              onClick={resetMapCenter}
+              disabled={loading}
+              className="rounded-full border border-white/15 bg-white/10 px-4 py-2 text-sm font-semibold text-white transition hover:bg-white/15 disabled:cursor-wait disabled:opacity-60"
+            >
+              Reset map
+            </button>
+            <button
+              type="button"
+              onClick={searchMapCenter}
+              disabled={loading}
+              className="rounded-full border border-emerald-200/40 bg-emerald-300 px-4 py-2 text-sm font-bold text-[#07110f] transition hover:bg-emerald-200 disabled:cursor-wait disabled:opacity-70"
+            >
+              {loading ? "Finding ZIP..." : "Search center point"}
+            </button>
+          </div>
         </div>
-      </button>
+      </div>
     </section>
   );
 }
