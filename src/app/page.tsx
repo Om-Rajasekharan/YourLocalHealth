@@ -17,7 +17,10 @@ import {
   type RiskModelItem,
 } from "../lib/riskModel";
 import { getLocation } from "../services/location";
-import { getAirQuality } from "../services/airsQuality";
+import {
+  getAirQuality,
+  type AirQualityData,
+} from "../services/airsQuality";
 import { getFluData } from "../services/flu";
 import {
   getCovidData,
@@ -56,6 +59,16 @@ import {
   type SavedHealthSnapshot,
 } from "../services/mlTrainingData";
 import { supabase } from "../lib/supabaseClient";
+
+const unknownCovidData: CovidActivityData = {
+  activity: "Unknown",
+  value: null,
+  numberOfSites: 0,
+  coverage: "Unknown",
+  timePeriod: "Unknown",
+  updatedAt: "Unknown",
+  weekEnd: "Unknown",
+};
 
 type ChatMessage = {
   role: "user" | "assistant";
@@ -2945,18 +2958,54 @@ export default function Home() {
       setLatitude(location.latitude);
       setLongitude(location.longitude);
 
-      const fluData = await getFluData(location.state);
+      const fluData = await getFluData(location.state).catch((error) => {
+        console.error("Flu data unavailable", error);
+        return "Unknown";
+      });
       setFluActivity(fluData);
-      setDataStatus((current) => ({ ...current, flu: true }));
+      setDataStatus((current) => ({
+        ...current,
+        flu: fluData !== "Unknown",
+      }));
 
-      const covidActivityData = await getCovidData(location.state);
+      const covidActivityData = await getCovidData(location.state).catch(
+        (error) => {
+          console.error("COVID wastewater data unavailable", error);
+          return unknownCovidData;
+        }
+      );
       setCovidData(covidActivityData);
-      setDataStatus((current) => ({ ...current, covid: true }));
+      setDataStatus((current) => ({
+        ...current,
+        covid: covidActivityData.activity !== "Unknown",
+      }));
 
       const [airData, environment, alerts, forecast] = await Promise.all([
-        getAirQuality(location.latitude, location.longitude),
-        getEnvironmentData(location.latitude, location.longitude),
-        getWeatherAlerts(location.latitude, location.longitude),
+        getAirQuality(location.latitude, location.longitude).catch(
+          (error) => {
+            console.error("Air quality data unavailable", error);
+            return {} as AirQualityData;
+          }
+        ),
+        getEnvironmentData(location.latitude, location.longitude).catch(
+          (error) => {
+            console.error("Heat and UV data unavailable", error);
+            return {
+              temperature: null,
+              apparentTemperature: null,
+              humidity: null,
+              uvIndexMax: null,
+              temperatureMax: null,
+              apparentTemperatureMax: null,
+            };
+          }
+        ),
+        getWeatherAlerts(location.latitude, location.longitude).catch(
+          (error) => {
+            console.error("Weather alerts unavailable", error);
+            return [];
+          }
+        ),
         getHealthForecast(location.latitude, location.longitude).catch(
           (error) => {
             setForecastError(
@@ -2978,7 +3027,10 @@ export default function Home() {
         ...current,
         airQuality: airData.list?.[0]?.main.aqi !== undefined,
         pollutants: Boolean(airData.list?.[0]?.components),
-        heatUv: true,
+        heatUv:
+          environment.apparentTemperature !== null ||
+          environment.apparentTemperatureMax !== null ||
+          environment.uvIndexMax !== null,
         weatherAlerts: true,
       }));
       setSearched(true);
