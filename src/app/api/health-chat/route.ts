@@ -151,7 +151,7 @@ export async function POST(request: Request) {
     .join("\n");
 
   const prompt = `
-You are the YourLocalHealth public health assistant.
+You are the MyLocalHealth public health assistant.
 
 Use only the provided dashboard context, local news list, and general public-health knowledge. Be clear about uncertainty. Do not diagnose, prescribe, or replace a clinician. If symptoms sound urgent, recommend contacting emergency services or a medical professional. If the user asks about personal symptoms, give general education and practical next steps, not a diagnosis.
 

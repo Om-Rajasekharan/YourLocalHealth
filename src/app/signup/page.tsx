@@ -122,7 +122,7 @@ export default function SignUpPage() {
               Create Account
             </p>
             <h1 className="mt-3 text-4xl font-bold text-white">
-              Personalize YourLocalHealth
+              Personalize MyLocalHealth
             </h1>
             <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-300">
               Create your login and add the profile factors used to personalize
@@ -173,7 +173,7 @@ export default function SignUpPage() {
                 </label>
               </div>
               {!isSupabaseConfigured && (
-                <p className="mt-4 rounded-lg border border-violet-300/30 bg-violet-500/10 p-3 text-xs leading-5 text-violet-100">
+                <p className="mt-4 rounded-lg border border-amber-300/30 bg-amber-500/10 p-3 text-xs leading-5 text-amber-100">
                   Supabase is not configured yet.
                 </p>
               )}

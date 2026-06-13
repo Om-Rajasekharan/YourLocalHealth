@@ -232,7 +232,7 @@ export async function POST(request: Request) {
 
   const body = (await request.json()) as HealthPlanRequest;
   const prompt = `
-You are generating a concise, practical public-health planning brief for YourLocalHealth.
+You are generating a concise, practical public-health planning brief for MyLocalHealth.
 
 Use only the provided dashboard context plus general public-health knowledge. Do not diagnose, prescribe, or claim certainty. Do not invent missing data. If symptoms sound severe or urgent, recommend contacting emergency services or a medical professional.
 

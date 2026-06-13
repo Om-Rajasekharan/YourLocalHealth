@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { FormEvent, useEffect, useRef, useState } from "react";
 import type { User } from "@supabase/supabase-js";
 import {
@@ -171,8 +172,8 @@ type DashboardView =
 const dashboardViews: { id: DashboardView; label: string; description: string }[] = [
   {
     id: "overview",
-    label: "Overview",
-    description: "Brief, risk score, and map",
+    label: "Today",
+    description: "Daily health forecast and next steps",
   },
   {
     id: "plan",
@@ -186,13 +187,13 @@ const dashboardViews: { id: DashboardView; label: string; description: string }[
   },
   {
     id: "timeline",
-    label: "Timeline",
+    label: "Planner",
     description: "Daily exposure estimate",
   },
   {
     id: "equity",
-    label: "Equity",
-    description: "Social vulnerability overlay",
+    label: "Local Context",
+    description: "Equity and chronic disease context",
   },
   {
     id: "checkin",
@@ -201,7 +202,7 @@ const dashboardViews: { id: DashboardView; label: string; description: string }[
   },
   {
     id: "signals",
-    label: "Health Signals",
+    label: "Signals",
     description: "Air, heat, UV, flu, COVID, and alerts",
   },
   {
@@ -221,16 +222,45 @@ const dashboardViews: { id: DashboardView; label: string; description: string }[
   },
 ];
 
+const dashboardGroups: {
+  label: string;
+  description: string;
+  views: DashboardView[];
+}[] = [
+  {
+    label: "Today",
+    description: "Start here for the daily snapshot",
+    views: ["overview", "forecast", "signals"],
+  },
+  {
+    label: "Plan",
+    description: "Turn local risk into next steps",
+    views: ["plan", "timeline", "assistant", "checkin"],
+  },
+  {
+    label: "Explore",
+    description: "Understand the data and local context",
+    views: ["equity", "news", "model"],
+  },
+];
+
+function getDashboardView(viewId: DashboardView) {
+  return (
+    dashboardViews.find((view) => view.id === viewId) ??
+    dashboardViews[0]
+  );
+}
+
 function riskBadgeClass(risk: string) {
   switch (risk) {
     case "Low":
     case "Very Low":
-      return "border-cyan-400/40 bg-cyan-400/10 text-cyan-200";
+      return "border-emerald-300/40 bg-emerald-400/10 text-teal-100";
     case "Moderate":
-      return "border-violet-300/40 bg-violet-400/10 text-violet-200";
+      return "border-amber-300/40 bg-amber-400/10 text-amber-100";
     case "High":
     case "Very High":
-      return "border-fuchsia-300/40 bg-fuchsia-500/10 text-fuchsia-200";
+      return "border-rose-300/40 bg-rose-500/10 text-rose-100";
     default:
       return "border-white/15 bg-white/10 text-slate-200";
   }
@@ -243,38 +273,77 @@ function DashboardNav({
   activeView: DashboardView;
   onChange: (view: DashboardView) => void;
 }) {
-  const activeDashboardView =
-    dashboardViews.find((view) => view.id === activeView) ??
-    dashboardViews[0];
+  const activeDashboardView = getDashboardView(activeView);
+  const activeGroup =
+    dashboardGroups.find((group) => group.views.includes(activeView)) ??
+    dashboardGroups[0];
 
   return (
-    <div className="mb-5 rounded-lg border border-white/10 bg-[#101934]/90 p-2 shadow-xl shadow-black/25">
+    <div className="quiet-surface relative z-20 mb-5 rounded-lg p-2">
       <nav
         aria-label="Dashboard sections"
-        className="flex gap-2 overflow-x-auto pb-1"
+        className="grid gap-2 md:grid-cols-3"
       >
-        {dashboardViews.map((view) => {
-          const isActive = activeView === view.id;
+        {dashboardGroups.map((group) => {
+          const isActiveGroup = group.views.includes(activeView);
 
           return (
-            <button
-              key={view.id}
-              type="button"
-              onClick={() => onChange(view.id)}
-              className={`h-10 shrink-0 rounded-lg border px-4 text-sm font-semibold transition ${
-                isActive
-                  ? "border-cyan-300/60 bg-cyan-400/15 text-white"
-                  : "border-transparent bg-transparent text-slate-300 hover:border-white/10 hover:bg-white/5"
-              }`}
-            >
-              {view.label}
-            </button>
+            <div className="group relative" key={group.label}>
+              <button
+                type="button"
+                onClick={() => onChange(group.views[0])}
+                className={`flex min-h-14 w-full items-center justify-between gap-3 rounded-lg border px-4 py-3 text-left transition ${
+                  isActiveGroup
+                    ? "border-emerald-300/40 bg-emerald-400/10 text-white"
+                    : "border-transparent bg-transparent text-slate-300 hover:border-white/10 hover:bg-white/5"
+                }`}
+              >
+                <span>
+                  <span className="block text-sm font-semibold">
+                    {group.label}
+                  </span>
+                  <span className="mt-1 block text-xs leading-4 text-slate-400">
+                    {isActiveGroup
+                      ? activeDashboardView.label
+                      : group.description}
+                  </span>
+                </span>
+                <span className="text-sm text-teal-100">v</span>
+              </button>
+
+              <div className="invisible absolute left-0 right-0 top-[calc(100%+0.5rem)] z-30 rounded-lg border border-white/10 bg-[#0b1715] p-2 opacity-0 shadow-2xl shadow-black/35 transition group-hover:visible group-hover:opacity-100 group-focus-within:visible group-focus-within:opacity-100">
+                {group.views.map((viewId) => {
+                  const view = getDashboardView(viewId);
+                  const isActive = activeView === viewId;
+
+                  return (
+                    <button
+                      key={view.id}
+                      type="button"
+                      onClick={() => onChange(view.id)}
+                      className={`w-full rounded-lg px-3 py-3 text-left transition ${
+                        isActive
+                          ? "bg-emerald-400/10 text-white"
+                          : "text-slate-300 hover:bg-white/5 hover:text-white"
+                      }`}
+                    >
+                      <span className="block text-sm font-semibold">
+                        {view.label}
+                      </span>
+                      <span className="mt-1 block text-xs leading-5 text-slate-400">
+                        {view.description}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
           );
         })}
       </nav>
       <div className="border-t border-white/10 px-2 py-3">
-        <p className="text-xs font-semibold uppercase tracking-wide text-cyan-300">
-          {activeDashboardView.label}
+        <p className="eyebrow-text">
+          {activeGroup.label} / {activeDashboardView.label}
         </p>
         <p className="mt-1 text-sm leading-6 text-slate-300">
           {activeDashboardView.description}
@@ -296,6 +365,252 @@ function RiskBadge({ value }: { value: string }) {
   );
 }
 
+function AnimatedHealthMapGraphic() {
+  const markers = [
+    { x: 132, y: 106, label: "AQI 74", tone: "air", delay: "0s" },
+    { x: 333, y: 72, label: "Flu rising", tone: "resp", delay: "0.8s" },
+    { x: 506, y: 143, label: "Heat 91°F", tone: "heat", delay: "1.5s" },
+  ];
+
+  return (
+    <div
+      aria-hidden="true"
+      className="health-map-visual quiet-surface mx-auto mt-10 w-full max-w-4xl overflow-hidden rounded-lg"
+    >
+      <svg
+        className="h-64 w-full"
+        viewBox="0 0 760 280"
+        role="img"
+        focusable="false"
+      >
+        <defs>
+          <linearGradient id="map-water" x1="0" x2="1" y1="0" y2="1">
+            <stop offset="0%" stopColor="#12332d" />
+            <stop offset="100%" stopColor="#0b1412" />
+          </linearGradient>
+          <linearGradient id="map-route" x1="0" x2="1" y1="0" y2="0">
+            <stop offset="0%" stopColor="#99f6e4" />
+            <stop offset="100%" stopColor="#fcd34d" />
+          </linearGradient>
+          <filter id="map-soft-glow">
+            <feGaussianBlur stdDeviation="4" result="blur" />
+            <feMerge>
+              <feMergeNode in="blur" />
+              <feMergeNode in="SourceGraphic" />
+            </feMerge>
+          </filter>
+        </defs>
+
+        <rect width="760" height="280" fill="url(#map-water)" />
+        <path
+          d="M0 80 C105 44 151 78 221 59 C299 38 350 16 430 42 C512 69 574 42 760 74 L760 0 L0 0 Z"
+          className="health-map-land"
+        />
+        <path
+          d="M0 236 C113 218 186 186 268 204 C367 225 428 176 514 196 C601 216 664 196 760 171 L760 280 L0 280 Z"
+          className="health-map-land health-map-land-alt"
+        />
+        <path
+          d="M42 171 L183 114 L314 147 L462 92 L676 138"
+          className="health-map-road health-map-road-major"
+        />
+        <path
+          d="M96 62 L185 114 L226 226"
+          className="health-map-road"
+        />
+        <path
+          d="M314 147 L342 67 L514 41"
+          className="health-map-road"
+        />
+        <path
+          d="M462 92 L548 202 L695 222"
+          className="health-map-road"
+        />
+        <path
+          d="M55 202 L188 171 L308 219 L455 180 L660 202"
+          className="health-map-road health-map-road-minor"
+        />
+        <path
+          d="M42 171 L183 114 L314 147 L462 92 L676 138"
+          className="health-map-flow"
+        />
+        <path
+          d="M96 62 L185 114 L226 226"
+          className="health-map-flow health-map-flow-alt"
+        />
+
+        <g className="health-map-zones">
+          <circle cx="126" cy="112" r="58" className="health-zone-air" />
+          <circle cx="333" cy="72" r="54" className="health-zone-resp" />
+          <circle cx="506" cy="143" r="66" className="health-zone-heat" />
+        </g>
+
+        <g filter="url(#map-soft-glow)">
+          {markers.map((marker) => (
+            <g key={marker.label}>
+              <circle
+                cx={marker.x}
+                cy={marker.y}
+                r="18"
+                className={`health-signal-ring health-signal-${marker.tone}`}
+                style={{ animationDelay: marker.delay }}
+              />
+              <circle
+                cx={marker.x}
+                cy={marker.y}
+                r="6"
+                className={`health-signal-dot health-signal-${marker.tone}`}
+              />
+              <text
+                x={marker.x + 16}
+                y={marker.y - 10}
+                className="health-map-label"
+              >
+                {marker.label}
+              </text>
+            </g>
+          ))}
+        </g>
+
+        <text x="92" y="254" className="health-map-place">
+          Downtown
+        </text>
+        <text x="286" y="242" className="health-map-place">
+          School
+        </text>
+        <text x="482" y="236" className="health-map-place">
+          Clinic
+        </text>
+        <text x="584" y="67" className="health-map-place">
+          Industrial corridor
+        </text>
+      </svg>
+    </div>
+  );
+}
+
+function LiveSignalTape() {
+  const signals = [
+    "AQI",
+    "Heat index",
+    "COVID wastewater",
+    "Flu activity",
+    "Pollen",
+    "UV",
+    "Local alerts",
+    "Equity context",
+  ];
+  const repeatedSignals = [...signals, ...signals];
+
+  return (
+    <div className="signal-tape mt-6 overflow-hidden border-y border-white/10 py-3 text-left">
+      <div className="signal-tape-track flex w-max gap-3">
+        {repeatedSignals.map((signal, index) => (
+          <span
+            className="rounded-full border border-white/10 bg-white/[0.04] px-3 py-1 text-xs font-semibold text-slate-300"
+            key={`${signal}-${index}`}
+          >
+            {signal}
+          </span>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function formatForecastMetric(value: number | null, suffix: string) {
+  if (value === null) return null;
+  return `${Math.round(value)}${suffix}`;
+}
+
+function buildForecastHourExplanation(hour: HealthForecastData["hours"][number]) {
+  const drivers =
+    hour.drivers.length > 0
+      ? hour.drivers.slice(0, 2).join(", ")
+      : "No major elevated driver";
+  const metrics = [
+    formatForecastMetric(hour.usAqi, " AQI"),
+    formatForecastMetric(hour.apparentTemperature, "°F feels like"),
+    formatForecastMetric(hour.uvIndex, " UV"),
+    hour.pollenRisk === "Unknown" ? null : `${hour.pollenRisk} pollen`,
+  ].filter(Boolean);
+
+  return {
+    drivers,
+    metrics: metrics.length > 0 ? metrics.join(" · ") : "Limited forecast values",
+  };
+}
+
+function ForecastPulseStrip({
+  forecastData,
+}: {
+  forecastData: HealthForecastData | null;
+}) {
+  const hours = forecastData?.hours.slice(0, 12) ?? [];
+
+  if (hours.length === 0) {
+    return null;
+  }
+
+  return (
+    <section className="quiet-surface mt-5 rounded-lg p-5">
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+          <p className="eyebrow-text">Next 12 hours</p>
+          <h3 className="display-heading mt-1 text-2xl leading-tight text-white">
+            Forecast pulse
+          </h3>
+        </div>
+        <p className="text-sm text-slate-400">
+          Hover bars to read the estimated exposure score.
+        </p>
+      </div>
+
+      <div className="mt-5 grid grid-cols-12 items-end gap-2">
+        {hours.map((hour) => {
+          const height = Math.max(18, hour.score);
+          const explanation = buildForecastHourExplanation(hour);
+          const color =
+            hour.risk === "High"
+              ? "bg-rose-300"
+              : hour.risk === "Moderate"
+              ? "bg-amber-300"
+              : "bg-emerald-300";
+
+          return (
+            <div
+              className="group relative flex min-w-0 flex-col items-center gap-2"
+              key={hour.time}
+              tabIndex={0}
+            >
+              <div className="relative flex h-28 w-full items-end rounded-full bg-white/[0.035] px-1">
+                <div
+                  className={`forecast-pulse-bar w-full rounded-full ${color} opacity-80`}
+                  style={{ height: `${height}%` }}
+                />
+              </div>
+              <div className="pointer-events-none absolute bottom-full left-1/2 z-20 mb-3 hidden w-64 -translate-x-1/2 rounded-lg border border-white/10 bg-[#0a1513] p-3 text-left text-xs shadow-2xl shadow-black/35 group-hover:block group-focus:block">
+                <p className="font-semibold text-white">
+                  {hour.displayTime} · {hour.score}/100
+                </p>
+                <p className="mt-1 leading-5 text-slate-300">
+                  {explanation.drivers}
+                </p>
+                <p className="mt-2 leading-5 text-slate-400">
+                  {explanation.metrics}
+                </p>
+              </div>
+              <p className="w-full truncate text-center text-[0.68rem] text-slate-400">
+                {hour.displayTime.replace(/^[A-Za-z]+,?\s/, "")}
+              </p>
+            </div>
+          );
+        })}
+      </div>
+    </section>
+  );
+}
+
 function SignalCard({
   title,
   value,
@@ -312,13 +627,13 @@ function SignalCard({
   return (
     <Link
       href={href}
-      className="group block rounded-lg outline-none transition focus:ring-4 focus:ring-cyan-400/20"
+      className="group block rounded-lg outline-none transition focus:ring-4 focus:ring-teal-300/20"
     >
-    <article className="rounded-lg border border-white/10 bg-[#111a33]/85 p-4 shadow-lg shadow-black/20 transition group-hover:-translate-y-0.5 group-hover:border-cyan-300/50 group-hover:bg-[#16213f] group-hover:shadow-cyan-950/40">
+    <article className="quiet-surface rounded-lg p-4 transition group-hover:-translate-y-0.5 group-hover:border-emerald-300/35 group-hover:bg-white/[0.065]">
       <div className="flex min-h-24 flex-col justify-between gap-3">
         <div>
           <div className="flex items-start justify-between gap-3">
-            <h3 className="text-sm font-semibold uppercase tracking-wide text-slate-400 transition group-hover:text-cyan-200">
+            <h3 className="text-sm font-semibold text-slate-300 transition group-hover:text-emerald-100">
               {title}
             </h3>
             <RiskBadge value={value} />
@@ -329,7 +644,7 @@ function SignalCard({
         </div>
         <div className="flex items-center justify-between gap-3 border-t border-white/10 pt-3">
           <p className="truncate text-xs text-slate-400">{source}</p>
-          <p className="shrink-0 text-xs font-semibold text-cyan-200">
+          <p className="shrink-0 text-xs font-semibold text-teal-100">
             Details
           </p>
         </div>
@@ -485,92 +800,6 @@ function buildHealthBrief({
   };
 }
 
-function TodayHealthBrief({
-  healthRisk,
-  headline,
-  drivers,
-  focusItems,
-  profileNote,
-}: {
-  healthRisk: string;
-  headline: string;
-  drivers: { label: string; value: string; note: string }[];
-  focusItems: string[];
-  profileNote: string;
-}) {
-  return (
-    <section className="mb-5 rounded-lg border border-cyan-300/20 bg-[#101934]/90 p-5 shadow-xl shadow-black/25">
-      <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-        <div>
-          <p className="text-sm font-semibold uppercase tracking-wide text-cyan-300">
-            Today&apos;s Health Brief
-          </p>
-          <h3 className="mt-2 text-2xl font-semibold text-white">
-            {headline}
-          </h3>
-          <p className="mt-3 max-w-3xl text-sm leading-6 text-slate-300">
-            This brief summarizes the strongest signals from today&apos;s local
-            air, heat, UV, alert, respiratory illness, wastewater, and profile
-            context.
-          </p>
-        </div>
-        <RiskBadge value={healthRisk} />
-      </div>
-
-      <div className="mt-5 grid gap-4 lg:grid-cols-[1fr_1fr]">
-        <div className="rounded-lg border border-white/10 bg-white/5 p-4">
-          <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">
-            Main drivers
-          </p>
-          {drivers.length > 0 ? (
-            <div className="mt-3 grid gap-3">
-              {drivers.map((driver) => (
-                <div
-                  className="flex flex-col gap-2 rounded-lg border border-white/10 bg-black/10 p-3 sm:flex-row sm:items-center sm:justify-between"
-                  key={driver.label}
-                >
-                  <div>
-                    <p className="text-sm font-semibold text-white">
-                      {driver.label}
-                    </p>
-                    <p className="mt-1 text-xs leading-5 text-slate-400">
-                      {driver.note}
-                    </p>
-                  </div>
-                  <RiskBadge value={driver.value} />
-                </div>
-              ))}
-            </div>
-          ) : (
-            <p className="mt-3 text-sm leading-6 text-slate-300">
-              No moderate or high drivers were detected from the current data.
-            </p>
-          )}
-        </div>
-
-        <div className="rounded-lg border border-white/10 bg-white/5 p-4">
-          <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">
-            Suggested focus
-          </p>
-          <ul className="mt-3 grid gap-3">
-            {focusItems.map((item) => (
-              <li
-                className="rounded-lg border border-white/10 bg-black/10 p-3 text-sm leading-6 text-slate-200"
-                key={item}
-              >
-                {item}
-              </li>
-            ))}
-          </ul>
-          <p className="mt-4 rounded-lg border border-cyan-300/20 bg-cyan-400/10 p-3 text-xs leading-5 text-cyan-100">
-            {profileNote}
-          </p>
-        </div>
-      </div>
-    </section>
-  );
-}
-
 function RiskTransparencyPanel({
   score,
   items,
@@ -588,7 +817,7 @@ function RiskTransparencyPanel({
 
   return (
     <section className="mt-5">
-      <article className="rounded-lg border border-white/10 bg-[#101934]/90 p-5 shadow-xl shadow-black/25">
+      <article className="rounded-lg border border-white/10 bg-[#0f211d]/90 p-5 shadow-xl shadow-black/25">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
           <div>
             <p className="text-sm font-semibold uppercase tracking-wide text-slate-400">
@@ -606,30 +835,30 @@ function RiskTransparencyPanel({
         </div>
         <div className="mt-5 h-3 overflow-hidden rounded-full bg-white/10">
           <div
-            className="h-full rounded-full bg-gradient-to-r from-cyan-300 via-violet-400 to-fuchsia-400"
+            className="h-full rounded-full bg-gradient-to-r from-emerald-300 via-amber-300 to-rose-400"
             style={{ width: `${score}%` }}
           />
         </div>
         {topDrivers.length > 0 && (
-          <div className="mt-5 rounded-lg border border-cyan-300/20 bg-cyan-400/10 p-4">
-            <p className="text-xs font-semibold uppercase tracking-wide text-cyan-100">
+          <div className="mt-5 rounded-lg border border-emerald-300/20 bg-emerald-400/10 p-4">
+            <p className="text-xs font-semibold uppercase tracking-wide text-emerald-100">
               Top drivers
             </p>
             <div className="mt-3 grid gap-3 md:grid-cols-2">
               {topDrivers.map((driver) => (
                 <div
-                  className="rounded-lg border border-cyan-200/10 bg-black/10 p-3"
+                  className="rounded-lg border border-emerald-200/10 bg-black/10 p-3"
                   key={driver.label}
                 >
                   <div className="flex items-center justify-between gap-3">
                     <p className="text-sm font-semibold text-white">
                       {driver.label}
                     </p>
-                    <p className="text-sm font-semibold text-cyan-100">
+                    <p className="text-sm font-semibold text-emerald-100">
                       +{driver.points}
                     </p>
                   </div>
-                  <p className="mt-1 text-xs leading-5 text-cyan-100/80">
+                  <p className="mt-1 text-xs leading-5 text-emerald-100/80">
                     {driver.detail} · {driver.category}
                   </p>
                 </div>
@@ -648,13 +877,13 @@ function RiskTransparencyPanel({
                 <p className="text-sm font-semibold text-white">
                   {category.label}
                 </p>
-                <p className="text-sm font-semibold text-cyan-100">
+                <p className="text-sm font-semibold text-emerald-100">
                   {category.score}
                 </p>
               </div>
               <div className="mt-3 h-2 overflow-hidden rounded-full bg-white/10">
                 <div
-                  className="h-full rounded-full bg-cyan-300"
+                  className="h-full rounded-full bg-emerald-300"
                   style={{ width: `${category.score}%` }}
                 />
               </div>
@@ -678,7 +907,7 @@ function RiskTransparencyPanel({
             <button
               type="button"
               onClick={() => setShowWeights((current) => !current)}
-              className="h-10 rounded-lg border border-white/15 px-4 text-sm font-semibold text-white transition hover:border-cyan-300/50 hover:bg-white/10"
+              className="h-10 rounded-lg border border-white/15 px-4 text-sm font-semibold text-white transition hover:border-emerald-300/50 hover:bg-white/10"
             >
               {showWeights ? "Hide weights" : "Show weights"}
             </button>
@@ -703,7 +932,7 @@ function RiskTransparencyPanel({
                       {item.maxPoints} points
                     </p>
                   </div>
-                  <p className="text-sm font-semibold text-cyan-100">
+                  <p className="text-sm font-semibold text-emerald-100">
                     +{item.points}
                   </p>
                 </div>
@@ -732,7 +961,7 @@ function DataConfidencePanel({
   confidence: RiskModelConfidence;
 }) {
   return (
-    <section className="mt-5 rounded-lg border border-white/10 bg-[#101934]/90 p-5 shadow-xl shadow-black/25">
+    <section className="mt-5 rounded-lg border border-white/10 bg-[#0f211d]/90 p-5 shadow-xl shadow-black/25">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <p className="text-sm font-semibold uppercase tracking-wide text-slate-400">
@@ -763,8 +992,8 @@ function DataConfidencePanel({
             <span
               className={`rounded-full border px-2 py-1 text-xs font-semibold ${
                 source.available
-                  ? "border-cyan-300/30 bg-cyan-400/10 text-cyan-100"
-                  : "border-fuchsia-300/30 bg-fuchsia-500/10 text-fuchsia-100"
+                  ? "border-emerald-300/30 bg-emerald-400/10 text-emerald-100"
+                  : "border-rose-300/30 bg-rose-500/10 text-rose-100"
               }`}
             >
               {source.available ? "Loaded" : "Missing"}
@@ -773,11 +1002,11 @@ function DataConfidencePanel({
         ))}
       </div>
       {confidence.caveats.length > 0 && (
-        <div className="mt-4 rounded-lg border border-violet-300/30 bg-violet-500/10 p-3">
-          <p className="text-xs font-semibold uppercase tracking-wide text-violet-100">
+        <div className="mt-4 rounded-lg border border-amber-300/30 bg-amber-500/10 p-3">
+          <p className="text-xs font-semibold uppercase tracking-wide text-amber-100">
             Caveats
           </p>
-          <ul className="mt-2 grid gap-1 text-xs leading-5 text-violet-100">
+          <ul className="mt-2 grid gap-1 text-xs leading-5 text-amber-100">
             {confidence.caveats.map((caveat) => (
               <li key={caveat}>{caveat}</li>
             ))}
@@ -841,13 +1070,13 @@ function ModelDataSourcesPanel({
     {
       label: "User check-ins",
       status: "Optional",
-      source: "YourLocalHealth symptom check-ins",
+      source: "MyLocalHealth symptom check-ins",
       use: "Outcome labels that can train future symptom-risk models when users opt in.",
     },
   ];
 
   return (
-    <section className="mt-5 rounded-lg border border-white/10 bg-[#101934]/90 p-5 shadow-xl shadow-black/25">
+    <section className="mt-5 rounded-lg border border-white/10 bg-[#0f211d]/90 p-5 shadow-xl shadow-black/25">
       <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <p className="text-sm font-semibold uppercase tracking-wide text-slate-400">
@@ -882,10 +1111,10 @@ function ModelDataSourcesPanel({
               <span
                 className={`rounded-full border px-2 py-1 text-xs font-semibold ${
                   source.status === "Loaded" || source.status === "Live"
-                    ? "border-cyan-300/30 bg-cyan-400/10 text-cyan-100"
+                    ? "border-emerald-300/30 bg-emerald-400/10 text-emerald-100"
                     : source.status === "Optional"
-                    ? "border-violet-300/30 bg-violet-400/10 text-violet-100"
-                    : "border-fuchsia-300/30 bg-fuchsia-500/10 text-fuchsia-100"
+                    ? "border-amber-300/30 bg-amber-300/10 text-amber-100"
+                    : "border-rose-300/30 bg-rose-500/10 text-rose-100"
                 }`}
               >
                 {source.status}
@@ -903,15 +1132,15 @@ function ModelDataSourcesPanel({
 
 function equityBadgeClass(level: string) {
   if (level === "High") {
-    return "border-fuchsia-300/40 bg-fuchsia-500/15 text-fuchsia-100";
+    return "border-rose-300/40 bg-rose-500/15 text-rose-100";
   }
 
   if (level === "Moderate") {
-    return "border-violet-300/40 bg-violet-400/15 text-violet-100";
+    return "border-amber-300/40 bg-amber-300/15 text-amber-100";
   }
 
   if (level === "Low") {
-    return "border-cyan-300/40 bg-cyan-400/15 text-cyan-100";
+    return "border-emerald-300/40 bg-emerald-400/15 text-emerald-100";
   }
 
   return "border-white/15 bg-white/10 text-slate-200";
@@ -949,10 +1178,10 @@ function HealthEquityPanel({
     ) ?? [];
 
   return (
-    <section className="rounded-lg border border-white/10 bg-[#101934]/90 p-5 shadow-xl shadow-black/25">
+    <section className="rounded-lg border border-white/10 bg-[#0f211d]/90 p-5 shadow-xl shadow-black/25">
       <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
         <div>
-          <p className="text-sm font-semibold uppercase tracking-wide text-cyan-300">
+          <p className="text-sm font-semibold uppercase tracking-wide text-teal-200">
             Health Equity Overlay
           </p>
           <h3 className="mt-2 text-2xl font-semibold text-white">
@@ -966,8 +1195,8 @@ function HealthEquityPanel({
           </p>
         </div>
         {equityData && (
-          <div className="rounded-lg border border-cyan-300/20 bg-cyan-400/10 p-4">
-            <p className="text-xs font-semibold uppercase tracking-wide text-cyan-100">
+          <div className="rounded-lg border border-emerald-300/20 bg-emerald-400/10 p-4">
+            <p className="text-xs font-semibold uppercase tracking-wide text-emerald-100">
               Equity vulnerability
             </p>
             <p className="mt-2 text-3xl font-bold text-white">
@@ -985,7 +1214,7 @@ function HealthEquityPanel({
       </div>
 
       {equityError && (
-        <p className="mt-5 rounded-lg border border-fuchsia-300/30 bg-fuchsia-500/10 p-4 text-sm text-fuchsia-100">
+        <p className="mt-5 rounded-lg border border-rose-300/30 bg-rose-500/10 p-4 text-sm text-rose-100">
           {equityError}
         </p>
       )}
@@ -1015,8 +1244,8 @@ function HealthEquityPanel({
 
           {equityData.cdcPlaces && (
             <div className="mt-5 grid gap-4 lg:grid-cols-3">
-              <article className="rounded-lg border border-cyan-300/20 bg-cyan-400/10 p-4">
-                <p className="text-xs font-semibold uppercase tracking-wide text-cyan-100">
+              <article className="rounded-lg border border-emerald-300/20 bg-emerald-400/10 p-4">
+                <p className="text-xs font-semibold uppercase tracking-wide text-emerald-100">
                   Chronic burden
                 </p>
                 <p className="mt-3 text-3xl font-bold text-white">
@@ -1024,7 +1253,7 @@ function HealthEquityPanel({
                     ? "n/a"
                     : `${equityData.cdcPlaces.chronicBurdenScore}/100`}
                 </p>
-                <p className="mt-2 text-xs leading-5 text-cyan-50/80">
+                <p className="mt-2 text-xs leading-5 text-emerald-50/80">
                   Composite from CDC PLACES asthma, COPD, smoking, diabetes,
                   obesity, physical health, and activity estimates.
                 </p>
@@ -1138,11 +1367,11 @@ function HealthEquityPanel({
             </article>
           </div>
 
-          <div className="mt-5 rounded-lg border border-violet-300/30 bg-violet-500/10 p-4">
-            <p className="text-xs font-semibold uppercase tracking-wide text-violet-100">
+          <div className="mt-5 rounded-lg border border-amber-300/30 bg-amber-500/10 p-4">
+            <p className="text-xs font-semibold uppercase tracking-wide text-amber-100">
               Next equity layers
             </p>
-            <div className="mt-3 grid gap-2 text-sm leading-6 text-violet-100 md:grid-cols-2">
+            <div className="mt-3 grid gap-2 text-sm leading-6 text-amber-100 md:grid-cols-2">
               <p>EPA EJScreen PM2.5 and environmental justice burden</p>
               <p>Tree canopy and heat island vulnerability</p>
               <p>Nearby clinics, hospitals, and transit access</p>
@@ -1184,10 +1413,10 @@ function ForecastPanel({
   const [showHourlyDetails, setShowHourlyDetails] = useState(false);
 
   return (
-    <section className="rounded-lg border border-white/10 bg-[#101934]/90 p-5 shadow-xl shadow-black/25">
+    <section className="rounded-lg border border-white/10 bg-[#0f211d]/90 p-5 shadow-xl shadow-black/25">
       <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
         <div>
-          <p className="text-sm font-semibold uppercase tracking-wide text-cyan-300">
+          <p className="text-sm font-semibold uppercase tracking-wide text-teal-200">
             Health Risk Forecast
           </p>
           <h3 className="mt-2 text-2xl font-semibold text-white">
@@ -1199,8 +1428,8 @@ function ForecastPanel({
           </p>
         </div>
         {forecastData && (
-          <div className="rounded-lg border border-cyan-300/20 bg-cyan-400/10 p-4">
-            <p className="text-xs font-semibold uppercase tracking-wide text-cyan-100">
+          <div className="rounded-lg border border-emerald-300/20 bg-emerald-400/10 p-4">
+            <p className="text-xs font-semibold uppercase tracking-wide text-emerald-100">
               Peak forecast risk
             </p>
             <p className="mt-2 text-3xl font-bold text-white">
@@ -1212,7 +1441,7 @@ function ForecastPanel({
       </div>
 
       {forecastError && (
-        <p className="mt-5 rounded-lg border border-fuchsia-300/30 bg-fuchsia-500/10 p-4 text-sm text-fuchsia-100">
+        <p className="mt-5 rounded-lg border border-rose-300/30 bg-rose-500/10 p-4 text-sm text-rose-100">
           {forecastError}
         </p>
       )}
@@ -1322,7 +1551,7 @@ function ForecastPanel({
                           }
                         >
                           <div
-                            className="w-full rounded bg-cyan-300/80"
+                            className="w-full rounded bg-emerald-300/80"
                             style={{ height: `${normalized}%` }}
                           />
                         </div>
@@ -1353,29 +1582,44 @@ function ForecastPanel({
               </p>
             </div>
             <div className="mt-5 grid grid-cols-12 gap-2 lg:[grid-template-columns:repeat(24,minmax(0,1fr))]">
-              {forecastData.hours.map((hour) => (
-                <div
-                  className="group flex min-h-36 flex-col justify-end gap-2"
-                  key={hour.time}
-                  title={`${hour.displayTime}: ${hour.score}/100`}
-                >
-                  <div className="flex h-24 items-end rounded bg-white/5 p-1">
-                    <div
-                      className={`w-full rounded ${
-                        hour.score >= 67
-                          ? "bg-fuchsia-400"
-                          : hour.score >= 34
-                          ? "bg-violet-400"
-                          : "bg-cyan-300"
-                      }`}
-                      style={{ height: `${Math.max(8, hour.score)}%` }}
-                    />
+              {forecastData.hours.map((hour) => {
+                const explanation = buildForecastHourExplanation(hour);
+
+                return (
+                  <div
+                    className="group relative flex min-h-36 flex-col justify-end gap-2 outline-none"
+                    key={hour.time}
+                    tabIndex={0}
+                  >
+                    <div className="flex h-24 items-end rounded bg-white/5 p-1 transition group-hover:bg-white/10 group-focus:bg-white/10">
+                      <div
+                        className={`forecast-pulse-bar w-full rounded ${
+                          hour.score >= 67
+                            ? "bg-rose-400"
+                            : hour.score >= 34
+                            ? "bg-amber-300"
+                            : "bg-emerald-300"
+                        }`}
+                        style={{ height: `${Math.max(8, hour.score)}%` }}
+                      />
+                    </div>
+                    <div className="pointer-events-none absolute bottom-full left-1/2 z-20 mb-3 hidden w-72 -translate-x-1/2 rounded-lg border border-white/10 bg-[#0a1513] p-3 text-left text-xs shadow-2xl shadow-black/35 group-hover:block group-focus:block">
+                      <p className="font-semibold text-white">
+                        {hour.displayTime} · {hour.score}/100
+                      </p>
+                      <p className="mt-1 leading-5 text-slate-300">
+                        {explanation.drivers}
+                      </p>
+                      <p className="mt-2 leading-5 text-slate-400">
+                        {explanation.metrics}
+                      </p>
+                    </div>
+                    <p className="truncate text-[10px] leading-4 text-slate-500 group-hover:text-slate-200 group-focus:text-slate-200">
+                      {hour.displayTime.replace(/^[A-Za-z]+,?\s?/, "")}
+                    </p>
                   </div>
-                  <p className="truncate text-[10px] leading-4 text-slate-500 group-hover:text-slate-200">
-                    {hour.displayTime.replace(/^[A-Za-z]+,?\s?/, "")}
-                  </p>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
 
@@ -1393,7 +1637,7 @@ function ForecastPanel({
               <button
                 type="button"
                 onClick={() => setShowHourlyDetails((current) => !current)}
-                className="h-10 rounded-lg border border-white/15 px-4 text-sm font-semibold text-white transition hover:border-cyan-300/50 hover:bg-white/10"
+                className="h-10 rounded-lg border border-white/15 px-4 text-sm font-semibold text-white transition hover:border-emerald-300/50 hover:bg-white/10"
               >
                 {showHourlyDetails ? "Hide details" : "Show details"}
               </button>
@@ -1460,14 +1704,14 @@ function exposureLabel(score: number) {
 
 function exposureClass(score: number) {
   if (score >= 67) {
-    return "border-fuchsia-300/40 bg-fuchsia-500/15 text-fuchsia-100";
+    return "border-rose-300/40 bg-rose-500/15 text-rose-100";
   }
 
   if (score >= 34) {
-    return "border-violet-300/40 bg-violet-400/15 text-violet-100";
+    return "border-amber-300/40 bg-amber-300/15 text-amber-100";
   }
 
-  return "border-cyan-300/40 bg-cyan-400/15 text-cyan-100";
+  return "border-emerald-300/40 bg-emerald-400/15 text-emerald-100";
 }
 
 function ExposureTimelinePanel({
@@ -1725,10 +1969,10 @@ function ExposureTimelinePanel({
   };
 
   return (
-    <section className="rounded-lg border border-white/10 bg-[#101934]/90 p-5 shadow-xl shadow-black/25">
+    <section className="rounded-lg border border-white/10 bg-[#0f211d]/90 p-5 shadow-xl shadow-black/25">
       <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
         <div>
-          <p className="text-sm font-semibold uppercase tracking-wide text-cyan-300">
+          <p className="text-sm font-semibold uppercase tracking-wide text-teal-200">
             Exposure Timeline
           </p>
           <h3 className="mt-2 text-2xl font-semibold text-white">
@@ -1740,8 +1984,8 @@ function ExposureTimelinePanel({
             setting, and activity intensity.
           </p>
         </div>
-        <div className="rounded-lg border border-cyan-300/20 bg-cyan-400/10 p-4">
-          <p className="text-xs font-semibold uppercase tracking-wide text-cyan-100">
+        <div className="rounded-lg border border-emerald-300/20 bg-emerald-400/10 p-4">
+          <p className="text-xs font-semibold uppercase tracking-wide text-emerald-100">
             Estimated day score
           </p>
           <p className="mt-2 text-3xl font-bold text-white">
@@ -1792,7 +2036,7 @@ function ExposureTimelinePanel({
       </div>
 
       {timelineError && (
-        <p className="mt-5 rounded-lg border border-fuchsia-300/30 bg-fuchsia-500/10 p-4 text-sm text-fuchsia-100">
+        <p className="mt-5 rounded-lg border border-rose-300/30 bg-rose-500/10 p-4 text-sm text-rose-100">
           {timelineError}
         </p>
       )}
@@ -1811,7 +2055,7 @@ function ExposureTimelinePanel({
                   onChange={(event) =>
                     updateBlock(block.id, "label", event.target.value)
                   }
-                  className="h-11 rounded-lg border border-white/15 bg-white/10 px-3 text-sm font-normal normal-case tracking-normal text-white outline-none focus:border-cyan-300"
+                  className="h-11 rounded-lg border border-white/15 bg-white/10 px-3 text-sm font-normal normal-case tracking-normal text-white outline-none focus:border-emerald-300"
                 />
               </label>
               <label className="grid gap-2 text-xs font-semibold uppercase tracking-wide text-slate-400">
@@ -1822,7 +2066,7 @@ function ExposureTimelinePanel({
                   onChange={(event) =>
                     updateBlock(block.id, "zipCode", event.target.value)
                   }
-                  className="h-11 rounded-lg border border-white/15 bg-white/10 px-3 text-sm font-normal tracking-normal text-white outline-none focus:border-cyan-300"
+                  className="h-11 rounded-lg border border-white/15 bg-white/10 px-3 text-sm font-normal tracking-normal text-white outline-none focus:border-emerald-300"
                 />
               </label>
               <label className="grid gap-2 text-xs font-semibold uppercase tracking-wide text-slate-400">
@@ -1833,7 +2077,7 @@ function ExposureTimelinePanel({
                   onChange={(event) =>
                     updateBlock(block.id, "start", event.target.value)
                   }
-                  className="h-11 rounded-lg border border-white/15 bg-white/10 px-3 text-sm font-normal tracking-normal text-white outline-none focus:border-cyan-300"
+                  className="h-11 rounded-lg border border-white/15 bg-white/10 px-3 text-sm font-normal tracking-normal text-white outline-none focus:border-emerald-300"
                 />
               </label>
               <label className="grid gap-2 text-xs font-semibold uppercase tracking-wide text-slate-400">
@@ -1844,7 +2088,7 @@ function ExposureTimelinePanel({
                   onChange={(event) =>
                     updateBlock(block.id, "end", event.target.value)
                   }
-                  className="h-11 rounded-lg border border-white/15 bg-white/10 px-3 text-sm font-normal tracking-normal text-white outline-none focus:border-cyan-300"
+                  className="h-11 rounded-lg border border-white/15 bg-white/10 px-3 text-sm font-normal tracking-normal text-white outline-none focus:border-emerald-300"
                 />
               </label>
               <label className="grid gap-2 text-xs font-semibold uppercase tracking-wide text-slate-400">
@@ -1858,7 +2102,7 @@ function ExposureTimelinePanel({
                       event.target.value as TimelineSetting
                     )
                   }
-                  className="h-11 rounded-lg border border-white/15 bg-[#111a33] px-3 text-sm font-normal normal-case tracking-normal text-white outline-none focus:border-cyan-300"
+                  className="h-11 rounded-lg border border-white/15 bg-[#12322c] px-3 text-sm font-normal normal-case tracking-normal text-white outline-none focus:border-emerald-300"
                 >
                   <option>Indoors</option>
                   <option>Outdoors</option>
@@ -1875,7 +2119,7 @@ function ExposureTimelinePanel({
                       event.target.value as TimelineIntensity
                     )
                   }
-                  className="h-11 rounded-lg border border-white/15 bg-[#111a33] px-3 text-sm font-normal normal-case tracking-normal text-white outline-none focus:border-cyan-300"
+                  className="h-11 rounded-lg border border-white/15 bg-[#12322c] px-3 text-sm font-normal normal-case tracking-normal text-white outline-none focus:border-emerald-300"
                 >
                   <option>Resting</option>
                   <option>Light</option>
@@ -1887,14 +2131,14 @@ function ExposureTimelinePanel({
                 type="button"
                 onClick={() => loadBlockZip(block)}
                 disabled={loadingBlockId === block.id}
-                className="h-11 rounded-lg bg-cyan-500 px-3 text-sm font-semibold text-slate-950 transition hover:bg-cyan-300 disabled:cursor-not-allowed disabled:bg-slate-700 disabled:text-slate-300"
+                className="h-11 rounded-lg bg-teal-500 px-3 text-sm font-semibold text-white transition hover:bg-teal-400 disabled:cursor-not-allowed disabled:bg-slate-700 disabled:text-slate-300"
               >
                 {loadingBlockId === block.id ? "Loading" : "Load ZIP"}
               </button>
               <button
                 type="button"
                 onClick={() => removeBlock(block.id)}
-                className="h-11 rounded-lg border border-white/15 px-3 text-sm font-semibold text-slate-200 transition hover:border-fuchsia-300/50 hover:bg-fuchsia-500/10"
+                className="h-11 rounded-lg border border-white/15 px-3 text-sm font-semibold text-slate-200 transition hover:border-rose-300/50 hover:bg-rose-500/10"
               >
                 Remove
               </button>
@@ -1915,7 +2159,7 @@ function ExposureTimelinePanel({
             <div className="mt-4 grid gap-3 md:grid-cols-[1fr_auto] md:items-center">
               <div className="h-3 overflow-hidden rounded-full bg-white/10">
                 <div
-                  className="h-full rounded-full bg-gradient-to-r from-cyan-300 via-violet-400 to-fuchsia-400"
+                  className="h-full rounded-full bg-gradient-to-r from-emerald-300 via-amber-300 to-rose-400"
                   style={{ width: `${block.exposureScore}%` }}
                 />
               </div>
@@ -1937,7 +2181,7 @@ function ExposureTimelinePanel({
         <button
           type="button"
           onClick={addBlock}
-          className="h-12 rounded-lg bg-cyan-500 px-5 text-sm font-semibold text-slate-950 transition hover:bg-cyan-300"
+          className="h-12 rounded-lg bg-teal-500 px-5 text-sm font-semibold text-white transition hover:bg-teal-400"
         >
           Add timeline block
         </button>
@@ -1993,10 +2237,10 @@ function AiHealthPlanPanel({
   };
 
   return (
-    <section className="rounded-lg border border-white/10 bg-[#101934]/90 p-5 shadow-xl shadow-black/25">
+    <section className="rounded-lg border border-white/10 bg-[#0f211d]/90 p-5 shadow-xl shadow-black/25">
       <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
         <div>
-          <p className="text-sm font-semibold uppercase tracking-wide text-cyan-300">
+          <p className="text-sm font-semibold uppercase tracking-wide text-teal-200">
             AI Health Plan
           </p>
           <h3 className="mt-2 text-2xl font-semibold text-white">
@@ -2011,14 +2255,14 @@ function AiHealthPlanPanel({
           type="button"
           onClick={generatePlan}
           disabled={loadingPlan}
-          className="h-12 rounded-lg bg-cyan-500 px-5 text-sm font-semibold text-slate-950 transition hover:bg-cyan-300 disabled:cursor-not-allowed disabled:bg-slate-700 disabled:text-slate-300"
+          className="h-12 rounded-lg bg-teal-500 px-5 text-sm font-semibold text-white transition hover:bg-teal-400 disabled:cursor-not-allowed disabled:bg-slate-700 disabled:text-slate-300"
         >
           {loadingPlan ? "Generating" : plan ? "Refresh plan" : "Generate plan"}
         </button>
       </div>
 
       {planError && (
-        <p className="mt-5 rounded-lg border border-fuchsia-300/30 bg-fuchsia-500/10 p-4 text-sm text-fuchsia-100">
+        <p className="mt-5 rounded-lg border border-rose-300/30 bg-rose-500/10 p-4 text-sm text-rose-100">
           {planError}
         </p>
       )}
@@ -2035,8 +2279,8 @@ function AiHealthPlanPanel({
 
       {plan && (
         <div className="mt-5 grid gap-4">
-          <article className="rounded-lg border border-cyan-300/20 bg-cyan-400/10 p-4">
-            <p className="text-xs font-semibold uppercase tracking-wide text-cyan-100">
+          <article className="rounded-lg border border-emerald-300/20 bg-emerald-400/10 p-4">
+            <p className="text-xs font-semibold uppercase tracking-wide text-emerald-100">
               {plan.headline}
             </p>
             <p className="mt-3 text-sm leading-6 text-slate-100">
@@ -2082,7 +2326,7 @@ function AiHealthPlanPanel({
             </ul>
           </article>
 
-          <p className="rounded-lg border border-violet-300/30 bg-violet-500/10 p-3 text-xs leading-5 text-violet-100">
+          <p className="rounded-lg border border-amber-300/30 bg-amber-500/10 p-3 text-xs leading-5 text-amber-100">
             {plan.uncertainty} This is informational only and is not medical
             advice.
           </p>
@@ -2148,7 +2392,7 @@ function SymptomCheckinPanel({
         notes,
       });
       setMessage(
-        "Check-in saved. Thanks for helping YourLocalHealth learn from real experiences."
+        "Check-in saved. Thanks for helping MyLocalHealth learn from real experiences."
       );
     } catch (error) {
       setMessage(
@@ -2162,13 +2406,13 @@ function SymptomCheckinPanel({
   };
 
   const checkboxClass =
-    "h-4 w-4 rounded border-white/20 bg-white/10 text-cyan-400";
+    "h-4 w-4 rounded border-white/20 bg-white/10 text-teal-400";
 
   return (
-    <section className="rounded-lg border border-white/10 bg-[#101934]/90 p-5 shadow-xl shadow-black/25">
+    <section className="rounded-lg border border-white/10 bg-[#0f211d]/90 p-5 shadow-xl shadow-black/25">
       <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
         <div>
-          <p className="text-sm font-semibold uppercase tracking-wide text-cyan-300">
+          <p className="text-sm font-semibold uppercase tracking-wide text-teal-200">
             Symptom Check-in
           </p>
           <h3 className="mt-2 text-2xl font-semibold text-white">
@@ -2180,7 +2424,7 @@ function SymptomCheckinPanel({
             risk estimates.
           </p>
         </div>
-        <div className="rounded-lg border border-cyan-300/20 bg-cyan-400/10 p-4 text-sm leading-6 text-cyan-100">
+        <div className="rounded-lg border border-emerald-300/20 bg-emerald-400/10 p-4 text-sm leading-6 text-emerald-100">
           Snapshot: {latestSnapshot ? "linked" : "not saved yet"}
         </div>
       </div>
@@ -2192,7 +2436,7 @@ function SymptomCheckinPanel({
       )}
 
       {!user && (
-        <p className="mt-5 rounded-lg border border-violet-300/30 bg-violet-500/10 p-4 text-sm text-violet-100">
+        <p className="mt-5 rounded-lg border border-amber-300/30 bg-amber-500/10 p-4 text-sm text-amber-100">
           Sign in to save check-ins. Anonymous check-ins are not stored.
         </p>
       )}
@@ -2275,7 +2519,7 @@ function SymptomCheckinPanel({
             value={notes}
             onChange={(event) => setNotes(event.target.value)}
             placeholder="Optional context, such as outdoor time or symptoms noticed."
-            className="min-h-24 rounded-lg border border-white/15 bg-white/10 px-3 py-2 text-sm font-normal text-white outline-none transition placeholder:text-slate-500 focus:border-cyan-300"
+            className="min-h-24 rounded-lg border border-white/15 bg-white/10 px-3 py-2 text-sm font-normal text-white outline-none transition placeholder:text-slate-500 focus:border-emerald-300"
           />
         </label>
 
@@ -2283,7 +2527,7 @@ function SymptomCheckinPanel({
           <button
             type="submit"
             disabled={saving || !user}
-            className="h-12 rounded-lg bg-cyan-500 px-5 text-sm font-semibold text-slate-950 transition hover:bg-cyan-300 disabled:cursor-not-allowed disabled:bg-slate-700 disabled:text-slate-300"
+            className="h-12 rounded-lg bg-teal-500 px-5 text-sm font-semibold text-white transition hover:bg-teal-400 disabled:cursor-not-allowed disabled:bg-slate-700 disabled:text-slate-300"
           >
             {saving ? "Saving" : "Save check-in"}
           </button>
@@ -2294,7 +2538,7 @@ function SymptomCheckinPanel({
         </div>
 
         {message && (
-          <p className="rounded-lg border border-cyan-300/20 bg-cyan-400/10 p-3 text-sm text-cyan-100">
+          <p className="rounded-lg border border-emerald-300/20 bg-emerald-400/10 p-3 text-sm text-emerald-100">
             {message}
           </p>
         )}
@@ -2367,10 +2611,10 @@ function HealthChatPanel({ context }: { context: HealthChatContext }) {
   };
 
   return (
-    <section className="mt-5 rounded-lg border border-cyan-300/20 bg-[#101934]/90 p-5 shadow-xl shadow-black/25">
+    <section className="mt-5 rounded-lg border border-emerald-300/20 bg-[#0f211d]/90 p-5 shadow-xl shadow-black/25">
       <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <p className="text-sm font-semibold uppercase tracking-wide text-cyan-300">
+          <p className="text-sm font-semibold uppercase tracking-wide text-teal-200">
             Health Assistant
           </p>
           <h3 className="mt-1 text-xl font-semibold text-white">
@@ -2388,12 +2632,12 @@ function HealthChatPanel({ context }: { context: HealthChatContext }) {
             key={`${message.role}-${index}`}
             className={`rounded-lg border p-3 ${
               message.role === "user"
-                ? "ml-auto max-w-[85%] border-violet-300/30 bg-violet-500/15 text-violet-50"
-                : "mr-auto max-w-[90%] border-cyan-300/20 bg-cyan-400/10 text-slate-100"
+                ? "ml-auto max-w-[85%] border-amber-300/30 bg-amber-500/15 text-amber-50"
+                : "mr-auto max-w-[90%] border-emerald-300/20 bg-emerald-400/10 text-slate-100"
             }`}
           >
             <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">
-              {message.role === "user" ? "You" : "YourLocalHealth"}
+              {message.role === "user" ? "You" : "MyLocalHealth"}
             </p>
             <p className="mt-2 whitespace-pre-wrap text-sm leading-6">
               {message.content}
@@ -2420,12 +2664,12 @@ function HealthChatPanel({ context }: { context: HealthChatContext }) {
           value={question}
           onChange={(event) => setQuestion(event.target.value)}
           placeholder="Example: Should I worry about outdoor exercise today?"
-          className="h-12 min-w-0 flex-1 rounded-lg border border-white/15 bg-white/10 px-4 text-base text-white outline-none transition placeholder:text-slate-400 focus:border-cyan-300 focus:ring-4 focus:ring-cyan-400/20"
+          className="h-12 min-w-0 flex-1 rounded-lg border border-white/15 bg-white/10 px-4 text-base text-white outline-none transition placeholder:text-slate-400 focus:border-emerald-300 focus:ring-4 focus:ring-teal-300/20"
         />
         <button
           type="submit"
           disabled={chatLoading}
-          className="h-12 rounded-lg bg-cyan-500 px-5 text-sm font-semibold text-slate-950 transition hover:bg-cyan-300 disabled:cursor-not-allowed disabled:bg-slate-700 disabled:text-slate-300"
+          className="h-12 rounded-lg bg-teal-500 px-5 text-sm font-semibold text-white transition hover:bg-teal-400 disabled:cursor-not-allowed disabled:bg-slate-700 disabled:text-slate-300"
         >
           {chatLoading ? "Asking" : "Ask"}
         </button>
@@ -2445,7 +2689,7 @@ export default function Home() {
   const [zipCode, setZipCode] = useState("");
   const [searched, setSearched] = useState(false);
   const [dashboardView, setDashboardView] =
-    useState<DashboardView>("forecast");
+    useState<DashboardView>("overview");
 
   const [city, setCity] = useState("");
   const [state, setState] = useState("");
@@ -2690,7 +2934,7 @@ export default function Home() {
       news: false,
     });
     setSearched(false);
-    setDashboardView("forecast");
+    setDashboardView("overview");
     setLoading(true);
 
     try {
@@ -2934,88 +3178,171 @@ export default function Home() {
     await searchZipCode(zipCode);
   };
 
-  return (
-    <main className="min-h-screen bg-[#070b1d] text-white">
-      <section className="mx-auto flex min-h-screen w-full max-w-6xl flex-col px-5 py-8 sm:px-8 lg:px-10">
-        <header className="border-b border-white/10 pb-8">
-          <div className="flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between">
-            <div>
-              <p className="text-sm font-semibold uppercase tracking-wide text-cyan-300">
-                Local public health dashboard
-              </p>
-              <h1 className="mt-3 text-4xl font-bold text-white sm:text-5xl">
-                YourLocalHealth
-              </h1>
-              <p className="mt-4 max-w-2xl text-base leading-7 text-slate-300">
-                Enter a ZIP code to view local respiratory and environmental
-                health signals from public data sources.
-              </p>
-            </div>
+  const resetToHome = () => {
+    setSearched(false);
+    setDashboardView("overview");
+    setError("");
+    setLoading(false);
+    setZipCode("");
 
-            <div className="flex flex-wrap gap-2">
-              <Link
-                href="/account"
-                className="w-fit rounded-lg border border-white/15 px-4 py-2 text-sm font-semibold text-white transition hover:border-cyan-300/50 hover:bg-white/10"
-              >
-                {user ? "Account" : "Sign in"}
-              </Link>
-              {!user && (
+    if (typeof window !== "undefined") {
+      window.history.replaceState(null, "", "/");
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+  };
+
+  return (
+    <main className="public-health-bg min-h-screen text-white">
+      <section className="mx-auto flex min-h-screen w-full max-w-[92rem] flex-col px-5 py-8 sm:px-8 lg:px-12">
+        <header
+          className={`border-b border-white/10 ${
+            searched ? "pb-4" : "pb-0"
+          }`}
+        >
+          <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
+            <div>
+              <div className="flex items-center">
                 <Link
-                  href="/signup"
-                  className="w-fit rounded-lg bg-cyan-500 px-4 py-2 text-sm font-semibold text-slate-950 transition hover:bg-cyan-300"
+                  href="/"
+                  onClick={(event) => {
+                    event.preventDefault();
+                    resetToHome();
+                  }}
+                  className="flex w-fit items-center gap-3 text-white"
+                  aria-label="MyLocalHealth home"
                 >
-                  Sign up
+                  <Image
+                    src="/mylocalhealth-icon-white.png"
+                    alt=""
+                    width={154}
+                    height={123}
+                    priority
+                    className={`h-auto shrink-0 drop-shadow-[0_10px_26px_rgba(0,0,0,0.35)] ${
+                      searched ? "w-11" : "w-14 sm:w-16"
+                    }`}
+                  />
+                  <span
+                    className={`font-bold tracking-normal text-white ${
+                      searched ? "text-2xl" : "text-4xl sm:text-5xl"
+                    }`}
+                  >
+                    MyLocalHealth
+                  </span>
                 </Link>
+              </div>
+              {!searched && (
+                <p className="mt-5 max-w-2xl text-base leading-7 text-emerald-50/80">
+                  Local public-health forecasts from air, heat, pollen,
+                  illness, equity, and community data.
+                </p>
               )}
             </div>
+
+            <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
+              {searched && (
+                <form
+                  onSubmit={handleSearch}
+                  className="flex w-full gap-2 lg:w-[28rem]"
+                >
+                  <label className="sr-only" htmlFor="zip-code-top">
+                    ZIP code
+                  </label>
+                  <input
+                    id="zip-code-top"
+                    type="text"
+                    inputMode="numeric"
+                    placeholder="Enter ZIP"
+                    value={zipCode}
+                    onChange={(event) => setZipCode(event.target.value)}
+                    className="h-11 min-w-0 flex-1 rounded-lg border border-white/15 bg-white/10 px-3 text-sm text-white shadow-sm outline-none transition placeholder:text-slate-400 focus:border-emerald-300 focus:ring-4 focus:ring-teal-300/20"
+                  />
+                  <button
+                    type="submit"
+                    disabled={loading}
+                    className="h-11 rounded-lg bg-teal-500 px-4 text-sm font-semibold text-white shadow-lg shadow-black/20 transition hover:bg-teal-400 disabled:cursor-not-allowed disabled:bg-slate-700 disabled:text-slate-300"
+                  >
+                    {loading ? "..." : "Search"}
+                  </button>
+                </form>
+              )}
+
+              <div className="flex flex-wrap gap-2">
+                <Link
+                  href="/account"
+                  className="w-fit rounded-lg border border-white/15 px-4 py-2 text-sm font-semibold text-white transition hover:border-emerald-300/50 hover:bg-white/10"
+                >
+                  {user ? "Account" : "Sign in"}
+                </Link>
+                {!user && (
+                  <Link
+                    href="/signup"
+                    className="w-fit rounded-lg bg-teal-500 px-4 py-2 text-sm font-semibold text-white transition hover:bg-teal-400"
+                  >
+                    Sign up
+                  </Link>
+                )}
+              </div>
+            </div>
           </div>
-
-          <form
-            onSubmit={handleSearch}
-            className="mt-8 flex w-full max-w-2xl flex-col gap-3 sm:flex-row"
-          >
-            <label className="sr-only" htmlFor="zip-code">
-              ZIP code
-            </label>
-            <input
-              id="zip-code"
-              type="text"
-              inputMode="numeric"
-              placeholder="Enter ZIP code"
-              value={zipCode}
-              onChange={(event) => setZipCode(event.target.value)}
-              className="h-12 min-w-0 flex-1 rounded-lg border border-white/15 bg-white/10 px-4 text-base text-white shadow-sm outline-none transition placeholder:text-slate-400 focus:border-cyan-300 focus:ring-4 focus:ring-cyan-400/20"
-            />
-
-            <button
-              type="submit"
-              disabled={loading}
-              className="h-12 rounded-lg bg-indigo-500 px-6 text-sm font-semibold text-white shadow-lg shadow-indigo-950/30 transition hover:bg-violet-500 disabled:cursor-not-allowed disabled:bg-slate-700 disabled:text-slate-300"
-            >
-              {loading ? "Searching" : "Search"}
-            </button>
-          </form>
         </header>
 
+        {searched && (
+          <div className="sticky top-0 z-30 border-b border-white/10 bg-[#0b1412]/88 pt-4 backdrop-blur-xl">
+            <DashboardNav
+              activeView={dashboardView}
+              onChange={setDashboardView}
+            />
+          </div>
+        )}
+
         {error && (
-          <div className="mt-6 rounded-lg border border-fuchsia-300/30 bg-fuchsia-500/10 p-4 text-sm font-medium text-fuchsia-100">
+          <div className="mt-6 rounded-lg border border-rose-300/30 bg-rose-500/10 p-4 text-sm font-medium text-rose-100">
             {error}
           </div>
         )}
 
         {!searched && !error && (
-          <section className="grid flex-1 place-items-center py-16">
-            <div className="max-w-xl text-center">
-              <p className="text-sm font-semibold uppercase tracking-wide text-cyan-300">
-                Ready when you are
-              </p>
-              <h2 className="mt-3 text-2xl font-semibold text-white">
-                Search any US ZIP code to generate a local health snapshot.
+          <section className="grid flex-1 items-center gap-10 py-14 lg:grid-cols-[0.9fr_1.1fr] lg:py-20">
+            <div className="max-w-2xl text-left">
+              <p className="eyebrow-text">Ready when you are</p>
+              <h2 className="display-heading mt-3 text-5xl leading-[1.02] text-white sm:text-6xl lg:text-7xl">
+                See what could affect your health near home today.
               </h2>
-              <p className="mt-4 text-sm leading-6 text-slate-300">
-                The dashboard currently combines air quality, CDC respiratory
-                illness activity, and CDC wastewater COVID activity.
+              <p className="mt-5 max-w-xl text-base leading-7 text-slate-300">
+                Enter a ZIP code for a plain-language read on air quality,
+                heat, pollen, respiratory illness, local context, and what to
+                watch next.
               </p>
+              <form
+                onSubmit={handleSearch}
+                className="quiet-surface mt-8 flex w-full max-w-xl flex-col gap-3 rounded-lg p-3 sm:flex-row"
+              >
+                <label className="sr-only" htmlFor="zip-code">
+                  ZIP code
+                </label>
+                <input
+                  id="zip-code"
+                  type="text"
+                  inputMode="numeric"
+                  placeholder="Enter ZIP code"
+                  value={zipCode}
+                  onChange={(event) => setZipCode(event.target.value)}
+                  className="h-14 min-w-0 flex-1 rounded-lg border border-white/15 bg-white/10 px-4 text-base text-white shadow-sm outline-none transition placeholder:text-slate-400 focus:border-emerald-300 focus:ring-4 focus:ring-teal-300/20"
+                />
+
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="h-14 rounded-lg bg-teal-500 px-6 text-sm font-semibold text-white shadow-lg shadow-black/25 transition hover:bg-teal-400 disabled:cursor-not-allowed disabled:bg-slate-700 disabled:text-slate-300"
+                >
+                  {loading ? "Searching" : "Search"}
+                </button>
+              </form>
+              <LiveSignalTape />
+            </div>
+
+            <div className="min-w-0">
+              <AnimatedHealthMapGraphic />
             </div>
           </section>
         )}
@@ -3036,73 +3363,296 @@ export default function Home() {
               </p>
             </div>
 
-            <DashboardNav
-              activeView={dashboardView}
-              onChange={setDashboardView}
-            />
-
             {dashboardView === "overview" && (
               <>
-            <TodayHealthBrief
-              healthRisk={healthRisk}
-              headline={healthBrief.headline}
-              drivers={healthBrief.drivers}
-              focusItems={healthBrief.focusItems}
-              profileNote={healthBrief.profileNote}
-            />
+                <section className="editorial-surface rounded-lg p-6 sm:p-7">
+                  <div className="grid gap-8 lg:grid-cols-[1.35fr_0.65fr] lg:items-start">
+                    <div>
+                      <p className="eyebrow-text">
+                        Today&apos;s Local Health Forecast
+                      </p>
+                      <h3 className="display-heading mt-3 max-w-4xl text-4xl leading-tight text-white sm:text-5xl">
+                        {healthBrief.headline}
+                      </h3>
+                      <p className="mt-4 max-w-3xl text-sm leading-6 text-slate-300">
+                        MyLocalHealth combines local air quality, heat, UV,
+                        pollen, flu activity, COVID wastewater, weather alerts,
+                        health equity context, and your profile when available.
+                      </p>
+                      <p className="mt-3 text-sm leading-6 text-emerald-100">
+                        {personalizationSummary}
+                      </p>
+                      <div className="mt-5 flex flex-wrap gap-3">
+                        <button
+                          type="button"
+                          onClick={() => setDashboardView("forecast")}
+                          className="rounded-lg bg-teal-500 px-4 py-2 text-sm font-semibold text-white transition hover:bg-teal-400"
+                        >
+                          View forecast
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setDashboardView("plan")}
+                          className="rounded-lg border border-white/15 px-4 py-2 text-sm font-semibold text-white transition hover:border-emerald-300/50 hover:bg-white/10"
+                        >
+                          Generate AI plan
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setDashboardView("assistant")}
+                          className="rounded-lg border border-white/15 px-4 py-2 text-sm font-semibold text-white transition hover:border-emerald-300/50 hover:bg-white/10"
+                        >
+                          Ask a question
+                        </button>
+                      </div>
+                    </div>
 
-            <section className="rounded-lg border border-white/10 bg-[#101934]/90 p-6 shadow-xl shadow-black/25">
-              <div className="grid gap-6 lg:grid-cols-[1.1fr_0.9fr] lg:items-center">
-                <div>
-                  <p className="text-sm font-semibold uppercase tracking-wide text-slate-400">
-                    Overall Health Risk
-                  </p>
-                  <p className="mt-3 text-5xl font-bold text-white">
-                    {healthRisk}
-                  </p>
-                <p className="mt-4 max-w-2xl text-sm leading-6 text-slate-300">
-                    This score combines air quality, pollutant levels, heat,
-                    UV, official weather alerts, CDC respiratory illness
-                    activity, CDC COVID wastewater activity, and your saved
-                    profile factors when available.
-                  </p>
-                  <p className="mt-3 text-sm leading-6 text-cyan-100">
-                    {personalizationSummary}
-                  </p>
-                  {riskModel.isPersonalized && (
-                    <p className="mt-2 text-xs leading-5 text-slate-400">
-                      Model: {riskModel.modelVersion}. Base environmental
-                      risk: {riskModel.baseHealthRisk}. Personalized risk is
-                      informational only.
-                    </p>
-                  )}
-                  {!riskModel.isPersonalized && (
-                    <p className="mt-2 text-xs leading-5 text-slate-400">
-                      Model: {riskModel.modelVersion}.
-                    </p>
-                  )}
-                </div>
-                <Link
-                  href={detailHref("respiratory-risk")}
-                  className="group rounded-lg border border-white/10 bg-white/5 p-5 outline-none transition hover:-translate-y-0.5 hover:border-cyan-300/50 hover:bg-white/10 hover:shadow-lg hover:shadow-cyan-950/30 focus:ring-4 focus:ring-cyan-400/20"
-                >
-                  <p className="text-sm font-semibold uppercase tracking-wide text-slate-400">
-                    Respiratory Risk
-                  </p>
-                  <div className="mt-3">
-                    <RiskBadge value={respiratoryRisk} />
+                    <div className="inset-surface rounded-lg p-5">
+                      <p className="text-xs font-semibold text-slate-400">
+                        Overall Risk
+                      </p>
+                      <p className="mt-3 text-6xl font-bold text-white">
+                        {healthRisk}
+                      </p>
+                      <div className="mt-4 h-3 overflow-hidden rounded-full bg-white/10">
+                        <div
+                          className="h-full rounded-full bg-gradient-to-r from-emerald-300 via-amber-300 to-rose-400"
+                          style={{ width: `${scoreBreakdown.score}%` }}
+                        />
+                      </div>
+                      <p className="mt-3 text-sm leading-6 text-slate-300">
+                        Risk index {scoreBreakdown.score}/100 ·{" "}
+                        {riskModel.modelVersion}
+                      </p>
+                      {riskModel.isPersonalized && (
+                        <p className="mt-2 text-xs leading-5 text-slate-400">
+                          Base environmental risk: {riskModel.baseHealthRisk}
+                        </p>
+                      )}
+                    </div>
                   </div>
-                  <p className="mt-3 text-sm leading-6 text-slate-300">
-                    Based on flu activity, COVID wastewater activity, and air
-                    quality conditions that may affect breathing, adjusted by
-                    your profile when available.
-                  </p>
-                  <p className="mt-4 text-xs font-semibold text-cyan-200">
-                    View details
-                  </p>
-                </Link>
-              </div>
-            </section>
+                </section>
+
+                <ForecastPulseStrip forecastData={healthForecastData} />
+
+                <section className="mt-5 grid gap-5 lg:grid-cols-[0.85fr_1.15fr]">
+                  <article className="quiet-surface rounded-lg p-5">
+                    <p className="text-sm font-semibold text-slate-300">
+                      Best Window Today
+                    </p>
+                    <p className="mt-3 text-2xl font-semibold text-white">
+                      {healthForecastData?.bestWindow?.displayTime ??
+                        "Unavailable"}
+                    </p>
+                    <p className="mt-3 text-sm leading-6 text-slate-300">
+                      {healthForecastData?.bestWindow
+                        ? `Estimated exposure risk ${healthForecastData.bestWindow.score}/100.`
+                        : "Run a ZIP search with forecast data available to see the lowest-risk window."}
+                    </p>
+                    <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                      <div className="inset-surface rounded-lg p-3">
+                        <p className="text-xs font-semibold text-slate-400">
+                          Watch Window
+                        </p>
+                        <p className="mt-2 text-sm font-semibold text-white">
+                          {healthForecastData?.worstWindow?.displayTime ??
+                            "Unavailable"}
+                        </p>
+                      </div>
+                      <div className="inset-surface rounded-lg p-3">
+                        <p className="text-xs font-semibold text-slate-400">
+                          Allergy Peak
+                        </p>
+                        <p className="mt-2 text-sm font-semibold text-white">
+                          {healthForecastData?.allergyPeakWindow
+                            ? `${healthForecastData.allergyPeakWindow.displayTime} · ${healthForecastData.allergyPeakWindow.pollenRisk}`
+                            : "Unavailable"}
+                        </p>
+                      </div>
+                    </div>
+                  </article>
+
+                  <article className="quiet-surface rounded-lg p-5">
+                    <p className="text-sm font-semibold text-slate-300">
+                      Suggested Focus
+                    </p>
+                    <div className="mt-3 grid gap-3">
+                      {healthBrief.focusItems.map((item) => (
+                        <p
+                          className="border-l border-emerald-300/40 bg-white/[0.03] py-2 pl-3 text-left text-sm leading-6 text-slate-200"
+                          key={item}
+                        >
+                          {item}
+                        </p>
+                      ))}
+                    </div>
+                    <p className="mt-4 border-l border-emerald-300/40 bg-emerald-400/10 py-3 pl-3 text-left text-xs leading-5 text-emerald-100">
+                      {healthBrief.profileNote}
+                    </p>
+                  </article>
+                </section>
+
+                <section className="mt-5 grid gap-5 lg:grid-cols-[1.1fr_0.9fr]">
+                  <div className="quiet-surface rounded-lg p-5">
+                    <div className="flex items-end justify-between gap-4">
+                      <div>
+                        <p className="text-sm font-semibold text-slate-300">
+                          Top Reasons
+                        </p>
+                        <h3 className="mt-1 text-xl font-semibold text-white">
+                          What is driving today&apos;s reading
+                        </h3>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setDashboardView("model")}
+                        className="shrink-0 text-xs font-semibold text-teal-100 hover:text-white"
+                      >
+                        See model
+                      </button>
+                    </div>
+                    <div className="mt-4 grid gap-3">
+                      {scoreBreakdown.topDrivers.slice(0, 4).map((driver) => (
+                        <div
+                          className="border-b border-white/10 py-3 last:border-b-0"
+                          key={driver.label}
+                        >
+                          <div className="flex items-center justify-between gap-3">
+                            <p className="text-sm font-semibold text-white">
+                              {driver.label}
+                            </p>
+                            <p className="text-sm font-semibold text-emerald-100">
+                              +{driver.points}
+                            </p>
+                          </div>
+                          <p className="mt-1 text-xs leading-5 text-slate-400">
+                            {driver.detail}
+                          </p>
+                        </div>
+                      ))}
+                      {scoreBreakdown.topDrivers.length === 0 && (
+                        <p className="border-l border-white/15 py-3 pl-3 text-sm leading-6 text-slate-300">
+                          No single driver is elevated right now.
+                        </p>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="quiet-surface rounded-lg p-5">
+                    <div className="flex items-end justify-between gap-4">
+                      <div>
+                        <p className="text-sm font-semibold text-slate-300">
+                          Why It Matters Locally
+                        </p>
+                        <h3 className="mt-1 text-xl font-semibold text-white">
+                          Equity and baseline health context
+                        </h3>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setDashboardView("equity")}
+                        className="shrink-0 text-xs font-semibold text-teal-100 hover:text-white"
+                      >
+                        See context
+                      </button>
+                    </div>
+                    <p className="mt-4 text-sm leading-6 text-slate-300">
+                      {healthEquityData
+                        ? healthEquityData.summary
+                        : "Health equity context is still loading or unavailable for this ZIP code."}
+                    </p>
+                    <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                      <div className="inset-surface rounded-lg p-3">
+                        <p className="text-xs font-semibold text-slate-400">
+                          Equity Score
+                        </p>
+                        <p className="mt-2 text-lg font-semibold text-white">
+                          {healthEquityData
+                            ? `${healthEquityData.equityScore}/100`
+                            : "n/a"}
+                        </p>
+                      </div>
+                      <div className="inset-surface rounded-lg p-3">
+                        <p className="text-xs font-semibold text-slate-400">
+                          Chronic Burden
+                        </p>
+                        <p className="mt-2 text-lg font-semibold text-white">
+                          {healthEquityData?.cdcPlaces
+                            ?.chronicBurdenScore === null ||
+                          healthEquityData?.cdcPlaces
+                            ?.chronicBurdenScore === undefined
+                            ? "n/a"
+                            : `${healthEquityData.cdcPlaces.chronicBurdenScore}/100`}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </section>
+
+                <section className="mt-5 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+                  <SignalCard
+                    title="Respiratory"
+                    value={respiratoryRisk}
+                    detail="Flu, COVID wastewater, air quality, and pollutant context."
+                    source="CDC + air quality sources"
+                    href={detailHref("respiratory-risk")}
+                  />
+                  <SignalCard
+                    title="Air"
+                    value={airQualityLabel}
+                    detail={`AQI ${aqi ?? "n/a"} with ${dominantPollutant} as the main pollutant signal.`}
+                    source="OpenWeather"
+                    href={detailHref("air-quality")}
+                  />
+                  <SignalCard
+                    title="Heat"
+                    value={heatRisk}
+                    detail={`Daily max feels-like temperature ${
+                      environmentData?.apparentTemperatureMax?.toFixed(0) ??
+                      "n/a"
+                    }°F.`}
+                    source="Open-Meteo"
+                    href={detailHref("heat-risk")}
+                  />
+                  <SignalCard
+                    title="Pollen"
+                    value={
+                      healthForecastData?.allergyPeakWindow?.pollenRisk ??
+                      "Unknown"
+                    }
+                    detail={
+                      healthForecastData?.allergyPeakWindow
+                        ? `Peak around ${healthForecastData.allergyPeakWindow.displayTime}.`
+                        : "Pollen forecast unavailable."
+                    }
+                    source="Open-Meteo"
+                    href={detailHref("pollen-forecast")}
+                  />
+                </section>
+
+                {hasMapLocation && (
+                  <section className="quiet-surface mt-5 overflow-hidden rounded-lg">
+                    <div className="flex flex-col gap-2 border-b border-white/10 p-5 sm:flex-row sm:items-end sm:justify-between">
+                      <div>
+                        <p className="text-sm font-semibold uppercase tracking-wide text-slate-400">
+                          Search Location
+                        </p>
+                        <h3 className="mt-1 text-xl font-semibold text-white">
+                          {city}, {state}
+                        </h3>
+                      </div>
+                      <p className="text-sm text-slate-400">
+                        ZIP {zipCode} · {latitude}, {longitude}
+                      </p>
+                    </div>
+                    <iframe
+                      title={`Map centered on ${city}, ${state}`}
+                      src={mapUrl}
+                      className="h-80 w-full border-0"
+                      loading="lazy"
+                    />
+                  </section>
+                )}
               </>
             )}
 
@@ -3168,30 +3718,6 @@ export default function Home() {
                 latestSnapshot={latestSnapshot}
                 snapshotStatus={snapshotStatus}
               />
-            )}
-
-            {dashboardView === "overview" && hasMapLocation && (
-              <section className="mt-5 overflow-hidden rounded-lg border border-white/10 bg-[#101934]/90 shadow-xl shadow-black/25">
-                <div className="flex flex-col gap-2 border-b border-white/10 p-5 sm:flex-row sm:items-end sm:justify-between">
-                  <div>
-                    <p className="text-sm font-semibold uppercase tracking-wide text-slate-400">
-                      Search Location
-                    </p>
-                    <h3 className="mt-1 text-xl font-semibold text-white">
-                      {city}, {state}
-                    </h3>
-                  </div>
-                  <p className="text-sm text-slate-400">
-                    ZIP {zipCode} · {latitude}, {longitude}
-                  </p>
-                </div>
-                <iframe
-                  title={`Map centered on ${city}, ${state}`}
-                  src={mapUrl}
-                  className="h-80 w-full border-0"
-                  loading="lazy"
-                />
-              </section>
             )}
 
             {dashboardView === "signals" && (
@@ -3310,7 +3836,7 @@ export default function Home() {
             )}
 
             {dashboardView === "news" && (
-            <section className="mt-5 rounded-lg border border-white/10 bg-[#101934]/90 p-5 shadow-xl shadow-black/25">
+            <section className="mt-5 rounded-lg border border-white/10 bg-[#0f211d]/90 p-5 shadow-xl shadow-black/25">
               <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
                 <div>
                   <p className="text-sm font-semibold uppercase tracking-wide text-slate-400">
@@ -3332,7 +3858,7 @@ export default function Home() {
               )}
 
               {newsError && (
-                <p className="mt-5 rounded-lg border border-violet-300/30 bg-violet-500/10 p-4 text-sm text-violet-100">
+                <p className="mt-5 rounded-lg border border-amber-300/30 bg-amber-500/10 p-4 text-sm text-amber-100">
                   {newsError}
                 </p>
               )}
@@ -3353,9 +3879,9 @@ export default function Home() {
                       key={article.url}
                       target="_blank"
                       rel="noreferrer"
-                      className="rounded-lg border border-white/10 bg-white/5 p-4 transition hover:-translate-y-0.5 hover:border-cyan-300/50 hover:bg-white/10"
+                      className="rounded-lg border border-white/10 bg-white/5 p-4 transition hover:-translate-y-0.5 hover:border-emerald-300/50 hover:bg-white/10"
                     >
-                      <p className="text-xs font-semibold uppercase tracking-wide text-cyan-300">
+                      <p className="text-xs font-semibold uppercase tracking-wide text-teal-200">
                         {article.source}
                       </p>
                       <h4 className="mt-2 text-base font-semibold leading-6 text-white">

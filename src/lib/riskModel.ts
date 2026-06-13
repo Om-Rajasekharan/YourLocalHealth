@@ -5,7 +5,7 @@ import {
 } from "./healthRisk";
 import { personalizeRisk } from "./personalizedRisk";
 
-export const RISK_MODEL_VERSION = "YourLocalHealth Risk Model v1.2";
+export const RISK_MODEL_VERSION = "MyLocalHealth Risk Model v1.2";
 
 export type DataStatus = {
   airQuality: boolean;
