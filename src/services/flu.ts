@@ -1,34 +1,28 @@
-import { stateMap } from "../lib/states";
-
-type FluRecord = {
-  geography?: string;
-  label?: string;
+type FluResponse = {
+  activity?: string;
 };
 
 export async function getFluData(
   stateAbbreviation: string
 ): Promise<string> {
-  const response = await fetch(
-    "https://data.cdc.gov/api/v3/views/f3zz-zga5/query.json"
-  );
-
-  if (!response.ok) {
-    throw new Error("Unable to retrieve CDC respiratory illness data.");
-  }
-
-  const data = (await response.json()) as FluRecord[];
-
-  const stateName =
-    stateMap[stateAbbreviation];
-
-  if (!stateName) {
+  if (!stateAbbreviation) {
     return "Unknown";
   }
 
-  const record = data.find(
-    (item) =>
-      item.geography === stateName
-  );
+  try {
+    const params = new URLSearchParams({
+      state: stateAbbreviation,
+    });
+    const response = await fetch(`/api/flu?${params.toString()}`);
 
-  return record?.label ?? "Unknown";
+    if (!response.ok) {
+      return "Unknown";
+    }
+
+    const data = (await response.json()) as FluResponse;
+
+    return data.activity ?? "Unknown";
+  } catch {
+    return "Unknown";
+  }
 }

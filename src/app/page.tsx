@@ -2,7 +2,13 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { FormEvent, useEffect, useRef, useState } from "react";
+import {
+  FormEvent,
+  type MouseEvent,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
 import type { User } from "@supabase/supabase-js";
 import {
   getAirQualityLabel,
@@ -388,6 +394,175 @@ function RiskBadge({ value }: { value: string }) {
     >
       {value}
     </span>
+  );
+}
+
+const MAP_ZOOM = 11;
+const TILE_SIZE = 256;
+
+type MapTile = {
+  id: string;
+  x: number;
+  y: number;
+  url: string;
+  left: number;
+  top: number;
+};
+
+function clampLatitude(value: number) {
+  return Math.max(-85.05112878, Math.min(85.05112878, value));
+}
+
+function latLngToWorldPixel(latitude: number, longitude: number, zoom: number) {
+  const scale = TILE_SIZE * 2 ** zoom;
+  const sinLatitude = Math.sin((clampLatitude(latitude) * Math.PI) / 180);
+
+  return {
+    x: ((longitude + 180) / 360) * scale,
+    y:
+      (0.5 -
+        Math.log((1 + sinLatitude) / (1 - sinLatitude)) /
+          (4 * Math.PI)) *
+      scale,
+  };
+}
+
+function worldPixelToLatLng(x: number, y: number, zoom: number) {
+  const scale = TILE_SIZE * 2 ** zoom;
+  const longitude = (x / scale) * 360 - 180;
+  const n = Math.PI - (2 * Math.PI * y) / scale;
+  const latitude =
+    (180 / Math.PI) * Math.atan(0.5 * (Math.exp(n) - Math.exp(-n)));
+
+  return { latitude, longitude };
+}
+
+function getMapTiles(latitude: number, longitude: number) {
+  const world = latLngToWorldPixel(latitude, longitude, MAP_ZOOM);
+  const centerTileX = Math.floor(world.x / TILE_SIZE);
+  const centerTileY = Math.floor(world.y / TILE_SIZE);
+  const centerOffsetX = world.x - centerTileX * TILE_SIZE;
+  const centerOffsetY = world.y - centerTileY * TILE_SIZE;
+  const tileCount = 2 ** MAP_ZOOM;
+  const tiles: MapTile[] = [];
+
+  for (let row = -2; row <= 2; row += 1) {
+    for (let column = -4; column <= 4; column += 1) {
+      const tileX = ((centerTileX + column) % tileCount + tileCount) % tileCount;
+      const tileY = Math.max(0, Math.min(tileCount - 1, centerTileY + row));
+
+      tiles.push({
+        id: `${tileX}-${tileY}`,
+        x: tileX,
+        y: tileY,
+        url: `https://tile.openstreetmap.org/${MAP_ZOOM}/${tileX}/${tileY}.png`,
+        left: column * TILE_SIZE - centerOffsetX,
+        top: row * TILE_SIZE - centerOffsetY,
+      });
+    }
+  }
+
+  return tiles;
+}
+
+function InteractiveLocationMap({
+  city,
+  state,
+  zipCode,
+  latitude,
+  longitude,
+  loading,
+  message,
+  onSelectPoint,
+}: {
+  city: string;
+  state: string;
+  zipCode: string;
+  latitude: number;
+  longitude: number;
+  loading: boolean;
+  message: string;
+  onSelectPoint: (latitude: number, longitude: number) => void;
+}) {
+  const tiles = getMapTiles(latitude, longitude);
+
+  const handleMapClick = (event: MouseEvent<HTMLButtonElement>) => {
+    const bounds = event.currentTarget.getBoundingClientRect();
+    const center = latLngToWorldPixel(latitude, longitude, MAP_ZOOM);
+    const clickOffsetX = event.clientX - bounds.left - bounds.width / 2;
+    const clickOffsetY = event.clientY - bounds.top - bounds.height / 2;
+    const clickedPoint = worldPixelToLatLng(
+      center.x + clickOffsetX,
+      center.y + clickOffsetY,
+      MAP_ZOOM
+    );
+
+    onSelectPoint(clickedPoint.latitude, clickedPoint.longitude);
+  };
+
+  return (
+    <section className="quiet-surface mt-5 overflow-hidden rounded-lg">
+      <div className="flex flex-col gap-3 border-b border-white/10 p-5 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+          <p className="eyebrow-text">Clickable Map</p>
+          <h3 className="mt-1 text-xl font-semibold text-white">
+            {city}, {state}
+          </h3>
+          <p className="mt-2 text-sm leading-6 text-stone-300">
+            Click anywhere nearby to load a new local health snapshot for that
+            point.
+          </p>
+        </div>
+        <p className="text-sm text-stone-400">
+          ZIP {zipCode} · {latitude.toFixed(4)}, {longitude.toFixed(4)}
+        </p>
+      </div>
+
+      <button
+        type="button"
+        onClick={handleMapClick}
+        disabled={loading}
+        className="group relative block h-80 w-full cursor-crosshair overflow-hidden bg-[#10211e] text-left disabled:cursor-wait"
+        aria-label={`Click the map near ${city}, ${state} to search that location`}
+      >
+        <div className="absolute inset-0 overflow-hidden">
+          {tiles.map((tile) => (
+            // Map tiles are external, position-critical images; Next Image optimization is not useful here.
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              key={tile.id}
+              src={tile.url}
+              alt=""
+              draggable={false}
+              className="absolute h-64 w-64 select-none"
+              style={{
+                left: `calc(50% + ${tile.left}px)`,
+                top: `calc(50% + ${tile.top}px)`,
+              }}
+            />
+          ))}
+        </div>
+
+        <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(7,15,13,0.08),rgba(7,15,13,0.48))]" />
+        <div className="absolute left-1/2 top-1/2 h-8 w-8 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-white bg-emerald-400/90 shadow-[0_0_0_8px_rgba(16,185,129,0.2),0_14px_30px_rgba(0,0,0,0.35)]" />
+        <div className="absolute left-1/2 top-1/2 h-3 w-3 -translate-x-1/2 -translate-y-1/2 rounded-full bg-white" />
+
+        <div className="absolute bottom-4 left-4 right-4 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+          <div className="max-w-xl rounded-lg border border-white/12 bg-[#0b1715]/85 p-4 shadow-2xl backdrop-blur">
+            <p className="text-xs font-semibold uppercase tracking-wide text-emerald-200">
+              Map lookup
+            </p>
+            <p className="mt-1 text-sm leading-6 text-stone-200">
+              {message ||
+                "Click the map to switch the dashboard to that location."}
+            </p>
+          </div>
+          <span className="w-fit rounded-full border border-emerald-300/30 bg-emerald-300/10 px-3 py-2 text-xs font-semibold uppercase tracking-wide text-emerald-100">
+            {loading ? "Finding ZIP..." : "Click to search"}
+          </span>
+        </div>
+      </button>
+    </section>
   );
 }
 
@@ -2749,6 +2924,8 @@ export default function Home() {
     useState<SavedHealthSnapshot | null>(null);
   const [snapshotStatus, setSnapshotStatus] = useState("");
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
+  const [mapClickLoading, setMapClickLoading] = useState(false);
+  const [mapClickMessage, setMapClickMessage] = useState("");
   const [dataStatus, setDataStatus] = useState<DataStatus>({
     airQuality: false,
     pollutants: false,
@@ -2792,13 +2969,6 @@ export default function Home() {
   const longitudeValue = Number(longitude);
   const hasMapLocation =
     !Number.isNaN(latitudeValue) && !Number.isNaN(longitudeValue);
-  const mapUrl = hasMapLocation
-    ? `https://www.openstreetmap.org/export/embed.html?bbox=${
-        longitudeValue - 0.08
-      }%2C${latitudeValue - 0.05}%2C${longitudeValue + 0.08}%2C${
-        latitudeValue + 0.05
-      }&layer=mapnik&marker=${latitudeValue}%2C${longitudeValue}`
-    : "";
   const healthBrief = buildHealthBrief({
     healthRisk,
     respiratoryRisk,
@@ -3279,7 +3449,48 @@ export default function Home() {
 
   const handleSearch = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    setMapClickMessage("");
     await searchZipCode(zipCode);
+  };
+
+  const handleMapPointSelect = async (
+    selectedLatitude: number,
+    selectedLongitude: number
+  ) => {
+    setMapClickLoading(true);
+    setMapClickMessage("Finding the ZIP code for that point...");
+
+    try {
+      const params = new URLSearchParams({
+        latitude: selectedLatitude.toString(),
+        longitude: selectedLongitude.toString(),
+      });
+      const response = await fetch(
+        `/api/reverse-location?${params.toString()}`
+      );
+      const data = (await response.json()) as {
+        zipCode?: string;
+        error?: string;
+      };
+
+      if (!response.ok || !data.zipCode) {
+        throw new Error(
+          data.error ?? "Unable to match that map point to a ZIP code."
+        );
+      }
+
+      setMapClickMessage(`Loading local health data for ZIP ${data.zipCode}...`);
+      await searchZipCode(data.zipCode);
+      setMapClickMessage(`Showing local health data for ZIP ${data.zipCode}.`);
+    } catch (error) {
+      setMapClickMessage(
+        error instanceof Error
+          ? error.message
+          : "Unable to use that map point."
+      );
+    } finally {
+      setMapClickLoading(false);
+    }
   };
 
   const navigateDashboardView = (view: DashboardView) => {
@@ -3301,6 +3512,8 @@ export default function Home() {
     setError("");
     setLoading(false);
     setZipCode("");
+    setMapClickLoading(false);
+    setMapClickMessage("");
     restoredZipRef.current = "";
 
     if (typeof window !== "undefined") {
@@ -3749,27 +3962,16 @@ export default function Home() {
                 </section>
 
                 {hasMapLocation && (
-                  <section className="quiet-surface mt-5 overflow-hidden rounded-lg">
-                    <div className="flex flex-col gap-2 border-b border-white/10 p-5 sm:flex-row sm:items-end sm:justify-between">
-                      <div>
-                        <p className="text-sm font-semibold uppercase tracking-wide text-slate-400">
-                          Search Location
-                        </p>
-                        <h3 className="mt-1 text-xl font-semibold text-white">
-                          {city}, {state}
-                        </h3>
-                      </div>
-                      <p className="text-sm text-slate-400">
-                        ZIP {zipCode} · {latitude}, {longitude}
-                      </p>
-                    </div>
-                    <iframe
-                      title={`Map centered on ${city}, ${state}`}
-                      src={mapUrl}
-                      className="h-80 w-full border-0"
-                      loading="lazy"
-                    />
-                  </section>
+                  <InteractiveLocationMap
+                    city={city}
+                    state={state}
+                    zipCode={zipCode}
+                    latitude={latitudeValue}
+                    longitude={longitudeValue}
+                    loading={mapClickLoading}
+                    message={mapClickMessage}
+                    onSelectPoint={handleMapPointSelect}
+                  />
                 )}
               </>
             )}
