@@ -765,28 +765,55 @@ function AnimatedHealthMapGraphic() {
 
 function LiveSignalTape() {
   const signals = [
-    "AQI",
-    "Heat index",
-    "COVID wastewater",
-    "Flu activity",
-    "Pollen",
-    "UV",
-    "Local alerts",
-    "Equity context",
+    "ZIP Code Geography",
+    "Latitude And Longitude",
+    "Current AQI",
+    "PM2.5",
+    "Ozone",
+    "Dominant Pollutant",
+    "Heat Index",
+    "UV Index",
+    "Humidity",
+    "Weather Alerts",
+    "24-Hour Forecast",
+    "Pollen Risk",
+    "CDC Flu Activity",
+    "COVID Wastewater",
+    "Local Health News",
+    "ACS Poverty Context",
+    "Insurance Access",
+    "Transportation Access",
+    "EPA-Style Pollution Burden",
+    "CDC PLACES Asthma",
+    "COPD Prevalence",
+    "Smoking Prevalence",
+    "Diabetes Prevalence",
+    "Chronic Disease Burden",
+    "Personal Sensitivity",
+    "Time Spent Outside",
+    "Activity Level",
+    "Traffic Exposure",
+    "Car/Commute Context",
+    "Daily Exposure Timeline",
+    "Symptom Check-Ins",
+    "ML Outcome Labels",
   ];
   const repeatedSignals = [...signals, ...signals];
 
   return (
-    <div className="signal-tape mt-6 overflow-hidden border-y border-white/10 py-3 text-left">
-      <div className="signal-tape-track flex w-max gap-3">
-        {repeatedSignals.map((signal, index) => (
-          <span
-            className="rounded-full border border-white/10 bg-white/[0.04] px-3 py-1 text-xs font-semibold text-slate-300"
-            key={`${signal}-${index}`}
-          >
-            {signal}
-          </span>
-        ))}
+    <div className="mt-6 overflow-hidden border-y border-white/10 py-3 text-left">
+      <p className="eyebrow-text mb-3">Powered by</p>
+      <div className="signal-tape overflow-hidden">
+        <div className="signal-tape-track flex w-max gap-3">
+          {repeatedSignals.map((signal, index) => (
+            <span
+              className="rounded-full border border-white/10 bg-white/[0.04] px-3 py-1 text-xs font-semibold text-slate-300"
+              key={`${signal}-${index}`}
+            >
+              {signal}
+            </span>
+          ))}
+        </div>
       </div>
     </div>
   );
