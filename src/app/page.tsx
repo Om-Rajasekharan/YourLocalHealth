@@ -314,7 +314,7 @@ function DashboardNav({
     <div className="quiet-surface relative z-20 mb-5 rounded-lg p-2">
       <nav
         aria-label="Dashboard sections"
-        className="grid gap-2 md:grid-cols-3"
+        className="grid gap-2 sm:grid-cols-3"
       >
         {dashboardGroups.map((group) => {
           const isActiveGroup = group.views.includes(activeView);
@@ -343,7 +343,7 @@ function DashboardNav({
                 <span className="text-sm text-teal-100">v</span>
               </button>
 
-              <div className="invisible absolute left-0 right-0 top-[calc(100%+0.5rem)] z-30 rounded-lg border border-white/10 bg-[#0b1715] p-2 opacity-0 shadow-2xl shadow-black/35 transition group-hover:visible group-hover:opacity-100 group-focus-within:visible group-focus-within:opacity-100">
+              <div className="invisible absolute left-0 right-0 top-[calc(100%+0.5rem)] z-30 max-h-80 overflow-y-auto rounded-lg border border-white/10 bg-[#0b1715] p-2 opacity-0 shadow-2xl shadow-black/35 transition group-hover:visible group-hover:opacity-100 group-focus-within:visible group-focus-within:opacity-100">
                 {group.views.map((viewId) => {
                   const view = getDashboardView(viewId);
                   const isActive = activeView === viewId;
@@ -385,6 +385,78 @@ function DashboardNav({
   );
 }
 
+function DashboardSidebar({
+  activeView,
+  onChange,
+  city,
+  state,
+  zipCode,
+}: {
+  activeView: DashboardView;
+  onChange: (view: DashboardView) => void;
+  city: string;
+  state: string;
+  zipCode: string;
+}) {
+  const activeDashboardView = getDashboardView(activeView);
+
+  return (
+    <aside className="dashboard-sidebar sticky top-5 hidden max-h-[calc(100vh-2.5rem)] overflow-y-auto lg:block">
+      <div className="quiet-surface field-report p-4">
+        <div className="relative z-10 border-b border-white/10 pb-4">
+          <p className="eyebrow-text">Dashboard</p>
+          <h2 className="mt-2 text-xl font-bold leading-tight text-white">
+            {city}, {state}
+          </h2>
+          <p className="mt-1 text-xs font-semibold uppercase tracking-wide text-stone-400">
+            ZIP {zipCode}
+          </p>
+          <p className="mt-3 text-sm leading-5 text-stone-300">
+            {activeDashboardView.description}
+          </p>
+        </div>
+
+        <nav
+          aria-label="Dashboard sections"
+          className="relative z-10 mt-4 space-y-5"
+        >
+          {dashboardGroups.map((group) => (
+            <div key={group.label}>
+              <p className="px-2 text-[0.68rem] font-bold uppercase tracking-[0.16em] text-stone-500">
+                {group.label}
+              </p>
+              <div className="mt-2 space-y-1">
+                {group.views.map((viewId) => {
+                  const view = getDashboardView(viewId);
+                  const isActive = activeView === viewId;
+
+                  return (
+                    <button
+                      key={view.id}
+                      type="button"
+                      onClick={() => onChange(view.id)}
+                      className={`sidebar-nav-item w-full text-left ${
+                        isActive ? "sidebar-nav-item-active" : ""
+                      }`}
+                    >
+                      <span className="block text-sm font-semibold">
+                        {view.label}
+                      </span>
+                      <span className="mt-1 block text-xs leading-4">
+                        {view.description}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          ))}
+        </nav>
+      </div>
+    </aside>
+  );
+}
+
 function RiskBadge({ value }: { value: string }) {
   return (
     <span
@@ -394,6 +466,66 @@ function RiskBadge({ value }: { value: string }) {
     >
       {value}
     </span>
+  );
+}
+
+function BriefMetric({
+  label,
+  value,
+  detail,
+  actionLabel = "Open",
+  href,
+  onClick,
+}: {
+  label: string;
+  value: string;
+  detail: string;
+  actionLabel?: string;
+  href?: string;
+  onClick?: () => void;
+}) {
+  const content = (
+    <>
+      <p className="text-xs font-semibold uppercase tracking-wide text-stone-400">
+        {label}
+      </p>
+      <p className="mt-3 text-2xl font-semibold leading-tight text-white">
+        {value}
+      </p>
+      <p className="mt-2 text-xs leading-5 text-stone-300">{detail}</p>
+      <p className="mt-4 text-xs font-bold uppercase tracking-wide text-emerald-100">
+        {actionLabel}
+      </p>
+    </>
+  );
+
+  if (href) {
+    return (
+      <Link
+        href={href}
+        className="paper-strip action-panel cut-corner data-pin block min-h-36 p-4 text-left"
+      >
+        {content}
+      </Link>
+    );
+  }
+
+  if (onClick) {
+    return (
+      <button
+        type="button"
+        onClick={onClick}
+        className="paper-strip action-panel cut-corner data-pin block min-h-36 w-full p-4 text-left"
+      >
+        {content}
+      </button>
+    );
+  }
+
+  return (
+    <div className="paper-strip cut-corner data-pin min-h-36 p-4">
+      {content}
+    </div>
   );
 }
 
@@ -574,7 +706,7 @@ function InteractiveLocationMap({
         onPointerMove={handlePointerMove}
         onPointerUp={endDrag}
         onPointerCancel={endDrag}
-        className={`group relative h-80 w-full touch-none overflow-hidden bg-[#10211e] text-left outline-none ${
+        className={`group relative h-[30rem] w-full touch-none overflow-hidden bg-[#10211e] text-left outline-none sm:h-80 ${
           isDragging ? "cursor-grabbing" : "cursor-grab"
         } ${loading ? "cursor-wait" : ""}`}
         aria-label={`Draggable map near ${city}, ${state}. Drag to move the map, then use Search center point.`}
@@ -602,25 +734,25 @@ function InteractiveLocationMap({
         <div className="pointer-events-none absolute left-1/2 top-1/2 h-3 w-3 -translate-x-1/2 -translate-y-1/2 rounded-full bg-white" />
         <div className="pointer-events-none absolute left-1/2 top-[calc(50%+1.45rem)] h-7 w-px -translate-x-1/2 bg-white/70" />
 
-        <div className="absolute bottom-4 left-4 right-4 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-          <div className="max-w-xl rounded-lg border border-white/12 bg-[#0b1715]/85 p-4 shadow-2xl backdrop-blur">
+        <div className="absolute bottom-3 left-3 right-3 flex flex-col gap-3 sm:bottom-4 sm:left-4 sm:right-4 sm:flex-row sm:items-end sm:justify-between">
+          <div className="max-w-xl rounded-lg border border-white/12 bg-[#0b1715]/85 p-3 shadow-2xl backdrop-blur sm:p-4">
             <p className="text-xs font-semibold uppercase tracking-wide text-emerald-200">
               Map controls
             </p>
-            <p className="mt-1 text-sm leading-6 text-stone-200">
+            <p className="mt-1 text-xs leading-5 text-stone-200 sm:text-sm sm:leading-6">
               {message ||
                 "Drag the map first. The marker in the center is the point that will be searched."}
             </p>
           </div>
           <div
-            className="flex flex-wrap gap-2"
+            className="flex flex-col gap-2 sm:flex-row sm:flex-wrap"
             onPointerDown={(event) => event.stopPropagation()}
           >
             <button
               type="button"
               onClick={resetMapCenter}
               disabled={loading}
-              className="rounded-full border border-white/15 bg-white/10 px-4 py-2 text-sm font-semibold text-white transition hover:bg-white/15 disabled:cursor-wait disabled:opacity-60"
+              className="w-full rounded-full border border-white/15 bg-white/10 px-4 py-2 text-sm font-semibold text-white transition hover:bg-white/15 disabled:cursor-wait disabled:opacity-60 sm:w-auto"
             >
               Reset map
             </button>
@@ -628,7 +760,7 @@ function InteractiveLocationMap({
               type="button"
               onClick={searchMapCenter}
               disabled={loading}
-              className="rounded-full border border-emerald-200/40 bg-emerald-300 px-4 py-2 text-sm font-bold text-[#07110f] transition hover:bg-emerald-200 disabled:cursor-wait disabled:opacity-70"
+              className="w-full rounded-full border border-emerald-200/40 bg-emerald-300 px-4 py-2 text-sm font-bold text-[#07110f] transition hover:bg-emerald-200 disabled:cursor-wait disabled:opacity-70 sm:w-auto"
             >
               {loading ? "Finding ZIP..." : "Search center point"}
             </button>
@@ -844,8 +976,10 @@ function buildForecastHourExplanation(hour: HealthForecastData["hours"][number])
 
 function ForecastPulseStrip({
   forecastData,
+  onOpenForecast,
 }: {
   forecastData: HealthForecastData | null;
+  onOpenForecast?: () => void;
 }) {
   const hours = forecastData?.hours.slice(0, 12) ?? [];
 
@@ -862,51 +996,57 @@ function ForecastPulseStrip({
             Forecast pulse
           </h3>
         </div>
-        <p className="text-sm text-slate-400">
-          Hover bars to read the estimated exposure score.
-        </p>
+        <button
+          type="button"
+          onClick={onOpenForecast}
+          className="w-fit rounded-full border border-white/10 px-3 py-2 text-sm font-semibold text-slate-300 transition hover:border-emerald-300/40 hover:bg-white/10 hover:text-white"
+        >
+          Open full forecast
+        </button>
       </div>
 
-      <div className="mt-5 grid grid-cols-12 items-end gap-2">
-        {hours.map((hour) => {
-          const height = Math.max(18, hour.score);
-          const explanation = buildForecastHourExplanation(hour);
-          const color =
-            hour.risk === "High"
-              ? "bg-rose-300"
-              : hour.risk === "Moderate"
-              ? "bg-amber-300"
-              : "bg-emerald-300";
+      <div className="-mx-2 overflow-x-auto px-2 pb-2">
+        <div className="mt-5 grid min-w-[42rem] grid-cols-12 items-end gap-2 sm:min-w-0">
+          {hours.map((hour) => {
+            const height = Math.max(18, hour.score);
+            const explanation = buildForecastHourExplanation(hour);
+            const color =
+              hour.risk === "High"
+                ? "bg-rose-300"
+                : hour.risk === "Moderate"
+                ? "bg-amber-300"
+                : "bg-emerald-300";
 
-          return (
-            <div
-              className="group relative flex min-w-0 flex-col items-center gap-2"
-              key={hour.time}
-              tabIndex={0}
-            >
-              <div className="relative flex h-28 w-full items-end rounded-full bg-white/[0.035] px-1">
-                <div
-                  className={`forecast-pulse-bar w-full rounded-full ${color} opacity-80`}
-                  style={{ height: `${height}%` }}
-                />
+            return (
+              <div
+                className="group relative flex min-w-0 flex-col items-center gap-2"
+                key={hour.time}
+                tabIndex={0}
+              >
+                <div className="relative flex h-28 w-full items-end rounded-full bg-white/[0.035] px-1">
+                  <div
+                    className={`forecast-pulse-bar w-full rounded-full ${color} opacity-80`}
+                    style={{ height: `${height}%` }}
+                  />
+                </div>
+                <div className="pointer-events-none absolute bottom-full left-1/2 z-20 mb-3 hidden w-64 -translate-x-1/2 rounded-lg border border-white/10 bg-[#0a1513] p-3 text-left text-xs shadow-2xl shadow-black/35 group-hover:block group-focus:block">
+                  <p className="font-semibold text-white">
+                    {hour.displayTime} · {hour.score}/100
+                  </p>
+                  <p className="mt-1 leading-5 text-slate-300">
+                    {explanation.drivers}
+                  </p>
+                  <p className="mt-2 leading-5 text-slate-400">
+                    {explanation.metrics}
+                  </p>
+                </div>
+                <p className="w-full truncate text-center text-[0.68rem] text-slate-400">
+                  {hour.displayTime.replace(/^[A-Za-z]+,?\s/, "")}
+                </p>
               </div>
-              <div className="pointer-events-none absolute bottom-full left-1/2 z-20 mb-3 hidden w-64 -translate-x-1/2 rounded-lg border border-white/10 bg-[#0a1513] p-3 text-left text-xs shadow-2xl shadow-black/35 group-hover:block group-focus:block">
-                <p className="font-semibold text-white">
-                  {hour.displayTime} · {hour.score}/100
-                </p>
-                <p className="mt-1 leading-5 text-slate-300">
-                  {explanation.drivers}
-                </p>
-                <p className="mt-2 leading-5 text-slate-400">
-                  {explanation.metrics}
-                </p>
-              </div>
-              <p className="w-full truncate text-center text-[0.68rem] text-slate-400">
-                {hour.displayTime.replace(/^[A-Za-z]+,?\s/, "")}
-              </p>
-            </div>
-          );
-        })}
+            );
+          })}
+        </div>
       </div>
     </section>
   );
@@ -930,27 +1070,27 @@ function SignalCard({
       href={href}
       className="group block rounded-lg outline-none transition focus:ring-4 focus:ring-teal-300/20"
     >
-    <article className="quiet-surface rounded-lg p-4 transition group-hover:-translate-y-0.5 group-hover:border-emerald-300/35 group-hover:bg-white/[0.065]">
-      <div className="flex min-h-24 flex-col justify-between gap-3">
-        <div>
-          <div className="flex items-start justify-between gap-3">
-            <h3 className="text-sm font-semibold text-slate-300 transition group-hover:text-emerald-100">
-              {title}
-            </h3>
-            <RiskBadge value={value} />
+      <article className="quiet-surface action-panel cut-corner data-pin p-4">
+        <div className="flex min-h-28 flex-col justify-between gap-3">
+          <div>
+            <div className="flex items-start justify-between gap-3">
+              <h3 className="text-sm font-semibold text-slate-300 transition group-hover:text-emerald-100">
+                {title}
+              </h3>
+              <RiskBadge value={value} />
+            </div>
+            <p className="mt-3 line-clamp-3 text-sm leading-6 text-slate-300">
+              {detail}
+            </p>
           </div>
-          <p className="mt-3 line-clamp-3 text-sm leading-6 text-slate-300">
-            {detail}
-          </p>
+          <div className="flex items-center justify-between gap-3 border-t border-white/10 pt-3">
+            <p className="truncate text-xs text-slate-400">{source}</p>
+            <p className="shrink-0 text-xs font-bold uppercase tracking-wide text-teal-100">
+              Details
+            </p>
+          </div>
         </div>
-        <div className="flex items-center justify-between gap-3 border-t border-white/10 pt-3">
-          <p className="truncate text-xs text-slate-400">{source}</p>
-          <p className="shrink-0 text-xs font-semibold text-teal-100">
-            Details
-          </p>
-        </div>
-      </div>
-    </article>
+      </article>
     </Link>
   );
 }
@@ -1882,45 +2022,47 @@ function ForecastPanel({
                 Source: Open-Meteo weather and air-quality forecasts
               </p>
             </div>
-            <div className="mt-5 grid grid-cols-12 gap-2 lg:[grid-template-columns:repeat(24,minmax(0,1fr))]">
-              {forecastData.hours.map((hour) => {
-                const explanation = buildForecastHourExplanation(hour);
+            <div className="-mx-2 overflow-x-auto px-2 pb-2">
+              <div className="mt-5 grid min-w-[54rem] gap-2 [grid-template-columns:repeat(24,minmax(0,1fr))] lg:min-w-0">
+                {forecastData.hours.map((hour) => {
+                  const explanation = buildForecastHourExplanation(hour);
 
-                return (
-                  <div
-                    className="group relative flex min-h-36 flex-col justify-end gap-2 outline-none"
-                    key={hour.time}
-                    tabIndex={0}
-                  >
-                    <div className="flex h-24 items-end rounded bg-white/5 p-1 transition group-hover:bg-white/10 group-focus:bg-white/10">
-                      <div
-                        className={`forecast-pulse-bar w-full rounded ${
-                          hour.score >= 67
-                            ? "bg-rose-400"
-                            : hour.score >= 34
-                            ? "bg-amber-300"
-                            : "bg-emerald-300"
-                        }`}
-                        style={{ height: `${Math.max(8, hour.score)}%` }}
-                      />
+                  return (
+                    <div
+                      className="group relative flex min-h-36 flex-col justify-end gap-2 outline-none"
+                      key={hour.time}
+                      tabIndex={0}
+                    >
+                      <div className="flex h-24 items-end rounded bg-white/5 p-1 transition group-hover:bg-white/10 group-focus:bg-white/10">
+                        <div
+                          className={`forecast-pulse-bar w-full rounded ${
+                            hour.score >= 67
+                              ? "bg-rose-400"
+                              : hour.score >= 34
+                              ? "bg-amber-300"
+                              : "bg-emerald-300"
+                          }`}
+                          style={{ height: `${Math.max(8, hour.score)}%` }}
+                        />
+                      </div>
+                      <div className="pointer-events-none absolute bottom-full left-1/2 z-20 mb-3 hidden w-72 -translate-x-1/2 rounded-lg border border-white/10 bg-[#0a1513] p-3 text-left text-xs shadow-2xl shadow-black/35 group-hover:block group-focus:block">
+                        <p className="font-semibold text-white">
+                          {hour.displayTime} · {hour.score}/100
+                        </p>
+                        <p className="mt-1 leading-5 text-slate-300">
+                          {explanation.drivers}
+                        </p>
+                        <p className="mt-2 leading-5 text-slate-400">
+                          {explanation.metrics}
+                        </p>
+                      </div>
+                      <p className="truncate text-[10px] leading-4 text-slate-500 group-hover:text-slate-200 group-focus:text-slate-200">
+                        {hour.displayTime.replace(/^[A-Za-z]+,?\s?/, "")}
+                      </p>
                     </div>
-                    <div className="pointer-events-none absolute bottom-full left-1/2 z-20 mb-3 hidden w-72 -translate-x-1/2 rounded-lg border border-white/10 bg-[#0a1513] p-3 text-left text-xs shadow-2xl shadow-black/35 group-hover:block group-focus:block">
-                      <p className="font-semibold text-white">
-                        {hour.displayTime} · {hour.score}/100
-                      </p>
-                      <p className="mt-1 leading-5 text-slate-300">
-                        {explanation.drivers}
-                      </p>
-                      <p className="mt-2 leading-5 text-slate-400">
-                        {explanation.metrics}
-                      </p>
-                    </div>
-                    <p className="truncate text-[10px] leading-4 text-slate-500 group-hover:text-slate-200 group-focus:text-slate-200">
-                      {hour.displayTime.replace(/^[A-Za-z]+,?\s?/, "")}
-                    </p>
-                  </div>
-                );
-              })}
+                  );
+                })}
+              </div>
             </div>
           </div>
 
@@ -3084,6 +3226,15 @@ export default function Home() {
     personalizedRiskReasons: riskModel.personalizedRiskReasons,
     isPersonalized: riskModel.isPersonalized,
   });
+  const primaryDriver = scoreBreakdown.topDrivers[0];
+  const bestWindowLabel =
+    healthForecastData?.bestWindow?.displayTime ?? "Unavailable";
+  const bestWindowDetail = healthForecastData?.bestWindow
+    ? `Estimated exposure risk ${healthForecastData.bestWindow.score}/100.`
+    : "Forecast data is still loading or unavailable.";
+  const allergyPeakLabel = healthForecastData?.allergyPeakWindow
+    ? `${healthForecastData.allergyPeakWindow.displayTime} · ${healthForecastData.allergyPeakWindow.pollenRisk}`
+    : "Unavailable";
   const chatContext: HealthChatContext = {
     zipCode,
     city,
@@ -3624,7 +3775,7 @@ export default function Home() {
 
   return (
     <main className="public-health-bg min-h-screen text-white">
-      <section className="mx-auto flex min-h-screen w-full max-w-[92rem] flex-col px-5 py-8 sm:px-8 lg:px-12">
+      <section className="mx-auto flex min-h-screen w-full max-w-[92rem] flex-col px-4 py-5 sm:px-8 sm:py-8 lg:px-12">
         <header
           className={`border-b border-white/10 ${
             searched ? "pb-4" : "pb-0"
@@ -3649,12 +3800,12 @@ export default function Home() {
                     height={123}
                     priority
                     className={`h-auto shrink-0 drop-shadow-[0_10px_26px_rgba(0,0,0,0.35)] ${
-                      searched ? "w-11" : "w-14 sm:w-16"
+                      searched ? "w-10 sm:w-11" : "w-12 sm:w-16"
                     }`}
                   />
                   <span
                     className={`font-bold tracking-normal text-white ${
-                      searched ? "text-2xl" : "text-4xl sm:text-5xl"
+                      searched ? "text-xl sm:text-2xl" : "text-3xl sm:text-5xl"
                     }`}
                   >
                     MyLocalHealth
@@ -3662,7 +3813,7 @@ export default function Home() {
                 </Link>
               </div>
               {!searched && (
-                <p className="mt-5 max-w-2xl text-base leading-7 text-emerald-50/80">
+                <p className="mt-4 max-w-2xl text-sm leading-6 text-emerald-50/80 sm:mt-5 sm:text-base sm:leading-7">
                   Local public-health forecasts from air, heat, pollen,
                   illness, equity, and community data.
                 </p>
@@ -3685,12 +3836,12 @@ export default function Home() {
                     placeholder="Enter ZIP"
                     value={zipCode}
                     onChange={(event) => setZipCode(event.target.value)}
-                    className="h-11 min-w-0 flex-1 rounded-lg border border-white/15 bg-white/10 px-3 text-sm text-white shadow-sm outline-none transition placeholder:text-slate-400 focus:border-emerald-300 focus:ring-4 focus:ring-teal-300/20"
+                    className="bespoke-control h-11 min-w-0 flex-1 border border-white/15 bg-white/10 px-3 text-base text-white shadow-sm outline-none transition placeholder:text-slate-400 focus:border-emerald-300 focus:ring-4 focus:ring-teal-300/20 sm:text-sm"
                   />
                   <button
                     type="submit"
                     disabled={loading}
-                    className="h-11 rounded-lg bg-teal-500 px-4 text-sm font-semibold text-white shadow-lg shadow-black/20 transition hover:bg-teal-400 disabled:cursor-not-allowed disabled:bg-slate-700 disabled:text-slate-300"
+                    className="bespoke-button h-11 bg-teal-500 px-4 text-sm font-semibold text-white shadow-lg shadow-black/20 transition hover:bg-teal-400 disabled:cursor-not-allowed disabled:bg-slate-700 disabled:text-slate-300"
                   >
                     {loading ? "..." : "Search"}
                   </button>
@@ -3700,14 +3851,14 @@ export default function Home() {
               <div className="flex flex-wrap gap-2">
                 <Link
                   href="/account"
-                  className="w-fit rounded-lg border border-white/15 px-4 py-2 text-sm font-semibold text-white transition hover:border-emerald-300/50 hover:bg-white/10"
+                  className="bespoke-button flex-1 border border-white/15 px-4 py-2 text-center text-sm font-semibold text-white transition hover:border-emerald-300/50 hover:bg-white/10 sm:flex-none"
                 >
                   {user ? "Account" : "Sign in"}
                 </Link>
                 {!user && (
                   <Link
                     href="/signup"
-                    className="w-fit rounded-lg bg-teal-500 px-4 py-2 text-sm font-semibold text-white transition hover:bg-teal-400"
+                    className="bespoke-button flex-1 bg-teal-500 px-4 py-2 text-center text-sm font-semibold text-white transition hover:bg-teal-400 sm:flex-none"
                   >
                     Sign up
                   </Link>
@@ -3718,7 +3869,7 @@ export default function Home() {
         </header>
 
         {searched && (
-          <div className="sticky top-0 z-30 border-b border-white/10 bg-[#0b1412]/88 pt-4 backdrop-blur-xl">
+          <div className="sticky top-0 z-30 border-b border-white/10 bg-[#0b1412]/88 pt-4 backdrop-blur-xl lg:hidden">
             <DashboardNav
               activeView={dashboardView}
               onChange={navigateDashboardView}
@@ -3733,116 +3884,154 @@ export default function Home() {
         )}
 
         {!searched && !error && (
-          <section className="grid flex-1 items-center gap-10 py-14 lg:grid-cols-[0.9fr_1.1fr] lg:py-20">
-            <div className="max-w-2xl text-left">
-              <p className="eyebrow-text">Ready when you are</p>
-              <h2 className="display-heading mt-3 text-5xl leading-[1.02] text-white sm:text-6xl lg:text-7xl">
+          <section className="grid flex-1 items-center gap-10 py-10 sm:py-14 lg:grid-cols-[1.05fr_0.95fr] lg:py-20">
+            <div className="max-w-3xl text-left">
+              <span className="field-tag">Neighborhood health brief</span>
+              <h2 className="display-heading mt-3 text-4xl leading-[1.05] text-white sm:text-6xl sm:leading-[1.02] lg:text-7xl">
                 See what could affect your health near home today.
               </h2>
-              <p className="mt-5 max-w-xl text-base leading-7 text-slate-300">
+              <p className="mt-5 max-w-xl text-sm leading-6 text-slate-300 sm:text-base sm:leading-7">
                 Enter a ZIP code for a plain-language read on air quality,
                 heat, pollen, respiratory illness, local context, and what to
                 watch next.
               </p>
-              <form
-                onSubmit={handleSearch}
-                className="quiet-surface mt-8 flex w-full max-w-xl flex-col gap-3 rounded-lg p-3 sm:flex-row"
-              >
-                <label className="sr-only" htmlFor="zip-code">
-                  ZIP code
-                </label>
-                <input
-                  id="zip-code"
-                  type="text"
-                  inputMode="numeric"
-                  placeholder="Enter ZIP code"
-                  value={zipCode}
-                  onChange={(event) => setZipCode(event.target.value)}
-                  className="h-14 min-w-0 flex-1 rounded-lg border border-white/15 bg-white/10 px-4 text-base text-white shadow-sm outline-none transition placeholder:text-slate-400 focus:border-emerald-300 focus:ring-4 focus:ring-teal-300/20"
-                />
-
-                <button
-                  type="submit"
-                  disabled={loading}
-                  className="h-14 rounded-lg bg-teal-500 px-6 text-sm font-semibold text-white shadow-lg shadow-black/25 transition hover:bg-teal-400 disabled:cursor-not-allowed disabled:bg-slate-700 disabled:text-slate-300"
+              <div className="mt-8 max-w-2xl">
+                <form
+                  onSubmit={handleSearch}
+                  className="quiet-surface flex w-full flex-col gap-3 rounded-lg p-3 sm:flex-row"
                 >
-                  {loading ? "Searching" : "Search"}
-                </button>
-              </form>
+                  <label className="sr-only" htmlFor="zip-code">
+                    ZIP code
+                  </label>
+                  <input
+                    id="zip-code"
+                    type="text"
+                    inputMode="numeric"
+                    placeholder="Enter ZIP code"
+                    value={zipCode}
+                    onChange={(event) => setZipCode(event.target.value)}
+                    className="bespoke-control h-14 min-w-0 flex-1 border border-white/15 bg-white/10 px-4 text-base text-white shadow-sm outline-none transition placeholder:text-slate-400 focus:border-emerald-300 focus:ring-4 focus:ring-teal-300/20"
+                  />
+
+                  <button
+                    type="submit"
+                    disabled={loading}
+                    className="bespoke-button h-14 bg-teal-500 px-6 text-sm font-semibold text-white shadow-lg shadow-black/25 transition hover:bg-teal-400 disabled:cursor-not-allowed disabled:bg-slate-700 disabled:text-slate-300"
+                  >
+                    {loading ? "Searching" : "Search"}
+                  </button>
+                </form>
+                <div className="hand-note mt-4 max-w-xl rounded-lg px-4 py-3 text-sm leading-6 text-stone-300">
+                  Built like a field note: current environment, illness signals,
+                  local vulnerability, and personal exposure in one read.
+                </div>
+              </div>
               <LiveSignalTape />
             </div>
 
-            <div className="min-w-0">
+            <div className="min-w-0 lg:-mt-10">
               <AnimatedHealthMapGraphic />
+              <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                <div className="paper-strip p-4">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-stone-400">
+                    Local first
+                  </p>
+                  <p className="mt-2 text-sm leading-6 text-stone-200">
+                    ZIP-based snapshots, map lookup, and nearby news keep the
+                    read tied to place.
+                  </p>
+                </div>
+                <div className="paper-strip p-4 sm:translate-y-5">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-stone-400">
+                    Predictive
+                  </p>
+                  <p className="mt-2 text-sm leading-6 text-stone-200">
+                    Forecast windows, check-ins, and model labels turn today
+                    into a stronger signal over time.
+                  </p>
+                </div>
+              </div>
             </div>
           </section>
         )}
 
         {searched && (
-          <section className="py-8">
-            <div className="mb-5 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
-              <div>
-                <p className="text-sm font-semibold uppercase tracking-wide text-slate-400">
-                  Results for {zipCode}
+          <section className="grid gap-6 py-8 lg:grid-cols-[18rem_minmax(0,1fr)] lg:items-start">
+            <DashboardSidebar
+              activeView={dashboardView}
+              onChange={navigateDashboardView}
+              city={city}
+              state={state}
+              zipCode={zipCode}
+            />
+
+            <div className="min-w-0">
+              <div className="mb-5 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+                <div>
+                  <p className="text-sm font-semibold uppercase tracking-wide text-slate-400">
+                    Results for {zipCode}
+                  </p>
+                  <h2 className="mt-1 text-2xl font-bold text-white sm:text-3xl">
+                    {city}, {state}
+                  </h2>
+                </div>
+                <p className="text-sm text-slate-400">
+                  Informational only, not medical advice.
                 </p>
-                <h2 className="mt-1 text-3xl font-bold text-white">
-                  {city}, {state}
-                </h2>
               </div>
-              <p className="text-sm text-slate-400">
-                Informational only, not medical advice.
-              </p>
-            </div>
 
             {dashboardView === "overview" && (
               <>
-                <section className="editorial-surface rounded-lg p-6 sm:p-7">
-                  <div className="grid gap-8 lg:grid-cols-[1.35fr_0.65fr] lg:items-start">
+                <section className="editorial-surface field-report p-5 sm:p-7">
+                  <div className="relative z-10 grid gap-8 lg:grid-cols-[1.25fr_0.75fr] lg:items-start">
                     <div>
-                      <p className="eyebrow-text">
-                        Today&apos;s Local Health Forecast
-                      </p>
-                      <h3 className="display-heading mt-3 max-w-4xl text-4xl leading-tight text-white sm:text-5xl">
+                      <div className="flex flex-wrap items-center gap-3">
+                        <span className="field-tag">Today in {city}</span>
+                        <span className="text-xs font-semibold uppercase tracking-wide text-stone-400">
+                          ZIP {zipCode} · {state}
+                        </span>
+                      </div>
+                      <h3 className="display-heading mt-4 max-w-4xl text-3xl leading-tight text-white sm:text-5xl">
                         {healthBrief.headline}
                       </h3>
                       <p className="mt-4 max-w-3xl text-sm leading-6 text-slate-300">
-                        MyLocalHealth combines local air quality, heat, UV,
+                        A local field brief combining air quality, heat, UV,
                         pollen, flu activity, COVID wastewater, weather alerts,
-                        health equity context, and your profile when available.
+                        equity context, and your profile when available.
                       </p>
-                      <p className="mt-3 text-sm leading-6 text-emerald-100">
+                      <p className="hand-note mt-4 max-w-3xl rounded-lg px-4 py-3 text-sm leading-6 text-emerald-50">
                         {personalizationSummary}
                       </p>
                       <div className="mt-5 flex flex-wrap gap-3">
                         <button
                           type="button"
                           onClick={() => navigateDashboardView("forecast")}
-                          className="rounded-lg bg-teal-500 px-4 py-2 text-sm font-semibold text-white transition hover:bg-teal-400"
+                          className="bespoke-button bg-teal-500 px-4 py-2 text-sm font-semibold text-white transition hover:bg-teal-400"
                         >
                           View forecast
                         </button>
                         <button
                           type="button"
                           onClick={() => navigateDashboardView("plan")}
-                          className="rounded-lg border border-white/15 px-4 py-2 text-sm font-semibold text-white transition hover:border-emerald-300/50 hover:bg-white/10"
+                          className="bespoke-button border border-white/15 px-4 py-2 text-sm font-semibold text-white transition hover:border-emerald-300/50 hover:bg-white/10"
                         >
                           Generate AI plan
                         </button>
                         <button
                           type="button"
                           onClick={() => navigateDashboardView("assistant")}
-                          className="rounded-lg border border-white/15 px-4 py-2 text-sm font-semibold text-white transition hover:border-emerald-300/50 hover:bg-white/10"
+                          className="bespoke-button border border-white/15 px-4 py-2 text-sm font-semibold text-white transition hover:border-emerald-300/50 hover:bg-white/10"
                         >
                           Ask a question
                         </button>
                       </div>
                     </div>
 
-                    <div className="inset-surface rounded-lg p-5">
-                      <p className="text-xs font-semibold text-slate-400">
-                        Overall Risk
+                    <div className="paper-strip p-4 sm:p-5">
+                      <p className="text-xs font-semibold uppercase tracking-wide text-stone-400">
+                        Overall Risk Today
                       </p>
-                      <p className="mt-3 text-6xl font-bold text-white">
+                      <p className="mt-3 text-5xl font-bold leading-none text-white sm:text-6xl">
                         {healthRisk}
                       </p>
                       <div className="mt-4 h-3 overflow-hidden rounded-full bg-white/10">
@@ -3860,29 +4049,81 @@ export default function Home() {
                           Base environmental risk: {riskModel.baseHealthRisk}
                         </p>
                       )}
+                      <div className="mt-5 border-t border-white/10 pt-4">
+                        <p className="text-xs font-semibold uppercase tracking-wide text-stone-400">
+                          Main Driver
+                        </p>
+                        <p className="mt-2 text-sm font-semibold leading-6 text-white">
+                          {primaryDriver?.label ?? "No major elevated driver"}
+                        </p>
+                        <p className="mt-1 text-xs leading-5 text-stone-400">
+                          {primaryDriver?.detail ??
+                            "No single signal is dominating this snapshot."}
+                        </p>
+                      </div>
                     </div>
+                  </div>
+
+                  <div className="relative z-10 mt-7 grid gap-4 md:grid-cols-3">
+                    <BriefMetric
+                      label="Best Outdoor Window"
+                      value={bestWindowLabel}
+                      detail={bestWindowDetail}
+                      actionLabel="View forecast"
+                      onClick={() => navigateDashboardView("forecast")}
+                    />
+                    <BriefMetric
+                      label="Breathing Watch"
+                      value={respiratoryRisk}
+                      detail={`Flu ${fluActivity}; COVID wastewater ${covidActivity}; air ${airQualityLabel}.`}
+                      actionLabel="Open details"
+                      href={detailHref("respiratory-risk")}
+                    />
+                    <BriefMetric
+                      label="Allergy Peak"
+                      value={allergyPeakLabel}
+                      detail="Estimated from forecast pollen and exposure signals."
+                      actionLabel="Open pollen"
+                      href={detailHref("pollen-forecast")}
+                    />
                   </div>
                 </section>
 
-                <ForecastPulseStrip forecastData={healthForecastData} />
+                <ForecastPulseStrip
+                  forecastData={healthForecastData}
+                  onOpenForecast={() => navigateDashboardView("forecast")}
+                />
 
-                <section className="mt-5 grid gap-5 lg:grid-cols-[0.85fr_1.15fr]">
+                <section className="mt-5 grid gap-5 lg:grid-cols-[1.15fr_0.85fr]">
                   <article className="quiet-surface rounded-lg p-5">
-                    <p className="text-sm font-semibold text-slate-300">
-                      Best Window Today
+                    <p className="eyebrow-text">Suggested Focus</p>
+                    <h3 className="display-heading mt-2 text-2xl leading-tight text-white">
+                      What to do with today&apos;s read
+                    </h3>
+                    <div className="mt-4 grid gap-3">
+                      {healthBrief.focusItems.map((item, index) => (
+                        <p
+                          className={`py-2 pl-3 text-left text-sm leading-6 text-slate-200 ${
+                            index === 0
+                              ? "hand-note rounded-r-lg"
+                              : "border-l border-emerald-300/30 bg-white/[0.025]"
+                          }`}
+                          key={item}
+                        >
+                          {item}
+                        </p>
+                      ))}
+                    </div>
+                  </article>
+
+                  <article className="quiet-surface data-pin rounded-lg p-5">
+                    <p className="eyebrow-text">Personal Note</p>
+                    <p className="mt-4 text-sm leading-6 text-emerald-50">
+                      {healthBrief.profileNote}
                     </p>
-                    <p className="mt-3 text-2xl font-semibold text-white">
-                      {healthForecastData?.bestWindow?.displayTime ??
-                        "Unavailable"}
-                    </p>
-                    <p className="mt-3 text-sm leading-6 text-slate-300">
-                      {healthForecastData?.bestWindow
-                        ? `Estimated exposure risk ${healthForecastData.bestWindow.score}/100.`
-                        : "Run a ZIP search with forecast data available to see the lowest-risk window."}
-                    </p>
-                    <div className="mt-4 grid gap-3 sm:grid-cols-2">
-                      <div className="inset-surface rounded-lg p-3">
-                        <p className="text-xs font-semibold text-slate-400">
+                    <div className="mt-5 grid gap-3">
+                      <div className="paper-strip p-3">
+                        <p className="text-xs font-semibold uppercase tracking-wide text-stone-400">
                           Watch Window
                         </p>
                         <p className="mt-2 text-sm font-semibold text-white">
@@ -3890,36 +4131,7 @@ export default function Home() {
                             "Unavailable"}
                         </p>
                       </div>
-                      <div className="inset-surface rounded-lg p-3">
-                        <p className="text-xs font-semibold text-slate-400">
-                          Allergy Peak
-                        </p>
-                        <p className="mt-2 text-sm font-semibold text-white">
-                          {healthForecastData?.allergyPeakWindow
-                            ? `${healthForecastData.allergyPeakWindow.displayTime} · ${healthForecastData.allergyPeakWindow.pollenRisk}`
-                            : "Unavailable"}
-                        </p>
-                      </div>
                     </div>
-                  </article>
-
-                  <article className="quiet-surface rounded-lg p-5">
-                    <p className="text-sm font-semibold text-slate-300">
-                      Suggested Focus
-                    </p>
-                    <div className="mt-3 grid gap-3">
-                      {healthBrief.focusItems.map((item) => (
-                        <p
-                          className="border-l border-emerald-300/40 bg-white/[0.03] py-2 pl-3 text-left text-sm leading-6 text-slate-200"
-                          key={item}
-                        >
-                          {item}
-                        </p>
-                      ))}
-                    </div>
-                    <p className="mt-4 border-l border-emerald-300/40 bg-emerald-400/10 py-3 pl-3 text-left text-xs leading-5 text-emerald-100">
-                      {healthBrief.profileNote}
-                    </p>
                   </article>
                 </section>
 
@@ -4318,8 +4530,9 @@ export default function Home() {
             )}
 
             {dashboardView === "assistant" && (
-            <HealthChatPanel context={chatContext} />
+              <HealthChatPanel context={chatContext} />
             )}
+            </div>
           </section>
         )}
       </section>
