@@ -1,13 +1,21 @@
 @import "tailwindcss";
 
 :root {
-  --background: #0b1412;
-  --foreground: #f5fbf7;
+  --background: #101410;
+  --foreground: #f4f0e7;
+  --surface: #161d18;
+  --surface-muted: #1d251f;
+  --line: rgba(244, 240, 231, 0.12);
+  --line-strong: rgba(244, 240, 231, 0.2);
+  --accent: #c98253;
+  --accent-soft: rgba(201, 130, 83, 0.12);
+  --sage: #a8b7a2;
+  --muted: #a8a194;
   --font-app:
     "Avenir Next", Avenir, Optima, Candara, "Trebuchet MS", "Segoe UI",
     system-ui, -apple-system, BlinkMacSystemFont, Arial, sans-serif;
   --font-display:
-    Georgia, "Iowan Old Style", "Times New Roman", Optima, Candara, serif;
+    Charter, Georgia, "Iowan Old Style", "Times New Roman", serif;
   --font-code:
     "SFMono-Regular", Consolas, "Liberation Mono", Menlo, Courier, monospace;
 }
@@ -27,13 +35,13 @@ body {
     "kern" 1,
     "liga" 1;
   letter-spacing: 0.005em;
-  text-rendering: geometricPrecision;
+  text-rendering: optimizeLegibility;
   overflow-x: hidden;
 }
 
 .display-heading {
   font-family: var(--font-display);
-  font-weight: 650;
+  font-weight: 600;
   letter-spacing: 0;
 }
 
@@ -46,11 +54,7 @@ textarea {
 
 .public-health-bg {
   position: relative;
-  background:
-    radial-gradient(circle at 18% 10%, rgba(45, 212, 191, 0.1), transparent 27rem),
-    radial-gradient(circle at 88% 20%, rgba(251, 191, 36, 0.07), transparent 25rem),
-    radial-gradient(circle at 70% 86%, rgba(16, 185, 129, 0.08), transparent 28rem),
-    linear-gradient(180deg, #0b1412 0%, #0e1715 48%, #070d0c 100%);
+  background: var(--background);
 }
 
 .public-health-bg::before {
@@ -59,11 +63,10 @@ textarea {
   inset: 0;
   z-index: 0;
   background:
-    linear-gradient(rgba(236, 253, 245, 0.035) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(236, 253, 245, 0.028) 1px, transparent 1px),
-    radial-gradient(circle at 24% 18%, rgba(251, 191, 36, 0.07), transparent 18rem);
-  background-size: 56px 56px, 56px 56px, auto;
-  mask-image: linear-gradient(180deg, #000 0%, rgba(0, 0, 0, 0.72) 44%, transparent 100%);
+    linear-gradient(rgba(244, 240, 231, 0.026) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(244, 240, 231, 0.022) 1px, transparent 1px);
+  background-size: 64px 64px, 64px 64px;
+  mask-image: linear-gradient(180deg, #000 0%, rgba(0, 0, 0, 0.58) 45%, transparent 100%);
   pointer-events: none;
 }
 
@@ -73,40 +76,84 @@ textarea {
 }
 
 .editorial-surface {
-  border: 1px solid rgba(167, 243, 208, 0.13);
-  border-top-color: rgba(251, 191, 36, 0.28);
-  border-left-color: rgba(167, 243, 208, 0.22);
-  border-radius: 2.4rem 1rem 3rem 1.35rem;
-  background:
-    linear-gradient(90deg, rgba(251, 191, 36, 0.09) 0 0.45rem, transparent 0.45rem),
-    linear-gradient(135deg, rgba(19, 54, 48, 0.84), rgba(10, 23, 21, 0.94)),
-    rgba(10, 23, 21, 0.9);
-  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.24);
+  border: 1px solid var(--line);
+  border-top-color: var(--line-strong);
+  border-left-color: rgba(201, 130, 83, 0.3);
+  border-radius: 1.6rem 0.85rem 2rem 1rem;
+  background: var(--surface);
+  box-shadow: 0 18px 42px rgba(0, 0, 0, 0.18);
 }
 
 .quiet-surface {
-  border: 1px solid rgba(236, 253, 245, 0.09);
-  border-top-color: rgba(255, 255, 255, 0.14);
-  border-left-color: rgba(167, 243, 208, 0.14);
-  border-radius: 1.4rem 0.75rem 1.65rem 0.9rem;
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.025), transparent 40%),
-    rgba(13, 31, 28, 0.62);
-  box-shadow: 0 18px 48px rgba(0, 0, 0, 0.18);
+  border: 1px solid var(--line);
+  border-top-color: var(--line-strong);
+  border-radius: 1.1rem 0.75rem 1.25rem 0.8rem;
+  background: rgba(29, 37, 31, 0.74);
+  box-shadow: 0 14px 34px rgba(0, 0, 0, 0.14);
+}
+
+.moving-search-border {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  border-color: rgba(244, 240, 231, 0.08);
+}
+
+.moving-search-border::before {
+  content: "";
+  position: absolute;
+  inset: -95%;
+  z-index: -2;
+  background: conic-gradient(
+    from 0deg,
+    transparent 0deg,
+    transparent 72deg,
+    rgba(201, 130, 83, 0.72) 104deg,
+    rgba(168, 183, 162, 0.46) 132deg,
+    transparent 170deg,
+    transparent 360deg
+  );
+  animation: search-border-scan 9s linear infinite;
+}
+
+.moving-search-border::after {
+  content: "";
+  position: absolute;
+  inset: 1px;
+  z-index: -1;
+  border-radius: inherit;
+  background: rgba(22, 29, 24, 0.94);
+}
+
+.moving-search-border > * {
+  position: relative;
+  z-index: 1;
+}
+
+@keyframes search-border-scan {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .moving-search-border::before {
+    animation: none;
+  }
 }
 
 .inset-surface {
-  border: 1px solid rgba(255, 255, 255, 0.075);
-  border-left-color: rgba(251, 191, 36, 0.22);
-  border-radius: 0.95rem 1.25rem 0.95rem 1.25rem;
-  background: rgba(255, 255, 255, 0.045);
+  border: 1px solid var(--line);
+  border-left-color: rgba(201, 130, 83, 0.24);
+  border-radius: 0.8rem 1rem 0.85rem 1.05rem;
+  background: rgba(244, 240, 231, 0.035);
 }
 
 .eyebrow-text {
-  color: #a7f3d0;
+  color: var(--sage);
   font-size: 0.78rem;
   font-weight: 700;
-  letter-spacing: 0.11em;
+  letter-spacing: 0.09em;
   text-transform: uppercase;
 }
 
@@ -119,7 +166,7 @@ textarea {
   content: "";
   position: absolute;
   inset: 1.1rem;
-  border: 1px solid rgba(255, 255, 255, 0.045);
+  border: 1px solid rgba(244, 240, 231, 0.045);
   border-radius: inherit;
   pointer-events: none;
 }
@@ -129,11 +176,11 @@ textarea {
   width: fit-content;
   align-items: center;
   gap: 0.45rem;
-  border: 1px solid rgba(251, 191, 36, 0.28);
+  border: 1px solid rgba(201, 130, 83, 0.35);
   border-radius: 999px;
-  background: rgba(251, 191, 36, 0.08);
+  background: var(--accent-soft);
   padding: 0.35rem 0.7rem;
-  color: #fde68a;
+  color: #e3c6ad;
   font-size: 0.72rem;
   font-weight: 700;
   letter-spacing: 0.08em;
@@ -145,36 +192,34 @@ textarea {
   width: 0.4rem;
   height: 0.4rem;
   border-radius: 999px;
-  background: #fbbf24;
-  box-shadow: 0 0 0 0.25rem rgba(251, 191, 36, 0.12);
+  background: var(--accent);
+  box-shadow: none;
 }
 
 .hand-note {
-  border-left: 2px solid rgba(251, 191, 36, 0.5);
-  background:
-    linear-gradient(90deg, rgba(251, 191, 36, 0.08), transparent),
-    rgba(255, 255, 255, 0.025);
+  border-left: 2px solid rgba(201, 130, 83, 0.55);
+  background: rgba(244, 240, 231, 0.032);
 }
 
 .paper-strip {
-  border: 1px solid rgba(255, 255, 255, 0.075);
-  border-top-color: rgba(251, 191, 36, 0.18);
-  border-left-color: rgba(167, 243, 208, 0.14);
-  border-radius: 0.65rem 1.55rem 0.85rem 1.15rem;
+  border: 1px solid var(--line);
+  border-top-color: rgba(244, 240, 231, 0.18);
+  border-left-color: rgba(201, 130, 83, 0.25);
+  border-radius: 0.65rem 1.25rem 0.8rem 1rem;
   background:
     repeating-linear-gradient(
       -6deg,
-      rgba(255, 255, 255, 0.034) 0,
-      rgba(255, 255, 255, 0.034) 1px,
+      rgba(244, 240, 231, 0.026) 0,
+      rgba(244, 240, 231, 0.026) 1px,
       transparent 1px,
-      transparent 9px
+      transparent 12px
     ),
-    rgba(255, 255, 255, 0.045);
+    rgba(244, 240, 231, 0.036);
 }
 
 .dashboard-sidebar {
   scrollbar-width: thin;
-  scrollbar-color: rgba(167, 243, 208, 0.25) transparent;
+  scrollbar-color: rgba(244, 240, 231, 0.2) transparent;
 }
 
 .sidebar-nav-item {
@@ -182,7 +227,7 @@ textarea {
   border: 1px solid transparent;
   border-radius: 0.95rem 0.55rem 1.05rem 0.6rem;
   padding: 0.78rem 0.85rem 0.78rem 1rem;
-  color: #cbd5e1;
+  color: #d8d2c5;
   transition:
     border-color 180ms ease,
     background-color 180ms ease,
@@ -198,46 +243,46 @@ textarea {
   bottom: 0.85rem;
   width: 2px;
   border-radius: 999px;
-  background: rgba(167, 243, 208, 0);
+  background: rgba(201, 130, 83, 0);
   transition: background 180ms ease;
 }
 
 .sidebar-nav-item span:last-child {
-  color: #94a3b8;
+  color: var(--muted);
 }
 
 .sidebar-nav-item:hover,
 .sidebar-nav-item:focus-visible {
-  border-color: rgba(255, 255, 255, 0.09);
-  background: rgba(255, 255, 255, 0.045);
-  color: #fff;
+  border-color: rgba(244, 240, 231, 0.11);
+  background: rgba(244, 240, 231, 0.045);
+  color: var(--foreground);
   outline: none;
   transform: translateX(0.15rem);
 }
 
 .sidebar-nav-item-active {
-  border-color: rgba(167, 243, 208, 0.24);
-  background:
-    linear-gradient(90deg, rgba(251, 191, 36, 0.09), transparent 42%),
-    rgba(16, 185, 129, 0.11);
-  color: #fff;
+  border-color: rgba(201, 130, 83, 0.34);
+  background: rgba(201, 130, 83, 0.1);
+  color: var(--foreground);
 }
 
 .sidebar-nav-item-active::before {
-  background: #fcd34d;
+  background: var(--accent);
 }
 
 .bespoke-control {
-  border-radius: 1rem 0.65rem 1.1rem 0.75rem;
-  border-top-color: rgba(255, 255, 255, 0.18) !important;
-  border-left-color: rgba(167, 243, 208, 0.2) !important;
+  border-radius: 0.82rem 0.58rem 0.95rem 0.65rem;
+  border-top-color: rgba(244, 240, 231, 0.22) !important;
+  border-left-color: rgba(201, 130, 83, 0.28) !important;
 }
 
 .bespoke-button {
-  border-radius: 0.9rem 0.55rem 1rem 0.65rem;
+  border-radius: 0.78rem 0.52rem 0.9rem 0.58rem;
+  background-color: var(--accent);
+  color: #16110d;
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.15),
-    0 14px 30px rgba(0, 0, 0, 0.2);
+    inset 0 1px 0 rgba(255, 255, 255, 0.12),
+    0 10px 22px rgba(0, 0, 0, 0.16);
   transition:
     filter 180ms ease,
     transform 180ms ease,
@@ -246,7 +291,8 @@ textarea {
 }
 
 .bespoke-button:hover {
-  filter: saturate(1.08);
+  background-color: #d19368;
+  filter: none;
   transform: translateY(-1px);
 }
 
@@ -267,7 +313,7 @@ textarea {
   right: 0.8rem;
   bottom: 0.75rem;
   z-index: 1;
-  color: rgba(167, 243, 208, 0.86);
+  color: rgba(227, 198, 173, 0.9);
   font-size: 0.68rem;
   font-weight: 800;
   letter-spacing: 0.08em;
@@ -281,12 +327,12 @@ textarea {
 
 .action-panel:hover,
 .action-panel:focus-visible {
-  border-color: rgba(167, 243, 208, 0.36);
-  background-color: rgba(255, 255, 255, 0.07);
+  border-color: rgba(201, 130, 83, 0.34);
+  background-color: rgba(244, 240, 231, 0.055);
   box-shadow:
-    0 18px 45px rgba(0, 0, 0, 0.24),
-    0 0 0 1px rgba(167, 243, 208, 0.08);
-  transform: translateY(-3px) rotate(-0.25deg);
+    0 14px 34px rgba(0, 0, 0, 0.2),
+    0 0 0 1px rgba(201, 130, 83, 0.08);
+  transform: translateY(-2px);
 }
 
 .action-panel:hover::after,
@@ -311,8 +357,8 @@ textarea {
   width: 0.48rem;
   height: 0.48rem;
   border-radius: 999px;
-  background: #fcd34d;
-  box-shadow: 0 0 0 0.3rem rgba(252, 211, 77, 0.12);
+  background: var(--accent);
+  box-shadow: none;
 }
 
 .signal-tape {
@@ -354,37 +400,36 @@ textarea {
   position: absolute;
   inset: 0;
   background:
-    linear-gradient(90deg, rgba(45, 212, 191, 0.11), transparent 28%),
-    radial-gradient(circle at 20% 30%, rgba(16, 185, 129, 0.12), transparent 24%),
-    radial-gradient(circle at 82% 62%, rgba(245, 158, 11, 0.09), transparent 26%);
+    linear-gradient(90deg, rgba(244, 240, 231, 0.055), transparent 32%),
+    radial-gradient(circle at 82% 62%, rgba(201, 130, 83, 0.07), transparent 24%);
   pointer-events: none;
 }
 
 .health-map-land {
-  fill: rgba(45, 212, 191, 0.08);
-  stroke: rgba(167, 243, 208, 0.16);
+  fill: rgba(244, 240, 231, 0.055);
+  stroke: rgba(244, 240, 231, 0.14);
   stroke-width: 1;
 }
 
 .health-map-land-alt {
-  fill: rgba(245, 158, 11, 0.06);
+  fill: rgba(201, 130, 83, 0.055);
 }
 
 .health-map-road {
   fill: none;
-  stroke: rgba(209, 250, 229, 0.28);
+  stroke: rgba(244, 240, 231, 0.24);
   stroke-linecap: round;
   stroke-linejoin: round;
   stroke-width: 5;
 }
 
 .health-map-road-major {
-  stroke: rgba(255, 255, 255, 0.38);
+  stroke: rgba(244, 240, 231, 0.34);
   stroke-width: 7;
 }
 
 .health-map-road-minor {
-  stroke: rgba(204, 251, 241, 0.18);
+  stroke: rgba(244, 240, 231, 0.16);
   stroke-width: 4;
 }
 
@@ -405,15 +450,15 @@ textarea {
 }
 
 .health-zone-air {
-  fill: rgba(45, 212, 191, 0.14);
+  fill: rgba(168, 183, 162, 0.12);
 }
 
 .health-zone-resp {
-  fill: rgba(52, 211, 153, 0.1);
+  fill: rgba(168, 183, 162, 0.08);
 }
 
 .health-zone-heat {
-  fill: rgba(251, 191, 36, 0.12);
+  fill: rgba(201, 130, 83, 0.11);
 }
 
 .health-signal-ring {
@@ -430,18 +475,18 @@ textarea {
 }
 
 .health-signal-air {
-  fill: #2dd4bf;
-  stroke: #99f6e4;
+  fill: #8f9f87;
+  stroke: #d8d2c5;
 }
 
 .health-signal-resp {
-  fill: #34d399;
-  stroke: #a7f3d0;
+  fill: #a8b7a2;
+  stroke: #d8d2c5;
 }
 
 .health-signal-heat {
-  fill: #f59e0b;
-  stroke: #fcd34d;
+  fill: #c98253;
+  stroke: #e3c6ad;
 }
 
 .health-map-label {
@@ -456,7 +501,7 @@ textarea {
 }
 
 .health-map-place {
-  fill: rgba(209, 250, 229, 0.65);
+  fill: rgba(216, 210, 197, 0.68);
   font-family: var(--font-app);
   font-size: 13px;
   font-weight: 600;

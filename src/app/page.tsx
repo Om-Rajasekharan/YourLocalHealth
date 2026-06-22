@@ -287,14 +287,14 @@ function riskBadgeClass(risk: string) {
   switch (risk) {
     case "Low":
     case "Very Low":
-      return "border-emerald-300/40 bg-emerald-400/10 text-teal-100";
+      return "border-[#8f9f87]/45 bg-[#8f9f87]/10 text-[#dfe7d7]";
     case "Moderate":
-      return "border-amber-300/40 bg-amber-400/10 text-amber-100";
+      return "border-[#c98253]/45 bg-[#c98253]/12 text-[#efd4bd]";
     case "High":
     case "Very High":
-      return "border-rose-300/40 bg-rose-500/10 text-rose-100";
+      return "border-[#b46a56]/45 bg-[#b46a56]/14 text-[#f0c9bf]";
     default:
-      return "border-white/15 bg-white/10 text-slate-200";
+      return "border-[#f4f0e7]/15 bg-[#f4f0e7]/8 text-[#d8d2c5]";
   }
 }
 
@@ -326,8 +326,8 @@ function DashboardNav({
                 onClick={() => onChange(group.views[0])}
                 className={`flex min-h-14 w-full items-center justify-between gap-3 rounded-lg border px-4 py-3 text-left transition ${
                   isActiveGroup
-                    ? "border-emerald-300/40 bg-emerald-400/10 text-white"
-                    : "border-transparent bg-transparent text-slate-300 hover:border-white/10 hover:bg-white/5"
+                    ? "border-[#c98253]/35 bg-[#c98253]/10 text-[#f4f0e7]"
+                    : "border-transparent bg-transparent text-[#d8d2c5] hover:border-white/10 hover:bg-white/5"
                 }`}
               >
                 <span>
@@ -340,7 +340,7 @@ function DashboardNav({
                       : group.description}
                   </span>
                 </span>
-                <span className="text-sm text-teal-100">v</span>
+                <span className="text-sm text-[#c98253]">v</span>
               </button>
 
               <div className="invisible absolute left-0 right-0 top-[calc(100%+0.5rem)] z-30 max-h-80 overflow-y-auto rounded-lg border border-white/10 bg-[#0b1715] p-2 opacity-0 shadow-2xl shadow-black/35 transition group-hover:visible group-hover:opacity-100 group-focus-within:visible group-focus-within:opacity-100">
@@ -355,8 +355,8 @@ function DashboardNav({
                       onClick={() => onChange(view.id)}
                       className={`w-full rounded-lg px-3 py-3 text-left transition ${
                         isActive
-                          ? "bg-emerald-400/10 text-white"
-                          : "text-slate-300 hover:bg-white/5 hover:text-white"
+                          ? "bg-[#c98253]/10 text-[#f4f0e7]"
+                          : "text-[#d8d2c5] hover:bg-white/5 hover:text-white"
                       }`}
                     >
                       <span className="block text-sm font-semibold">
@@ -493,7 +493,7 @@ function BriefMetric({
         {value}
       </p>
       <p className="mt-2 text-xs leading-5 text-stone-300">{detail}</p>
-      <p className="mt-4 text-xs font-bold uppercase tracking-wide text-emerald-100">
+      <p className="mt-4 text-xs font-bold uppercase tracking-wide text-[#e3c6ad]">
         {actionLabel}
       </p>
     </>
@@ -730,13 +730,13 @@ function InteractiveLocationMap({
         </div>
 
         <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(7,15,13,0.08),rgba(7,15,13,0.48))]" />
-        <div className="pointer-events-none absolute left-1/2 top-1/2 h-10 w-10 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-white bg-emerald-400/90 shadow-[0_0_0_8px_rgba(16,185,129,0.2),0_14px_30px_rgba(0,0,0,0.35)]" />
+        <div className="pointer-events-none absolute left-1/2 top-1/2 h-10 w-10 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-white bg-[#c98253]/90 shadow-[0_0_0_7px_rgba(201,130,83,0.16),0_12px_24px_rgba(0,0,0,0.28)]" />
         <div className="pointer-events-none absolute left-1/2 top-1/2 h-3 w-3 -translate-x-1/2 -translate-y-1/2 rounded-full bg-white" />
         <div className="pointer-events-none absolute left-1/2 top-[calc(50%+1.45rem)] h-7 w-px -translate-x-1/2 bg-white/70" />
 
         <div className="absolute bottom-3 left-3 right-3 flex flex-col gap-3 sm:bottom-4 sm:left-4 sm:right-4 sm:flex-row sm:items-end sm:justify-between">
           <div className="max-w-xl rounded-lg border border-white/12 bg-[#0b1715]/85 p-3 shadow-2xl backdrop-blur sm:p-4">
-            <p className="text-xs font-semibold uppercase tracking-wide text-emerald-200">
+            <p className="text-xs font-semibold uppercase tracking-wide text-[#e3c6ad]">
               Map controls
             </p>
             <p className="mt-1 text-xs leading-5 text-stone-200 sm:text-sm sm:leading-6">
@@ -760,7 +760,7 @@ function InteractiveLocationMap({
               type="button"
               onClick={searchMapCenter}
               disabled={loading}
-              className="w-full rounded-full border border-emerald-200/40 bg-emerald-300 px-4 py-2 text-sm font-bold text-[#07110f] transition hover:bg-emerald-200 disabled:cursor-wait disabled:opacity-70 sm:w-auto"
+              className="w-full rounded-full border border-[#c98253]/40 bg-[#c98253] px-4 py-2 text-sm font-bold text-[#16110d] transition hover:bg-[#d19368] disabled:cursor-wait disabled:opacity-70 sm:w-auto"
             >
               {loading ? "Finding ZIP..." : "Search center point"}
             </button>
@@ -999,7 +999,7 @@ function ForecastPulseStrip({
         <button
           type="button"
           onClick={onOpenForecast}
-          className="w-fit rounded-full border border-white/10 px-3 py-2 text-sm font-semibold text-slate-300 transition hover:border-emerald-300/40 hover:bg-white/10 hover:text-white"
+          className="w-fit rounded-full border border-white/10 px-3 py-2 text-sm font-semibold text-slate-300 transition hover:border-[#c98253]/40 hover:bg-white/10 hover:text-white"
         >
           Open full forecast
         </button>
@@ -1012,10 +1012,10 @@ function ForecastPulseStrip({
             const explanation = buildForecastHourExplanation(hour);
             const color =
               hour.risk === "High"
-                ? "bg-rose-300"
+                ? "bg-[#b46a56]"
                 : hour.risk === "Moderate"
-                ? "bg-amber-300"
-                : "bg-emerald-300";
+                ? "bg-[#c98253]"
+                : "bg-[#8f9f87]";
 
             return (
               <div
@@ -1068,13 +1068,13 @@ function SignalCard({
   return (
     <Link
       href={href}
-      className="group block rounded-lg outline-none transition focus:ring-4 focus:ring-teal-300/20"
+      className="group block rounded-lg outline-none transition focus:ring-4 focus:ring-[#c98253]/15"
     >
       <article className="quiet-surface action-panel cut-corner data-pin p-4">
         <div className="flex min-h-28 flex-col justify-between gap-3">
           <div>
             <div className="flex items-start justify-between gap-3">
-              <h3 className="text-sm font-semibold text-slate-300 transition group-hover:text-emerald-100">
+              <h3 className="text-sm font-semibold text-slate-300 transition group-hover:text-[#f4f0e7]">
                 {title}
               </h3>
               <RiskBadge value={value} />
@@ -1085,7 +1085,7 @@ function SignalCard({
           </div>
           <div className="flex items-center justify-between gap-3 border-t border-white/10 pt-3">
             <p className="truncate text-xs text-slate-400">{source}</p>
-            <p className="shrink-0 text-xs font-bold uppercase tracking-wide text-teal-100">
+            <p className="shrink-0 text-xs font-bold uppercase tracking-wide text-[#e3c6ad]">
               Details
             </p>
           </div>
@@ -1276,30 +1276,30 @@ function RiskTransparencyPanel({
         </div>
         <div className="mt-5 h-3 overflow-hidden rounded-full bg-white/10">
           <div
-            className="h-full rounded-full bg-gradient-to-r from-emerald-300 via-amber-300 to-rose-400"
+            className="h-full rounded-full bg-[#c98253]"
             style={{ width: `${score}%` }}
           />
         </div>
         {topDrivers.length > 0 && (
-          <div className="mt-5 rounded-lg border border-emerald-300/20 bg-emerald-400/10 p-4">
-            <p className="text-xs font-semibold uppercase tracking-wide text-emerald-100">
+          <div className="mt-5 rounded-lg border border-[#c98253]/25 bg-[#c98253]/10 p-4">
+            <p className="text-xs font-semibold uppercase tracking-wide text-[#e3c6ad]">
               Top drivers
             </p>
             <div className="mt-3 grid gap-3 md:grid-cols-2">
               {topDrivers.map((driver) => (
                 <div
-                  className="rounded-lg border border-emerald-200/10 bg-black/10 p-3"
+                  className="rounded-lg border border-[#f4f0e7]/10 bg-black/10 p-3"
                   key={driver.label}
                 >
                   <div className="flex items-center justify-between gap-3">
                     <p className="text-sm font-semibold text-white">
                       {driver.label}
                     </p>
-                    <p className="text-sm font-semibold text-emerald-100">
+                    <p className="text-sm font-semibold text-[#e3c6ad]">
                       +{driver.points}
                     </p>
                   </div>
-                  <p className="mt-1 text-xs leading-5 text-emerald-100/80">
+                  <p className="mt-1 text-xs leading-5 text-[#d8d2c5]/80">
                     {driver.detail} · {driver.category}
                   </p>
                 </div>
@@ -1318,13 +1318,13 @@ function RiskTransparencyPanel({
                 <p className="text-sm font-semibold text-white">
                   {category.label}
                 </p>
-                <p className="text-sm font-semibold text-emerald-100">
+                <p className="text-sm font-semibold text-[#e3c6ad]">
                   {category.score}
                 </p>
               </div>
               <div className="mt-3 h-2 overflow-hidden rounded-full bg-white/10">
                 <div
-                  className="h-full rounded-full bg-emerald-300"
+                  className="h-full rounded-full bg-[#8f9f87]"
                   style={{ width: `${category.score}%` }}
                 />
               </div>
@@ -1348,7 +1348,7 @@ function RiskTransparencyPanel({
             <button
               type="button"
               onClick={() => setShowWeights((current) => !current)}
-              className="h-10 rounded-lg border border-white/15 px-4 text-sm font-semibold text-white transition hover:border-emerald-300/50 hover:bg-white/10"
+              className="h-10 rounded-lg border border-white/15 px-4 text-sm font-semibold text-white transition hover:border-[#c98253]/50 hover:bg-white/10"
             >
               {showWeights ? "Hide weights" : "Show weights"}
             </button>
@@ -1373,7 +1373,7 @@ function RiskTransparencyPanel({
                       {item.maxPoints} points
                     </p>
                   </div>
-                  <p className="text-sm font-semibold text-emerald-100">
+                    <p className="text-sm font-semibold text-[#e3c6ad]">
                     +{item.points}
                   </p>
                 </div>
@@ -1433,7 +1433,7 @@ function DataConfidencePanel({
             <span
               className={`rounded-full border px-2 py-1 text-xs font-semibold ${
                 source.available
-                  ? "border-emerald-300/30 bg-emerald-400/10 text-emerald-100"
+                  ? "border-[#8f9f87]/30 bg-[#8f9f87]/10 text-[#dfe7d7]"
                   : "border-rose-300/30 bg-rose-500/10 text-rose-100"
               }`}
             >
@@ -1552,7 +1552,7 @@ function ModelDataSourcesPanel({
               <span
                 className={`rounded-full border px-2 py-1 text-xs font-semibold ${
                   source.status === "Loaded" || source.status === "Live"
-                    ? "border-emerald-300/30 bg-emerald-400/10 text-emerald-100"
+                    ? "border-[#8f9f87]/30 bg-[#8f9f87]/10 text-[#dfe7d7]"
                     : source.status === "Optional"
                     ? "border-amber-300/30 bg-amber-300/10 text-amber-100"
                     : "border-rose-300/30 bg-rose-500/10 text-rose-100"
@@ -1581,7 +1581,7 @@ function equityBadgeClass(level: string) {
   }
 
   if (level === "Low") {
-    return "border-emerald-300/40 bg-emerald-400/15 text-emerald-100";
+    return "border-[#8f9f87]/40 bg-[#8f9f87]/15 text-[#dfe7d7]";
   }
 
   return "border-white/15 bg-white/10 text-slate-200";
@@ -1622,7 +1622,7 @@ function HealthEquityPanel({
     <section className="rounded-lg border border-white/10 bg-[#0f211d]/90 p-5 shadow-xl shadow-black/25">
       <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
         <div>
-          <p className="text-sm font-semibold uppercase tracking-wide text-teal-200">
+          <p className="text-sm font-semibold uppercase tracking-wide text-[#e3c6ad]">
             Health Equity Overlay
           </p>
           <h3 className="mt-2 text-2xl font-semibold text-white">
@@ -1636,8 +1636,8 @@ function HealthEquityPanel({
           </p>
         </div>
         {equityData && (
-          <div className="rounded-lg border border-emerald-300/20 bg-emerald-400/10 p-4">
-            <p className="text-xs font-semibold uppercase tracking-wide text-emerald-100">
+          <div className="rounded-lg border border-[#a8b7a2]/20 bg-[#a8b7a2]/10 p-4">
+            <p className="text-xs font-semibold uppercase tracking-wide text-[#e3c6ad]">
               Equity vulnerability
             </p>
             <p className="mt-2 text-3xl font-bold text-white">
@@ -1685,8 +1685,8 @@ function HealthEquityPanel({
 
           {equityData.cdcPlaces && (
             <div className="mt-5 grid gap-4 lg:grid-cols-3">
-              <article className="rounded-lg border border-emerald-300/20 bg-emerald-400/10 p-4">
-                <p className="text-xs font-semibold uppercase tracking-wide text-emerald-100">
+              <article className="rounded-lg border border-[#a8b7a2]/20 bg-[#a8b7a2]/10 p-4">
+                <p className="text-xs font-semibold uppercase tracking-wide text-[#e3c6ad]">
                   Chronic burden
                 </p>
                 <p className="mt-3 text-3xl font-bold text-white">
@@ -1694,7 +1694,7 @@ function HealthEquityPanel({
                     ? "n/a"
                     : `${equityData.cdcPlaces.chronicBurdenScore}/100`}
                 </p>
-                <p className="mt-2 text-xs leading-5 text-emerald-50/80">
+                <p className="mt-2 text-xs leading-5 text-[#d8d2c5]/80">
                   Composite from CDC PLACES asthma, COPD, smoking, diabetes,
                   obesity, physical health, and activity estimates.
                 </p>
@@ -1857,7 +1857,7 @@ function ForecastPanel({
     <section className="rounded-lg border border-white/10 bg-[#0f211d]/90 p-5 shadow-xl shadow-black/25">
       <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
         <div>
-          <p className="text-sm font-semibold uppercase tracking-wide text-teal-200">
+          <p className="text-sm font-semibold uppercase tracking-wide text-[#e3c6ad]">
             Health Risk Forecast
           </p>
           <h3 className="mt-2 text-2xl font-semibold text-white">
@@ -1869,8 +1869,8 @@ function ForecastPanel({
           </p>
         </div>
         {forecastData && (
-          <div className="rounded-lg border border-emerald-300/20 bg-emerald-400/10 p-4">
-            <p className="text-xs font-semibold uppercase tracking-wide text-emerald-100">
+          <div className="rounded-lg border border-[#a8b7a2]/20 bg-[#a8b7a2]/10 p-4">
+            <p className="text-xs font-semibold uppercase tracking-wide text-[#e3c6ad]">
               Peak forecast risk
             </p>
             <p className="mt-2 text-3xl font-bold text-white">
@@ -1992,7 +1992,7 @@ function ForecastPanel({
                           }
                         >
                           <div
-                            className="w-full rounded bg-emerald-300/80"
+                            className="w-full rounded bg-[#8f9f87]/80"
                             style={{ height: `${normalized}%` }}
                           />
                         </div>
@@ -2037,10 +2037,10 @@ function ForecastPanel({
                         <div
                           className={`forecast-pulse-bar w-full rounded ${
                             hour.score >= 67
-                              ? "bg-rose-400"
+                              ? "bg-[#b46a56]"
                               : hour.score >= 34
-                              ? "bg-amber-300"
-                              : "bg-emerald-300"
+                              ? "bg-[#c98253]"
+                              : "bg-[#8f9f87]"
                           }`}
                           style={{ height: `${Math.max(8, hour.score)}%` }}
                         />
@@ -2080,7 +2080,7 @@ function ForecastPanel({
               <button
                 type="button"
                 onClick={() => setShowHourlyDetails((current) => !current)}
-                className="h-10 rounded-lg border border-white/15 px-4 text-sm font-semibold text-white transition hover:border-emerald-300/50 hover:bg-white/10"
+                className="h-10 rounded-lg border border-white/15 px-4 text-sm font-semibold text-white transition hover:border-[#c98253]/50 hover:bg-white/10"
               >
                 {showHourlyDetails ? "Hide details" : "Show details"}
               </button>
@@ -2154,7 +2154,7 @@ function exposureClass(score: number) {
     return "border-amber-300/40 bg-amber-300/15 text-amber-100";
   }
 
-  return "border-emerald-300/40 bg-emerald-400/15 text-emerald-100";
+  return "border-[#8f9f87]/40 bg-[#8f9f87]/15 text-[#dfe7d7]";
 }
 
 function ExposureTimelinePanel({
@@ -2415,7 +2415,7 @@ function ExposureTimelinePanel({
     <section className="rounded-lg border border-white/10 bg-[#0f211d]/90 p-5 shadow-xl shadow-black/25">
       <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
         <div>
-          <p className="text-sm font-semibold uppercase tracking-wide text-teal-200">
+          <p className="text-sm font-semibold uppercase tracking-wide text-[#e3c6ad]">
             Exposure Timeline
           </p>
           <h3 className="mt-2 text-2xl font-semibold text-white">
@@ -2427,8 +2427,8 @@ function ExposureTimelinePanel({
             setting, and activity intensity.
           </p>
         </div>
-        <div className="rounded-lg border border-emerald-300/20 bg-emerald-400/10 p-4">
-          <p className="text-xs font-semibold uppercase tracking-wide text-emerald-100">
+          <div className="rounded-lg border border-[#a8b7a2]/20 bg-[#a8b7a2]/10 p-4">
+            <p className="text-xs font-semibold uppercase tracking-wide text-[#e3c6ad]">
             Estimated day score
           </p>
           <p className="mt-2 text-3xl font-bold text-white">
@@ -2498,7 +2498,7 @@ function ExposureTimelinePanel({
                   onChange={(event) =>
                     updateBlock(block.id, "label", event.target.value)
                   }
-                  className="h-11 rounded-lg border border-white/15 bg-white/10 px-3 text-sm font-normal normal-case tracking-normal text-white outline-none focus:border-emerald-300"
+                  className="h-11 rounded-lg border border-white/15 bg-white/10 px-3 text-sm font-normal normal-case tracking-normal text-white outline-none focus:border-[#c98253]"
                 />
               </label>
               <label className="grid gap-2 text-xs font-semibold uppercase tracking-wide text-slate-400">
@@ -2509,7 +2509,7 @@ function ExposureTimelinePanel({
                   onChange={(event) =>
                     updateBlock(block.id, "zipCode", event.target.value)
                   }
-                  className="h-11 rounded-lg border border-white/15 bg-white/10 px-3 text-sm font-normal tracking-normal text-white outline-none focus:border-emerald-300"
+                  className="h-11 rounded-lg border border-white/15 bg-white/10 px-3 text-sm font-normal tracking-normal text-white outline-none focus:border-[#c98253]"
                 />
               </label>
               <label className="grid gap-2 text-xs font-semibold uppercase tracking-wide text-slate-400">
@@ -2520,7 +2520,7 @@ function ExposureTimelinePanel({
                   onChange={(event) =>
                     updateBlock(block.id, "start", event.target.value)
                   }
-                  className="h-11 rounded-lg border border-white/15 bg-white/10 px-3 text-sm font-normal tracking-normal text-white outline-none focus:border-emerald-300"
+                  className="h-11 rounded-lg border border-white/15 bg-white/10 px-3 text-sm font-normal tracking-normal text-white outline-none focus:border-[#c98253]"
                 />
               </label>
               <label className="grid gap-2 text-xs font-semibold uppercase tracking-wide text-slate-400">
@@ -2531,7 +2531,7 @@ function ExposureTimelinePanel({
                   onChange={(event) =>
                     updateBlock(block.id, "end", event.target.value)
                   }
-                  className="h-11 rounded-lg border border-white/15 bg-white/10 px-3 text-sm font-normal tracking-normal text-white outline-none focus:border-emerald-300"
+                  className="h-11 rounded-lg border border-white/15 bg-white/10 px-3 text-sm font-normal tracking-normal text-white outline-none focus:border-[#c98253]"
                 />
               </label>
               <label className="grid gap-2 text-xs font-semibold uppercase tracking-wide text-slate-400">
@@ -2545,7 +2545,7 @@ function ExposureTimelinePanel({
                       event.target.value as TimelineSetting
                     )
                   }
-                  className="h-11 rounded-lg border border-white/15 bg-[#12322c] px-3 text-sm font-normal normal-case tracking-normal text-white outline-none focus:border-emerald-300"
+                  className="h-11 rounded-lg border border-white/15 bg-[#1d251f] px-3 text-sm font-normal normal-case tracking-normal text-white outline-none focus:border-[#c98253]"
                 >
                   <option>Indoors</option>
                   <option>Outdoors</option>
@@ -2562,7 +2562,7 @@ function ExposureTimelinePanel({
                       event.target.value as TimelineIntensity
                     )
                   }
-                  className="h-11 rounded-lg border border-white/15 bg-[#12322c] px-3 text-sm font-normal normal-case tracking-normal text-white outline-none focus:border-emerald-300"
+                  className="h-11 rounded-lg border border-white/15 bg-[#1d251f] px-3 text-sm font-normal normal-case tracking-normal text-white outline-none focus:border-[#c98253]"
                 >
                   <option>Resting</option>
                   <option>Light</option>
@@ -2574,7 +2574,7 @@ function ExposureTimelinePanel({
                 type="button"
                 onClick={() => loadBlockZip(block)}
                 disabled={loadingBlockId === block.id}
-                className="h-11 rounded-lg bg-teal-500 px-3 text-sm font-semibold text-white transition hover:bg-teal-400 disabled:cursor-not-allowed disabled:bg-slate-700 disabled:text-slate-300"
+                className="bespoke-button h-11 px-3 text-sm font-semibold transition disabled:cursor-not-allowed disabled:bg-slate-700 disabled:text-slate-300"
               >
                 {loadingBlockId === block.id ? "Loading" : "Load ZIP"}
               </button>
@@ -2602,7 +2602,7 @@ function ExposureTimelinePanel({
             <div className="mt-4 grid gap-3 md:grid-cols-[1fr_auto] md:items-center">
               <div className="h-3 overflow-hidden rounded-full bg-white/10">
                 <div
-                  className="h-full rounded-full bg-gradient-to-r from-emerald-300 via-amber-300 to-rose-400"
+                  className="h-full rounded-full bg-[#c98253]"
                   style={{ width: `${block.exposureScore}%` }}
                 />
               </div>
@@ -2624,7 +2624,7 @@ function ExposureTimelinePanel({
         <button
           type="button"
           onClick={addBlock}
-          className="h-12 rounded-lg bg-teal-500 px-5 text-sm font-semibold text-white transition hover:bg-teal-400"
+          className="bespoke-button h-12 px-5 text-sm font-semibold transition"
         >
           Add timeline block
         </button>
@@ -2683,7 +2683,7 @@ function AiHealthPlanPanel({
     <section className="rounded-lg border border-white/10 bg-[#0f211d]/90 p-5 shadow-xl shadow-black/25">
       <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
         <div>
-          <p className="text-sm font-semibold uppercase tracking-wide text-teal-200">
+          <p className="text-sm font-semibold uppercase tracking-wide text-[#e3c6ad]">
             AI Health Plan
           </p>
           <h3 className="mt-2 text-2xl font-semibold text-white">
@@ -2698,7 +2698,7 @@ function AiHealthPlanPanel({
           type="button"
           onClick={generatePlan}
           disabled={loadingPlan}
-          className="h-12 rounded-lg bg-teal-500 px-5 text-sm font-semibold text-white transition hover:bg-teal-400 disabled:cursor-not-allowed disabled:bg-slate-700 disabled:text-slate-300"
+          className="bespoke-button h-12 px-5 text-sm font-semibold transition disabled:cursor-not-allowed disabled:bg-slate-700 disabled:text-slate-300"
         >
           {loadingPlan ? "Generating" : plan ? "Refresh plan" : "Generate plan"}
         </button>
@@ -2722,8 +2722,8 @@ function AiHealthPlanPanel({
 
       {plan && (
         <div className="mt-5 grid gap-4">
-          <article className="rounded-lg border border-emerald-300/20 bg-emerald-400/10 p-4">
-            <p className="text-xs font-semibold uppercase tracking-wide text-emerald-100">
+          <article className="rounded-lg border border-[#a8b7a2]/20 bg-[#a8b7a2]/10 p-4">
+            <p className="text-xs font-semibold uppercase tracking-wide text-[#e3c6ad]">
               {plan.headline}
             </p>
             <p className="mt-3 text-sm leading-6 text-slate-100">
@@ -2849,13 +2849,13 @@ function SymptomCheckinPanel({
   };
 
   const checkboxClass =
-    "h-4 w-4 rounded border-white/20 bg-white/10 text-teal-400";
+    "h-4 w-4 rounded border-white/20 bg-white/10 text-[#c98253]";
 
   return (
     <section className="rounded-lg border border-white/10 bg-[#0f211d]/90 p-5 shadow-xl shadow-black/25">
       <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
         <div>
-          <p className="text-sm font-semibold uppercase tracking-wide text-teal-200">
+          <p className="text-sm font-semibold uppercase tracking-wide text-[#e3c6ad]">
             Symptom Check-in
           </p>
           <h3 className="mt-2 text-2xl font-semibold text-white">
@@ -2867,7 +2867,7 @@ function SymptomCheckinPanel({
             risk estimates.
           </p>
         </div>
-        <div className="rounded-lg border border-emerald-300/20 bg-emerald-400/10 p-4 text-sm leading-6 text-emerald-100">
+        <div className="rounded-lg border border-[#a8b7a2]/20 bg-[#a8b7a2]/10 p-4 text-sm leading-6 text-[#e3c6ad]">
           Snapshot: {latestSnapshot ? "linked" : "not saved yet"}
         </div>
       </div>
@@ -2962,7 +2962,7 @@ function SymptomCheckinPanel({
             value={notes}
             onChange={(event) => setNotes(event.target.value)}
             placeholder="Optional context, such as outdoor time or symptoms noticed."
-            className="min-h-24 rounded-lg border border-white/15 bg-white/10 px-3 py-2 text-sm font-normal text-white outline-none transition placeholder:text-slate-500 focus:border-emerald-300"
+            className="min-h-24 rounded-lg border border-white/15 bg-white/10 px-3 py-2 text-sm font-normal text-white outline-none transition placeholder:text-slate-500 focus:border-[#c98253]"
           />
         </label>
 
@@ -2970,7 +2970,7 @@ function SymptomCheckinPanel({
           <button
             type="submit"
             disabled={saving || !user}
-            className="h-12 rounded-lg bg-teal-500 px-5 text-sm font-semibold text-white transition hover:bg-teal-400 disabled:cursor-not-allowed disabled:bg-slate-700 disabled:text-slate-300"
+            className="bespoke-button h-12 px-5 text-sm font-semibold transition disabled:cursor-not-allowed disabled:bg-slate-700 disabled:text-slate-300"
           >
             {saving ? "Saving" : "Save check-in"}
           </button>
@@ -2981,7 +2981,7 @@ function SymptomCheckinPanel({
         </div>
 
         {message && (
-          <p className="rounded-lg border border-emerald-300/20 bg-emerald-400/10 p-3 text-sm text-emerald-100">
+          <p className="rounded-lg border border-[#a8b7a2]/20 bg-[#a8b7a2]/10 p-3 text-sm text-[#e3c6ad]">
             {message}
           </p>
         )}
@@ -3054,10 +3054,10 @@ function HealthChatPanel({ context }: { context: HealthChatContext }) {
   };
 
   return (
-    <section className="mt-5 rounded-lg border border-emerald-300/20 bg-[#0f211d]/90 p-5 shadow-xl shadow-black/25">
+    <section className="mt-5 rounded-lg border border-[#a8b7a2]/20 bg-[#0f211d]/90 p-5 shadow-xl shadow-black/25">
       <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <p className="text-sm font-semibold uppercase tracking-wide text-teal-200">
+          <p className="text-sm font-semibold uppercase tracking-wide text-[#e3c6ad]">
             Health Assistant
           </p>
           <h3 className="mt-1 text-xl font-semibold text-white">
@@ -3076,7 +3076,7 @@ function HealthChatPanel({ context }: { context: HealthChatContext }) {
             className={`rounded-lg border p-3 ${
               message.role === "user"
                 ? "ml-auto max-w-[85%] border-amber-300/30 bg-amber-500/15 text-amber-50"
-                : "mr-auto max-w-[90%] border-emerald-300/20 bg-emerald-400/10 text-slate-100"
+                : "mr-auto max-w-[90%] border-[#a8b7a2]/20 bg-[#a8b7a2]/10 text-slate-100"
             }`}
           >
             <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">
@@ -3107,12 +3107,12 @@ function HealthChatPanel({ context }: { context: HealthChatContext }) {
           value={question}
           onChange={(event) => setQuestion(event.target.value)}
           placeholder="Example: Should I worry about outdoor exercise today?"
-          className="h-12 min-w-0 flex-1 rounded-lg border border-white/15 bg-white/10 px-4 text-base text-white outline-none transition placeholder:text-slate-400 focus:border-emerald-300 focus:ring-4 focus:ring-teal-300/20"
+          className="h-12 min-w-0 flex-1 rounded-lg border border-white/15 bg-white/10 px-4 text-base text-white outline-none transition placeholder:text-slate-400 focus:border-[#c98253] focus:ring-4 focus:ring-[#c98253]/15"
         />
         <button
           type="submit"
           disabled={chatLoading}
-          className="h-12 rounded-lg bg-teal-500 px-5 text-sm font-semibold text-white transition hover:bg-teal-400 disabled:cursor-not-allowed disabled:bg-slate-700 disabled:text-slate-300"
+          className="bespoke-button h-12 px-5 text-sm font-semibold transition disabled:cursor-not-allowed disabled:bg-slate-700 disabled:text-slate-300"
         >
           {chatLoading ? "Asking" : "Ask"}
         </button>
@@ -3813,7 +3813,7 @@ export default function Home() {
                 </Link>
               </div>
               {!searched && (
-                <p className="mt-4 max-w-2xl text-sm leading-6 text-emerald-50/80 sm:mt-5 sm:text-base sm:leading-7">
+                <p className="mt-4 max-w-2xl text-sm leading-6 text-[#d8d2c5]/80 sm:mt-5 sm:text-base sm:leading-7">
                   Local public-health forecasts from air, heat, pollen,
                   illness, equity, and community data.
                 </p>
@@ -3836,12 +3836,12 @@ export default function Home() {
                     placeholder="Enter ZIP"
                     value={zipCode}
                     onChange={(event) => setZipCode(event.target.value)}
-                    className="bespoke-control h-11 min-w-0 flex-1 border border-white/15 bg-white/10 px-3 text-base text-white shadow-sm outline-none transition placeholder:text-slate-400 focus:border-emerald-300 focus:ring-4 focus:ring-teal-300/20 sm:text-sm"
+                    className="bespoke-control h-11 min-w-0 flex-1 border border-white/15 bg-white/10 px-3 text-base text-white shadow-sm outline-none transition placeholder:text-slate-400 focus:border-[#c98253] focus:ring-4 focus:ring-[#c98253]/15 sm:text-sm"
                   />
                   <button
                     type="submit"
                     disabled={loading}
-                    className="bespoke-button h-11 bg-teal-500 px-4 text-sm font-semibold text-white shadow-lg shadow-black/20 transition hover:bg-teal-400 disabled:cursor-not-allowed disabled:bg-slate-700 disabled:text-slate-300"
+                    className="bespoke-button h-11 px-4 text-sm font-semibold shadow-lg shadow-black/20 transition disabled:cursor-not-allowed disabled:bg-slate-700 disabled:text-slate-300"
                   >
                     {loading ? "..." : "Search"}
                   </button>
@@ -3851,14 +3851,14 @@ export default function Home() {
               <div className="flex flex-wrap gap-2">
                 <Link
                   href="/account"
-                  className="bespoke-button flex-1 border border-white/15 px-4 py-2 text-center text-sm font-semibold text-white transition hover:border-emerald-300/50 hover:bg-white/10 sm:flex-none"
+                  className="bespoke-button flex-1 border border-white/15 bg-transparent px-4 py-2 text-center text-sm font-semibold text-white transition hover:border-[#c98253]/50 hover:bg-white/10 sm:flex-none"
                 >
                   {user ? "Account" : "Sign in"}
                 </Link>
                 {!user && (
                   <Link
                     href="/signup"
-                    className="bespoke-button flex-1 bg-teal-500 px-4 py-2 text-center text-sm font-semibold text-white transition hover:bg-teal-400 sm:flex-none"
+                    className="bespoke-button flex-1 px-4 py-2 text-center text-sm font-semibold transition sm:flex-none"
                   >
                     Sign up
                   </Link>
@@ -3898,7 +3898,7 @@ export default function Home() {
               <div className="mt-8 max-w-2xl">
                 <form
                   onSubmit={handleSearch}
-                  className="quiet-surface flex w-full flex-col gap-3 rounded-lg p-3 sm:flex-row"
+                  className="quiet-surface moving-search-border flex w-full flex-col gap-3 rounded-lg p-3 sm:flex-row"
                 >
                   <label className="sr-only" htmlFor="zip-code">
                     ZIP code
@@ -3910,13 +3910,13 @@ export default function Home() {
                     placeholder="Enter ZIP code"
                     value={zipCode}
                     onChange={(event) => setZipCode(event.target.value)}
-                    className="bespoke-control h-14 min-w-0 flex-1 border border-white/15 bg-white/10 px-4 text-base text-white shadow-sm outline-none transition placeholder:text-slate-400 focus:border-emerald-300 focus:ring-4 focus:ring-teal-300/20"
+                    className="bespoke-control h-14 min-w-0 flex-1 border border-white/15 bg-white/10 px-4 text-base text-white shadow-sm outline-none transition placeholder:text-slate-400 focus:border-[#c98253] focus:ring-4 focus:ring-[#c98253]/15"
                   />
 
                   <button
                     type="submit"
                     disabled={loading}
-                    className="bespoke-button h-14 bg-teal-500 px-6 text-sm font-semibold text-white shadow-lg shadow-black/25 transition hover:bg-teal-400 disabled:cursor-not-allowed disabled:bg-slate-700 disabled:text-slate-300"
+                    className="bespoke-button h-14 px-6 text-sm font-semibold shadow-lg shadow-black/25 transition disabled:cursor-not-allowed disabled:bg-slate-700 disabled:text-slate-300"
                   >
                     {loading ? "Searching" : "Search"}
                   </button>
@@ -3999,28 +3999,28 @@ export default function Home() {
                         pollen, flu activity, COVID wastewater, weather alerts,
                         equity context, and your profile when available.
                       </p>
-                      <p className="hand-note mt-4 max-w-3xl rounded-lg px-4 py-3 text-sm leading-6 text-emerald-50">
+                      <p className="hand-note mt-4 max-w-3xl rounded-lg px-4 py-3 text-sm leading-6 text-[#d8d2c5]">
                         {personalizationSummary}
                       </p>
                       <div className="mt-5 flex flex-wrap gap-3">
                         <button
                           type="button"
                           onClick={() => navigateDashboardView("forecast")}
-                          className="bespoke-button bg-teal-500 px-4 py-2 text-sm font-semibold text-white transition hover:bg-teal-400"
+                          className="bespoke-button px-4 py-2 text-sm font-semibold transition"
                         >
                           View forecast
                         </button>
                         <button
                           type="button"
                           onClick={() => navigateDashboardView("plan")}
-                          className="bespoke-button border border-white/15 px-4 py-2 text-sm font-semibold text-white transition hover:border-emerald-300/50 hover:bg-white/10"
+                          className="bespoke-button border border-white/15 bg-transparent px-4 py-2 text-sm font-semibold text-white transition hover:border-[#c98253]/50 hover:bg-white/10"
                         >
                           Generate AI plan
                         </button>
                         <button
                           type="button"
                           onClick={() => navigateDashboardView("assistant")}
-                          className="bespoke-button border border-white/15 px-4 py-2 text-sm font-semibold text-white transition hover:border-emerald-300/50 hover:bg-white/10"
+                          className="bespoke-button border border-white/15 bg-transparent px-4 py-2 text-sm font-semibold text-white transition hover:border-[#c98253]/50 hover:bg-white/10"
                         >
                           Ask a question
                         </button>
@@ -4036,7 +4036,7 @@ export default function Home() {
                       </p>
                       <div className="mt-4 h-3 overflow-hidden rounded-full bg-white/10">
                         <div
-                          className="h-full rounded-full bg-gradient-to-r from-emerald-300 via-amber-300 to-rose-400"
+                          className="h-full rounded-full bg-[#c98253]"
                           style={{ width: `${scoreBreakdown.score}%` }}
                         />
                       </div>
@@ -4106,7 +4106,7 @@ export default function Home() {
                           className={`py-2 pl-3 text-left text-sm leading-6 text-slate-200 ${
                             index === 0
                               ? "hand-note rounded-r-lg"
-                              : "border-l border-emerald-300/30 bg-white/[0.025]"
+                              : "border-l border-[#c98253]/30 bg-white/[0.025]"
                           }`}
                           key={item}
                         >
@@ -4118,7 +4118,7 @@ export default function Home() {
 
                   <article className="quiet-surface data-pin rounded-lg p-5">
                     <p className="eyebrow-text">Personal Note</p>
-                    <p className="mt-4 text-sm leading-6 text-emerald-50">
+                    <p className="mt-4 text-sm leading-6 text-[#d8d2c5]">
                       {healthBrief.profileNote}
                     </p>
                     <div className="mt-5 grid gap-3">
@@ -4149,7 +4149,7 @@ export default function Home() {
                       <button
                         type="button"
                         onClick={() => navigateDashboardView("model")}
-                        className="shrink-0 text-xs font-semibold text-teal-100 hover:text-white"
+                        className="shrink-0 text-xs font-semibold text-[#e3c6ad] hover:text-white"
                       >
                         See model
                       </button>
@@ -4164,7 +4164,7 @@ export default function Home() {
                             <p className="text-sm font-semibold text-white">
                               {driver.label}
                             </p>
-                            <p className="text-sm font-semibold text-emerald-100">
+                            <p className="text-sm font-semibold text-[#e3c6ad]">
                               +{driver.points}
                             </p>
                           </div>
@@ -4194,7 +4194,7 @@ export default function Home() {
                       <button
                         type="button"
                         onClick={() => navigateDashboardView("equity")}
-                        className="shrink-0 text-xs font-semibold text-teal-100 hover:text-white"
+                        className="shrink-0 text-xs font-semibold text-[#e3c6ad] hover:text-white"
                       >
                         See context
                       </button>
@@ -4511,9 +4511,9 @@ export default function Home() {
                       key={article.url}
                       target="_blank"
                       rel="noreferrer"
-                      className="rounded-lg border border-white/10 bg-white/5 p-4 transition hover:-translate-y-0.5 hover:border-emerald-300/50 hover:bg-white/10"
+                      className="rounded-lg border border-white/10 bg-white/5 p-4 transition hover:-translate-y-0.5 hover:border-[#c98253]/50 hover:bg-white/10"
                     >
-                      <p className="text-xs font-semibold uppercase tracking-wide text-teal-200">
+                      <p className="text-xs font-semibold uppercase tracking-wide text-[#e3c6ad]">
                         {article.source}
                       </p>
                       <h4 className="mt-2 text-base font-semibold leading-6 text-white">
