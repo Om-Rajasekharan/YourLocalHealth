@@ -3804,11 +3804,15 @@ export default function Home() {
                     }`}
                   />
                   <span
-                    className={`font-bold tracking-normal text-white ${
-                      searched ? "text-xl sm:text-2xl" : "text-3xl sm:text-5xl"
+                    className={`brand-wordmark ${
+                      searched
+                        ? "brand-wordmark-compact"
+                        : "brand-wordmark-large"
                     }`}
                   >
-                    MyLocalHealth
+                    <span className="brand-wordmark-my">My</span>
+                    <span className="brand-wordmark-local">Local</span>
+                    <span className="brand-wordmark-health">Health</span>
                   </span>
                 </Link>
               </div>

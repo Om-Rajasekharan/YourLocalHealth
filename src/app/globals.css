@@ -45,6 +45,52 @@ body {
   letter-spacing: 0;
 }
 
+.brand-wordmark {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0;
+  color: var(--foreground);
+  font-family: Optima, "Avenir Next", Candara, var(--font-app);
+  font-weight: 700;
+  line-height: 0.98;
+  letter-spacing: -0.028em;
+  text-shadow: 0 8px 20px rgba(0, 0, 0, 0.22);
+}
+
+.brand-wordmark-large {
+  font-size: clamp(2.2rem, 6.4vw, 4.05rem);
+}
+
+.brand-wordmark-compact {
+  font-size: clamp(1.35rem, 2.9vw, 1.9rem);
+}
+
+.brand-wordmark-my {
+  font: inherit;
+}
+
+.brand-wordmark-local {
+  font: inherit;
+}
+
+.brand-wordmark-health {
+  position: relative;
+  margin-left: 0.03em;
+  color: #f8f3ea;
+  font: inherit;
+}
+
+.brand-wordmark-health::after {
+  content: "";
+  position: absolute;
+  left: 0.04em;
+  right: 0.03em;
+  bottom: -0.16em;
+  height: 0.045em;
+  border-radius: 999px;
+  background: rgba(201, 130, 83, 0.72);
+}
+
 button,
 input,
 select,

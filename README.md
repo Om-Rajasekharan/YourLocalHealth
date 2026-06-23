@@ -1,36 +1,164 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# MyLocalHealth
 
-## Getting Started
+MyLocalHealth is a public-health dashboard that turns local environmental,
+respiratory, forecast, and community context into a plain-language health
+snapshot for a ZIP code.
 
-First, run the development server:
+The goal is not to diagnose or replace medical care. The app is an
+informational tool that helps people understand local signals that may affect
+breathing, heat exposure, allergies, outdoor activity, and community health
+vulnerability.
+
+## Current Features
+
+- ZIP code lookup with city, state, latitude, and longitude
+- Air quality and pollutant context
+- CDC flu activity by state
+- COVID wastewater activity
+- Weather, heat, UV, pollen, and air-quality forecast signals
+- Interactive map with center-point ZIP lookup
+- Local health news context
+- Health equity overlay using Census/CDC-style social determinants
+- CDC PLACES chronic disease context
+- Personalized account/profile fields through Supabase
+- Saved locations
+- Symptom check-ins for future model training
+- AI health assistant and AI daily health plan
+- Synthetic ML training pipeline for demo/testing
+
+## Tech Stack
+
+- Next.js
+- TypeScript
+- Tailwind CSS
+- Supabase
+- OpenWeather / Open-Meteo / CDC public datasets
+- Python, pandas, scikit-learn, joblib for ML experiments
+
+## Run Locally
+
+Install JavaScript dependencies:
+
+```bash
+npm install
+```
+
+Start the app:
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open:
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```bash
+http://localhost:3000
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Environment Variables
 
-## Learn More
+Create `.env.local` locally and add the API keys used by the app. Do not commit
+`.env.local`.
 
-To learn more about Next.js, take a look at the following resources:
+Common variables include:
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+```bash
+NEXT_PUBLIC_SUPABASE_URL=
+NEXT_PUBLIC_SUPABASE_ANON_KEY=
+OPENAI_API_KEY=
+OPENWEATHER_API_KEY=
+CENSUS_API_KEY=
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## ML Pipeline
 
-## Deploy on Vercel
+The app can save health snapshots and user symptom check-ins. Over time, those
+check-ins can become outcome labels for a real symptom-risk model.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+For now, the project includes a synthetic data generator so the ML pipeline can
+be tested before enough real check-ins exist.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+### Important Note
+
+Synthetic data is for development and demos only. It proves that the pipeline
+works, but it does not prove clinical or real-world accuracy.
+
+### Set Up Python ML Environment
+
+Create and use a local virtual environment:
+
+```bash
+python3 -m venv .venv
+.venv/bin/pip install -r ml/requirements.txt
+```
+
+### Generate Synthetic Check-Ins
+
+```bash
+python3 ml/generate_synthetic_checkins.py --rows 1500 --output data/synthetic_checkins.csv
+```
+
+### Train Demo Models
+
+```bash
+.venv/bin/python ml/train_symptom_model.py data/synthetic_checkins.csv --all-targets
+```
+
+Training outputs are written to:
+
+```bash
+ml/models/
+```
+
+Generated datasets and model artifacts are ignored by git.
+
+### Train On Real Check-Ins Later
+
+When enough real users have submitted check-ins:
+
+1. Run `supabase/export_ml_training_data.sql` in the Supabase SQL editor.
+2. Export the results as CSV.
+3. Save the file locally as `data/checkins.csv`.
+4. Train with:
+
+```bash
+.venv/bin/python ml/train_symptom_model.py data/checkins.csv --all-targets
+```
+
+## Supabase SQL Files
+
+- `supabase/saved_locations.sql`: saved locations table and policies
+- `supabase/user_profiles.sql`: user profile table and policies
+- `supabase/ml_training_data.sql`: health snapshots and symptom check-ins
+- `supabase/export_ml_training_data.sql`: export query for ML training data
+
+## Development Checks
+
+Run lint:
+
+```bash
+npm run lint
+```
+
+Build production bundle:
+
+```bash
+npm run build
+```
+
+## Safe Commit Command
+
+The generated ML data, model artifacts, local virtual environment, env files,
+and Next build output are ignored. After reviewing `git status`, this is safe:
+
+```bash
+git add .
+git commit -m "Add ML training pipeline and polish UI"
+git push
+```
+
+## Medical Disclaimer
+
+MyLocalHealth is informational only. It does not provide medical advice,
+diagnosis, or treatment. People with serious or urgent symptoms should contact
+emergency services or a medical professional.

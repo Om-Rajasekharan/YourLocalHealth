@@ -2,6 +2,7 @@
 
 # dependencies
 /node_modules
+/.venv
 /.pnp
 .pnp.*
 .yarn/*
@@ -12,6 +13,10 @@
 
 # testing
 /coverage
+
+# generated local ML artifacts
+/data
+/ml/models
 
 # next.js
 /.next/
