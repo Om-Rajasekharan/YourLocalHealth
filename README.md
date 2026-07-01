@@ -20,6 +20,7 @@ vulnerability.
 - Local health news context
 - Health equity overlay using Census/CDC-style social determinants
 - CDC PLACES chronic disease context
+- Optional Tableau or Looker Studio community trends embed
 - Personalized account/profile fields through Supabase
 - Saved locations
 - Symptom check-ins for future model training
@@ -68,7 +69,12 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=
 OPENAI_API_KEY=
 OPENWEATHER_API_KEY=
 CENSUS_API_KEY=
+NEXT_PUBLIC_LOOKER_STUDIO_EMBED_URL=
+NEXT_PUBLIC_TABLEAU_EMBED_URL=
 ```
+
+The Tableau/Looker variables are optional. If neither is set, the app still
+works and shows a setup panel in the Community Trends page.
 
 ## ML Pipeline
 
@@ -111,6 +117,29 @@ ml/models/
 ```
 
 Generated datasets and model artifacts are ignored by git.
+
+## Tableau or Looker Studio
+
+The app includes a Community Trends page that can embed a BI dashboard.
+
+Recommended use:
+
+1. Export aggregate, de-identified data from Supabase.
+2. Build charts in Looker Studio or Tableau, such as symptom check-ins over
+   time, risk by ZIP/state, environmental signals vs outcomes, and model
+   performance.
+3. Copy the report's embed URL.
+4. Add one of these environment variables locally and in Vercel:
+
+```bash
+NEXT_PUBLIC_LOOKER_STUDIO_EMBED_URL=
+NEXT_PUBLIC_TABLEAU_EMBED_URL=
+```
+
+Only one is needed. If both are set, Looker Studio is used first.
+
+Do not embed tables containing names, emails, notes, precise medical histories,
+or account-level records. Use aggregate counts, rates, and model metrics.
 
 ### Train On Real Check-Ins Later
 

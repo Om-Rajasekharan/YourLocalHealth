@@ -52,7 +52,7 @@ function RiskMeter({
     value === null ? null : Math.min(value * sensitivity, max);
 
   return (
-    <article className="rounded-lg border border-white/10 bg-[#0f211d]/90 p-5 shadow-xl shadow-black/25">
+    <article className="rounded-lg border border-white/10 bg-[#0c2238]/90 p-5 shadow-xl shadow-black/25">
       <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <p className="text-sm font-semibold uppercase tracking-wide text-slate-400">
@@ -71,7 +71,7 @@ function RiskMeter({
 
       <div className="mt-5 h-4 overflow-hidden rounded-full bg-white/10">
         <div
-          className="h-full rounded-full bg-gradient-to-r from-emerald-300 via-amber-300 to-rose-400"
+          className="h-full rounded-full bg-gradient-to-r from-[#8FC6E8] via-[#4B9CD3] to-[#13294B]"
           style={{ width: `${meterPercent(adjustedValue, max)}%` }}
         />
       </div>
@@ -98,7 +98,7 @@ function RiskMeter({
           step="0.1"
           value={sensitivity}
           onChange={(event) => setSensitivity(Number(event.target.value))}
-          className="mt-2 block w-full accent-teal-300"
+          className="mt-2 block w-full accent-[#4B9CD3]"
         />
       </label>
       <p className="mt-2 text-xs leading-5 text-slate-500">
@@ -129,7 +129,7 @@ function InteractiveBars({
   const maxValue = Math.max(1, ...bars.map((bar) => bar.value ?? 0));
 
   return (
-    <article className="rounded-lg border border-white/10 bg-[#0f211d]/90 p-5 shadow-xl shadow-black/25">
+    <article className="rounded-lg border border-white/10 bg-[#0c2238]/90 p-5 shadow-xl shadow-black/25">
       <p className="text-sm font-semibold uppercase tracking-wide text-slate-400">
         Interactive Visual
       </p>
@@ -148,8 +148,8 @@ function InteractiveBars({
               onClick={() => setSelectedLabel(bar.label)}
               className={`rounded-lg border p-3 text-left transition ${
                 isSelected
-                  ? "border-emerald-300/60 bg-emerald-400/10"
-                  : "border-white/10 bg-white/5 hover:border-emerald-300/40"
+                  ? "border-[#8FC6E8]/60 bg-[#B7D8F2]/10"
+                  : "border-white/10 bg-white/5 hover:border-[#4B9CD3]/40"
               }`}
               key={bar.label}
             >
@@ -157,7 +157,7 @@ function InteractiveBars({
                 <span className="text-sm font-semibold text-white">
                   {bar.label}
                 </span>
-                <span className="text-sm font-semibold text-emerald-100">
+                <span className="text-sm font-semibold text-[#D7ECFA]">
                   {bar.value === null
                     ? "n/a"
                     : `${bar.value.toFixed(1)}${unit}`}
@@ -165,7 +165,7 @@ function InteractiveBars({
               </div>
               <div className="mt-3 h-3 overflow-hidden rounded-full bg-white/10">
                 <div
-                  className="h-full rounded-full bg-gradient-to-r from-emerald-300 to-amber-300"
+                  className="h-full rounded-full bg-gradient-to-r from-[#8FC6E8] to-[#4B9CD3]"
                   style={{ width: `${width}%` }}
                 />
               </div>
@@ -175,7 +175,7 @@ function InteractiveBars({
       </div>
 
       {selected && (
-        <p className="mt-4 rounded-lg border border-emerald-300/20 bg-emerald-400/10 p-3 text-sm leading-6 text-emerald-50">
+        <p className="mt-4 rounded-lg border border-[#8FC6E8]/20 bg-[#B7D8F2]/10 p-3 text-sm leading-6 text-[#EAF6FF]">
           <span className="font-semibold">{selected.label}:</span>{" "}
           {selected.detail}
         </p>
@@ -289,7 +289,7 @@ function TopicVisualization({
     }
 
     return (
-      <article className="rounded-lg border border-white/10 bg-[#0f211d]/90 p-5 shadow-xl shadow-black/25">
+      <article className="rounded-lg border border-white/10 bg-[#0c2238]/90 p-5 shadow-xl shadow-black/25">
         <p className="text-sm font-semibold uppercase tracking-wide text-slate-400">
           Active Alert Events
         </p>
@@ -300,8 +300,8 @@ function TopicVisualization({
               onClick={() => setSelectedAlert(alert)}
               className={`rounded-full border px-3 py-1 text-sm font-semibold transition ${
                 selectedAlert === alert
-                  ? "border-emerald-300/50 bg-emerald-400/10 text-emerald-100"
-                  : "border-rose-300/30 bg-rose-500/10 text-rose-100 hover:border-emerald-300/40"
+                  ? "border-[#8FC6E8]/50 bg-[#B7D8F2]/10 text-[#D7ECFA]"
+                  : "border-rose-300/30 bg-rose-500/10 text-rose-100 hover:border-[#4B9CD3]/40"
               }`}
               key={alert}
             >
@@ -462,7 +462,7 @@ function getRiskTone(value: string) {
     case "Fair":
     case "Good":
     case "Standard Coverage":
-      return "border-emerald-300/40 bg-emerald-400/10 text-teal-100";
+      return "border-[#8FC6E8]/40 bg-[#B7D8F2]/10 text-[#D7ECFA]";
     case "Moderate":
     case "Limited Coverage":
       return "border-amber-300/40 bg-amber-300/10 text-amber-100";
@@ -533,7 +533,7 @@ function TrendChart({
   const earliestPoint = visiblePoints[0];
 
   return (
-    <article className="mt-5 rounded-lg border border-white/10 bg-[#0f211d]/90 p-5 shadow-xl shadow-black/25">
+    <article className="mt-5 rounded-lg border border-white/10 bg-[#0c2238]/90 p-5 shadow-xl shadow-black/25">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <p className="text-sm font-semibold uppercase tracking-wide text-slate-400">
@@ -672,12 +672,12 @@ function TrendChart({
             max={Math.max(points.length, 8)}
             value={weeksShown}
             onChange={(event) => setWeeksShown(Number(event.target.value))}
-            className="mt-2 block w-full accent-teal-300"
+            className="mt-2 block w-full accent-[#4B9CD3]"
           />
         </label>
         <div className="flex flex-wrap gap-3 text-xs font-semibold">
-          <span className="inline-flex items-center gap-2 text-teal-100">
-            <span className="h-1.5 w-6 rounded-full bg-emerald-300" />
+          <span className="inline-flex items-center gap-2 text-[#D7ECFA]">
+            <span className="h-1.5 w-6 rounded-full bg-[#8FC6E8]" />
             {region}
           </span>
           <span className="inline-flex items-center gap-2 text-amber-100">
@@ -737,7 +737,7 @@ function WastewaterTrendSection({
 
   if (loading) {
     return (
-      <section className="mt-5 rounded-lg border border-white/10 bg-[#0f211d]/90 p-5 text-sm text-slate-300 shadow-xl shadow-black/25">
+      <section className="mt-5 rounded-lg border border-white/10 bg-[#0c2238]/90 p-5 text-sm text-slate-300 shadow-xl shadow-black/25">
         Loading historical trend data...
       </section>
     );
@@ -1034,20 +1034,20 @@ function DetailsContent() {
     };
 
   return (
-    <main className="min-h-screen bg-[#0b1412] text-white">
+    <main className="min-h-screen bg-[#061826] text-white">
       <section className="mx-auto w-full max-w-5xl px-5 py-8 sm:px-8 lg:px-10">
         <button
           type="button"
           onClick={() =>
             router.push(`/?zipCode=${encodeURIComponent(zipCode)}`)
           }
-          className="inline-flex text-sm font-semibold text-teal-200 hover:text-white"
+          className="inline-flex text-sm font-semibold text-[#D7ECFA] hover:text-white"
         >
           Back to summary
         </button>
 
-        <header className="mt-8 rounded-lg border border-white/10 bg-[#0f211d]/90 p-6 shadow-xl shadow-black/25">
-          <p className="text-sm font-semibold uppercase tracking-wide text-teal-200">
+        <header className="mt-8 rounded-lg border border-white/10 bg-[#0c2238]/90 p-6 shadow-xl shadow-black/25">
+          <p className="text-sm font-semibold uppercase tracking-wide text-[#D7ECFA]">
             {detail.eyebrow}
           </p>
           <div className="mt-4 flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
@@ -1073,7 +1073,7 @@ function DetailsContent() {
         </header>
 
         <section className="mt-5 grid gap-5 lg:grid-cols-[0.9fr_1.1fr]">
-          <article className="rounded-lg border border-white/10 bg-[#0f211d]/90 p-5 shadow-xl shadow-black/25">
+          <article className="rounded-lg border border-white/10 bg-[#0c2238]/90 p-5 shadow-xl shadow-black/25">
             <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-400">
               Reading Details
             </h2>
@@ -1092,7 +1092,7 @@ function DetailsContent() {
             </dl>
           </article>
 
-          <article className="rounded-lg border border-white/10 bg-[#0f211d]/90 p-5 shadow-xl shadow-black/25">
+          <article className="rounded-lg border border-white/10 bg-[#0c2238]/90 p-5 shadow-xl shadow-black/25">
             <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-400">
               What This Means
             </h2>
@@ -1153,7 +1153,7 @@ export default function DetailPage() {
   return (
     <Suspense
       fallback={
-        <main className="grid min-h-screen place-items-center bg-[#0b1412] text-slate-300">
+        <main className="grid min-h-screen place-items-center bg-[#061826] text-slate-300">
           Loading details...
         </main>
       }
