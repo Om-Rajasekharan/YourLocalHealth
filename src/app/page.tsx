@@ -900,17 +900,16 @@ function LiveSignalTape() {
     "Symptom Check-Ins",
     "ML Outcome Labels",
   ];
-  const repeatedSignals = [...signals, ...signals];
 
   return (
     <div className="mt-6 overflow-hidden border-y border-white/10 py-3 text-left">
-      <p className="eyebrow-text mb-3">Powered by</p>
-      <div className="signal-tape overflow-hidden">
-        <div className="signal-tape-track flex w-max gap-3">
-          {repeatedSignals.map((signal, index) => (
+      <p className="eyebrow-text mb-3">Signals checked</p>
+      <div className="signal-tape">
+        <div className="flex flex-wrap gap-2">
+          {signals.map((signal) => (
             <span
-              className="rounded-full border border-white/10 bg-white/[0.04] px-3 py-1 text-xs font-semibold text-slate-300"
-              key={`${signal}-${index}`}
+              className="rounded-full border border-white/10 bg-white/[0.035] px-3 py-1 text-xs font-semibold text-slate-300"
+              key={signal}
             >
               {signal}
             </span>
@@ -918,6 +917,140 @@ function LiveSignalTape() {
         </div>
       </div>
     </div>
+  );
+}
+
+function PreSearchFeatureSections() {
+  const features = [
+    {
+      id: "feature-forecast",
+      eyebrow: "Forecast",
+      title: "A 24-hour pulse for outdoor decisions",
+      body:
+        "The forecast blends hourly weather, heat index, UV, PM2.5, ozone, pollen, and active alerts into a time-of-day exposure score. The app highlights the best and worst windows so the result is easier to act on.",
+      method:
+        "Generated with live Open-Meteo forecast data, air-quality forecast signals, weather alerts, and a transparent weighted risk model.",
+      stat: "24 hr",
+      statLabel: "hourly risk window",
+      visual: "forecast",
+      readouts: [
+        ["Forecast inputs", "Temp, UV, AQI, pollen"],
+        ["Model output", "Hourly exposure score"],
+        ["User-facing result", "Best and worst windows"],
+      ],
+    },
+    {
+      id: "feature-air-heat",
+      eyebrow: "Air + Heat",
+      title: "Respiratory and heat stress in one view",
+      body:
+        "Air pollution and heat can stack together. MyLocalHealth reads AQI, dominant pollutants, PM2.5, ozone, humidity, and feels-like temperature to explain what is driving the current signal.",
+      method:
+        "Generated from OpenWeather air pollution data, Open-Meteo weather data, pollutant thresholds, and health-risk scoring rules.",
+      stat: "AQI",
+      statLabel: "pollutant-aware context",
+      visual: "air",
+      readouts: [
+        ["Air inputs", "PM2.5, ozone, NO2"],
+        ["Heat inputs", "Feels-like temp, humidity"],
+        ["Risk logic", "Combined respiratory stress"],
+      ],
+    },
+    {
+      id: "feature-equity",
+      eyebrow: "Equity",
+      title: "Why the same hazard can affect places differently",
+      body:
+        "A heat wave or bad-air day does not land equally everywhere. The local context layer combines social determinants and chronic disease estimates to show where risk may be harder to avoid or recover from.",
+      method:
+        "Generated from Census ACS indicators, CDC PLACES chronic disease prevalence, and an equity overlay that explains vulnerability drivers.",
+      stat: "ACS",
+      statLabel: "plus CDC PLACES",
+      visual: "equity",
+      readouts: [
+        ["Social context", "Poverty, insurance, vehicle access"],
+        ["Health context", "Asthma, COPD, smoking"],
+        ["Output", "Structural vulnerability layer"],
+      ],
+    },
+    {
+      id: "feature-ai-plan",
+      eyebrow: "AI Plan",
+      title: "Plain-language guidance from the local snapshot",
+      body:
+        "The AI assistant uses the dashboard context to answer questions and draft daily suggestions. It is designed to explain the data, not diagnose or replace medical care.",
+      method:
+        "Generated from the ZIP-code snapshot, forecast drivers, local news, profile context when available, and OpenAI-powered summarization.",
+      stat: "AI",
+      statLabel: "context-aware explanation",
+      visual: "ai",
+      readouts: [
+        ["Context", "Local data snapshot"],
+        ["Guardrail", "Informational, not diagnosis"],
+        ["Output", "Plain-language guidance"],
+      ],
+    },
+  ];
+
+  return (
+    <section className="presearch-features" aria-label="How MyLocalHealth works">
+      <div className="presearch-section-intro">
+        <p>Before you search</p>
+        <h2 className="display-heading">
+          What the dashboard is looking for
+        </h2>
+        <span>
+          Each ZIP code search pulls live public-health signals, then turns them
+          into a readable forecast, context layer, and personalized next step.
+        </span>
+      </div>
+
+      <div className="presearch-feature-list">
+        {features.map((feature, index) => (
+          <article
+            className="presearch-feature-card"
+            id={feature.id}
+            key={feature.id}
+          >
+            <div className="presearch-feature-copy">
+              <span className="presearch-feature-number">
+                {String(index + 1).padStart(2, "0")}
+              </span>
+              <p className="presearch-feature-eyebrow">{feature.eyebrow}</p>
+              <h3 className="display-heading">{feature.title}</h3>
+              <p>{feature.body}</p>
+              <div className="presearch-method-note">
+                <strong>How it is generated</strong>
+                <span>{feature.method}</span>
+              </div>
+            </div>
+
+            <div className={`presearch-visual presearch-visual-${feature.visual}`}>
+              <div className="presearch-stat-card">
+                <strong>{feature.stat}</strong>
+                <span>{feature.statLabel}</span>
+              </div>
+              <div className="presearch-readout-list">
+                {feature.readouts.map(([label, value]) => (
+                  <div className="presearch-readout-row" key={label}>
+                    <span>{label}</span>
+                    <strong>{value}</strong>
+                  </div>
+                ))}
+              </div>
+              <div className="presearch-visual-grid">
+                <span />
+                <span />
+                <span />
+                <span />
+                <span />
+                <span />
+              </div>
+            </div>
+          </article>
+        ))}
+      </div>
+    </section>
   );
 }
 
@@ -4215,10 +4348,10 @@ export default function Home() {
             </div>
             <nav className="landing-nav" aria-label="Primary">
               <div className="landing-nav-links">
-                <a href="#zip-search">Forecast</a>
-                <a href="#zip-search">Air + Heat</a>
-                <a href="#zip-search">Equity</a>
-                <a href="#zip-search">AI Plan</a>
+                <a href="#feature-forecast">Forecast</a>
+                <a href="#feature-air-heat">Air + Heat</a>
+                <a href="#feature-equity">Equity</a>
+                <a href="#feature-ai-plan">AI Plan</a>
               </div>
 
               <Link
@@ -4424,6 +4557,8 @@ export default function Home() {
                 </span>
               </article>
             </div>
+
+            <PreSearchFeatureSections />
           </section>
         )}
 
