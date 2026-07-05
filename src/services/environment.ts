@@ -20,6 +20,15 @@ type OpenMeteoResponse = {
   };
 };
 
+const unavailableEnvironmentData: EnvironmentData = {
+  temperature: null,
+  apparentTemperature: null,
+  humidity: null,
+  uvIndexMax: null,
+  temperatureMax: null,
+  apparentTemperatureMax: null,
+};
+
 export function getHeatRiskLabel(apparentTemperature: number | null) {
   if (apparentTemperature === null) return "Unknown";
   if (apparentTemperature >= 103) return "High";
@@ -49,23 +58,27 @@ export async function getEnvironmentData(
     timezone: "auto",
   });
 
-  const response = await fetch(
-    `https://api.open-meteo.com/v1/forecast?${params.toString()}`
-  );
+  try {
+    const response = await fetch(
+      `https://api.open-meteo.com/v1/forecast?${params.toString()}`
+    );
 
-  if (!response.ok) {
-    throw new Error("Unable to retrieve heat and UV data.");
+    if (!response.ok) {
+      return unavailableEnvironmentData;
+    }
+
+    const data = (await response.json()) as OpenMeteoResponse;
+
+    return {
+      temperature: data.current?.temperature_2m ?? null,
+      apparentTemperature: data.current?.apparent_temperature ?? null,
+      humidity: data.current?.relative_humidity_2m ?? null,
+      uvIndexMax: data.daily?.uv_index_max?.[0] ?? null,
+      temperatureMax: data.daily?.temperature_2m_max?.[0] ?? null,
+      apparentTemperatureMax:
+        data.daily?.apparent_temperature_max?.[0] ?? null,
+    };
+  } catch {
+    return unavailableEnvironmentData;
   }
-
-  const data = (await response.json()) as OpenMeteoResponse;
-
-  return {
-    temperature: data.current?.temperature_2m ?? null,
-    apparentTemperature: data.current?.apparent_temperature ?? null,
-    humidity: data.current?.relative_humidity_2m ?? null,
-    uvIndexMax: data.daily?.uv_index_max?.[0] ?? null,
-    temperatureMax: data.daily?.temperature_2m_max?.[0] ?? null,
-    apparentTemperatureMax:
-      data.daily?.apparent_temperature_max?.[0] ?? null,
-  };
 }

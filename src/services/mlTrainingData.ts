@@ -60,6 +60,61 @@ export type SymptomCheckinInput = {
   notes: string;
 };
 
+export type CheckinStreakDay = {
+  date: string;
+  label: string;
+  checkedIn: boolean;
+  isToday: boolean;
+};
+
+export type CheckinStreak = {
+  currentStreak: number;
+  bestStreak: number;
+  checkedInToday: boolean;
+  lastCheckinDate: string | null;
+  totalCheckins: number;
+  nextMilestone: number;
+  week: CheckinStreakDay[];
+};
+
+function dateKey(date: Date) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+
+  return `${year}-${month}-${day}`;
+}
+
+function addDays(date: Date, days: number) {
+  const next = new Date(date);
+  next.setDate(next.getDate() + days);
+  return next;
+}
+
+export function emptyCheckinStreak(): CheckinStreak {
+  const today = new Date();
+  const week = Array.from({ length: 7 }, (_, index) => {
+    const day = addDays(today, index - 6);
+
+    return {
+      date: dateKey(day),
+      label: day.toLocaleDateString(undefined, { weekday: "short" }),
+      checkedIn: false,
+      isToday: index === 6,
+    };
+  });
+
+  return {
+    currentStreak: 0,
+    bestStreak: 0,
+    checkedInToday: false,
+    lastCheckinDate: null,
+    totalCheckins: 0,
+    nextMilestone: 3,
+    week,
+  };
+}
+
 export async function saveHealthSnapshot(
   snapshot: HealthSnapshotInput
 ): Promise<SavedHealthSnapshot> {
@@ -143,4 +198,80 @@ export async function saveSymptomCheckin(
   if (error) {
     throw new Error(error.message);
   }
+}
+
+export async function getSymptomCheckinStreak(
+  userId: string
+): Promise<CheckinStreak> {
+  if (!supabase) {
+    return emptyCheckinStreak();
+  }
+
+  const since = addDays(new Date(), -120);
+  const { data, error } = await supabase
+    .from("symptom_checkins")
+    .select("created_at")
+    .eq("user_id", userId)
+    .gte("created_at", since.toISOString())
+    .order("created_at", { ascending: false });
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  const base = emptyCheckinStreak();
+  const checkedDates = new Set(
+    (data ?? []).map((row) => dateKey(new Date(row.created_at)))
+  );
+  const sortedDates = Array.from(checkedDates).sort();
+  const today = new Date();
+  const todayKey = dateKey(today);
+  const yesterdayKey = dateKey(addDays(today, -1));
+  const checkedInToday = checkedDates.has(todayKey);
+  const lastCheckinDate = sortedDates.at(-1) ?? null;
+  const week = base.week.map((day) => ({
+    ...day,
+    checkedIn: checkedDates.has(day.date),
+  }));
+
+  let currentStreak = 0;
+  if (checkedInToday || checkedDates.has(yesterdayKey)) {
+    let cursor = checkedInToday ? today : addDays(today, -1);
+    while (checkedDates.has(dateKey(cursor))) {
+      currentStreak += 1;
+      cursor = addDays(cursor, -1);
+    }
+  }
+
+  let bestStreak = 0;
+  let runningStreak = 0;
+  let previousDate: Date | null = null;
+
+  sortedDates.forEach((key) => {
+    const currentDate = new Date(`${key}T12:00:00`);
+    const expectedPrevious = previousDate
+      ? dateKey(addDays(currentDate, -1))
+      : null;
+
+    runningStreak =
+      previousDate && expectedPrevious === dateKey(previousDate)
+        ? runningStreak + 1
+        : 1;
+    bestStreak = Math.max(bestStreak, runningStreak);
+    previousDate = currentDate;
+  });
+
+  const nextMilestone =
+    [3, 7, 14, 30, 60].find((milestone) => milestone > currentStreak) ??
+    currentStreak + 30;
+
+  return {
+    currentStreak,
+    bestStreak,
+    checkedInToday,
+    lastCheckinDate,
+    totalCheckins: data?.length ?? 0,
+    nextMilestone,
+    week,
+  };
 }

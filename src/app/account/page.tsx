@@ -93,19 +93,19 @@ function AuthPanel({
   if (user) {
     return (
       <section className="quiet-surface rounded-lg p-5">
-        <p className="text-xs font-semibold uppercase tracking-wide text-[#D7ECFA]">
+        <p className="text-xs font-semibold uppercase tracking-wide text-[var(--foreground-muted)]">
           Account
         </p>
-        <p className="mt-2 text-sm text-slate-200">{user.email}</p>
+        <p className="mt-2 text-sm text-[var(--foreground)]">{user.email}</p>
         <button
           type="button"
           onClick={handleSignOut}
-          className="mt-4 rounded-lg border border-white/15 px-4 py-2 text-sm font-semibold text-white transition hover:border-[#4B9CD3]/50 hover:bg-white/10"
+          className="mt-4 rounded-lg border border-[var(--rule)] px-4 py-2 text-sm font-semibold text-[var(--foreground)] transition hover:border-[var(--accent)]/50 hover:bg-[var(--surface-muted)]"
         >
           Sign out
         </button>
         {authMessage && (
-          <p className="mt-3 text-xs leading-5 text-slate-300">
+          <p className="mt-3 text-xs leading-5 text-[var(--foreground-muted)]">
             {authMessage}
           </p>
         )}
@@ -115,13 +115,13 @@ function AuthPanel({
 
   return (
     <section className="quiet-surface rounded-lg p-5">
-      <p className="text-xs font-semibold uppercase tracking-wide text-[#D7ECFA]">
+      <p className="text-xs font-semibold uppercase tracking-wide text-[var(--foreground-muted)]">
         Sign In
       </p>
-      <h2 className="mt-2 text-2xl font-semibold text-white">
+      <h2 className="mt-2 text-2xl font-semibold text-[var(--foreground)]">
         Welcome back
       </h2>
-      <p className="mt-2 text-sm leading-6 text-slate-300">
+      <p className="mt-2 text-sm leading-6 text-[var(--foreground-muted)]">
         Sign in to manage your profile and saved places.
       </p>
       {!isSupabaseConfigured && (
@@ -135,14 +135,14 @@ function AuthPanel({
           placeholder="Email"
           value={email}
           onChange={(event) => setEmail(event.target.value)}
-          className="h-11 rounded-lg border border-white/15 bg-white/10 px-3 text-sm text-white outline-none placeholder:text-slate-400 focus:border-[#4B9CD3]"
+          className="h-11 rounded-lg border border-[var(--rule)] bg-[var(--surface-muted)] px-3 text-sm text-[var(--foreground)] outline-none placeholder:text-slate-400 focus:border-[var(--accent)]"
         />
         <input
           type="password"
           placeholder="Password"
           value={password}
           onChange={(event) => setPassword(event.target.value)}
-          className="h-11 rounded-lg border border-white/15 bg-white/10 px-3 text-sm text-white outline-none placeholder:text-slate-400 focus:border-[#4B9CD3]"
+          className="h-11 rounded-lg border border-[var(--rule)] bg-[var(--surface-muted)] px-3 text-sm text-[var(--foreground)] outline-none placeholder:text-slate-400 focus:border-[var(--accent)]"
         />
       </div>
       <div className="mt-4 flex flex-wrap gap-2">
@@ -150,19 +150,19 @@ function AuthPanel({
           type="button"
           disabled={authLoading}
           onClick={() => void handleSignIn()}
-          className="rounded-lg bg-[#4B9CD3] px-4 py-2 text-sm font-semibold text-[#061826] transition hover:bg-[#6CB6E4] disabled:bg-slate-700 disabled:text-slate-300"
+          className="rounded-lg bg-[var(--accent)] px-4 py-2 text-sm font-semibold text-[var(--background)] transition hover:bg-[var(--accent-ink)] disabled:bg-slate-700 disabled:text-slate-300"
         >
           Sign in
         </button>
         <Link
           href="/signup"
-          className="rounded-lg border border-white/15 px-4 py-2 text-sm font-semibold text-white transition hover:border-[#4B9CD3]/50 hover:bg-white/10"
+          className="rounded-lg border border-[var(--rule)] px-4 py-2 text-sm font-semibold text-[var(--foreground)] transition hover:border-[var(--accent)]/50 hover:bg-[var(--surface-muted)]"
         >
           Create account
         </Link>
       </div>
       {authMessage && (
-        <p className="mt-3 text-xs leading-5 text-slate-300">
+        <p className="mt-3 text-xs leading-5 text-[var(--foreground-muted)]">
           {authMessage}
         </p>
       )}
@@ -254,37 +254,37 @@ function ProfilePanel({
 
   return (
     <section className="quiet-surface rounded-lg p-5">
-      <p className="text-xs font-semibold uppercase tracking-wide text-[#D7ECFA]">
+      <p className="text-xs font-semibold uppercase tracking-wide text-[var(--foreground-muted)]">
         Health Profile
       </p>
-      <h2 className="mt-2 text-2xl font-semibold text-white">
+      <h2 className="mt-2 text-2xl font-semibold text-[var(--foreground)]">
         Personal details
       </h2>
-      <p className="mt-2 text-sm leading-6 text-slate-300">
+      <p className="mt-2 text-sm leading-6 text-[var(--foreground-muted)]">
         These factors are used only to adjust your informational risk snapshot.
       </p>
 
       <form onSubmit={handleProfileSubmit} className="mt-5 grid gap-4">
-        <label className="grid gap-1 text-xs font-semibold uppercase tracking-wide text-slate-400">
+        <label className="grid gap-1 text-xs font-semibold uppercase tracking-wide text-[var(--foreground-faint)]">
           Name
           <input
             type="text"
             value={fullName}
             onChange={(event) => setFullName(event.target.value)}
             placeholder="Optional"
-            className="h-11 rounded-lg border border-white/15 bg-white/10 px-3 text-sm font-normal normal-case tracking-normal text-white outline-none placeholder:text-slate-400 focus:border-[#4B9CD3]"
+            className="h-11 rounded-lg border border-[var(--rule)] bg-[var(--surface-muted)] px-3 text-sm font-normal normal-case tracking-normal text-[var(--foreground)] outline-none placeholder:text-slate-400 focus:border-[var(--accent)]"
           />
         </label>
 
         <div className="grid gap-4 sm:grid-cols-2">
-          <label className="grid gap-1 text-xs font-semibold uppercase tracking-wide text-slate-400">
+          <label className="grid gap-1 text-xs font-semibold uppercase tracking-wide text-[var(--foreground-faint)]">
             Age range
             <select
               value={ageRange}
               onChange={(event) =>
                 setAgeRange(event.target.value as AgeRange)
               }
-              className="h-11 rounded-lg border border-white/15 bg-[#12314f] px-3 text-sm font-normal normal-case tracking-normal text-white outline-none focus:border-[#4B9CD3]"
+              className="h-11 rounded-lg border border-[var(--rule)] bg-[var(--surface)] px-3 text-sm font-normal normal-case tracking-normal text-[var(--foreground)] outline-none focus:border-[var(--accent)]"
             >
               {ageRanges.map((range) => (
                 <option key={range}>{range}</option>
@@ -292,12 +292,12 @@ function ProfilePanel({
             </select>
           </label>
 
-          <label className="grid gap-1 text-xs font-semibold uppercase tracking-wide text-slate-400">
+          <label className="grid gap-1 text-xs font-semibold uppercase tracking-wide text-[var(--foreground-faint)]">
             Car type
             <select
               value={carType}
               onChange={(event) => setCarType(event.target.value)}
-              className="h-11 rounded-lg border border-white/15 bg-[#12314f] px-3 text-sm font-normal normal-case tracking-normal text-white outline-none focus:border-[#4B9CD3]"
+              className="h-11 rounded-lg border border-[var(--rule)] bg-[var(--surface)] px-3 text-sm font-normal normal-case tracking-normal text-[var(--foreground)] outline-none focus:border-[var(--accent)]"
             >
               {carTypes.map((type) => (
                 <option key={type}>{type}</option>
@@ -307,14 +307,14 @@ function ProfilePanel({
         </div>
 
         <div className="grid gap-4 sm:grid-cols-2">
-          <label className="grid gap-1 text-xs font-semibold uppercase tracking-wide text-slate-400">
+          <label className="grid gap-1 text-xs font-semibold uppercase tracking-wide text-[var(--foreground-faint)]">
             Time outside
             <select
               value={outdoorExposure}
               onChange={(event) =>
                 setOutdoorExposure(event.target.value as ExposureLevel)
               }
-              className="h-11 rounded-lg border border-white/15 bg-[#12314f] px-3 text-sm font-normal normal-case tracking-normal text-white outline-none focus:border-[#4B9CD3]"
+              className="h-11 rounded-lg border border-[var(--rule)] bg-[var(--surface)] px-3 text-sm font-normal normal-case tracking-normal text-[var(--foreground)] outline-none focus:border-[var(--accent)]"
             >
               {exposureLevels.map((level) => (
                 <option key={level}>{level}</option>
@@ -322,14 +322,14 @@ function ProfilePanel({
             </select>
           </label>
 
-          <label className="grid gap-1 text-xs font-semibold uppercase tracking-wide text-slate-400">
+          <label className="grid gap-1 text-xs font-semibold uppercase tracking-wide text-[var(--foreground-faint)]">
             Activity level
             <select
               value={activityLevel}
               onChange={(event) =>
                 setActivityLevel(event.target.value as ActivityLevel)
               }
-              className="h-11 rounded-lg border border-white/15 bg-[#12314f] px-3 text-sm font-normal normal-case tracking-normal text-white outline-none focus:border-[#4B9CD3]"
+              className="h-11 rounded-lg border border-[var(--rule)] bg-[var(--surface)] px-3 text-sm font-normal normal-case tracking-normal text-[var(--foreground)] outline-none focus:border-[var(--accent)]"
             >
               {activityLevels.map((level) => (
                 <option key={level}>{level}</option>
@@ -339,14 +339,14 @@ function ProfilePanel({
         </div>
 
         <div className="grid gap-4 sm:grid-cols-2">
-          <label className="grid gap-1 text-xs font-semibold uppercase tracking-wide text-slate-400">
+          <label className="grid gap-1 text-xs font-semibold uppercase tracking-wide text-[var(--foreground-faint)]">
             Traffic exposure
             <select
               value={commuteExposure}
               onChange={(event) =>
                 setCommuteExposure(event.target.value as ExposureLevel)
               }
-              className="h-11 rounded-lg border border-white/15 bg-[#12314f] px-3 text-sm font-normal normal-case tracking-normal text-white outline-none focus:border-[#4B9CD3]"
+              className="h-11 rounded-lg border border-[var(--rule)] bg-[var(--surface)] px-3 text-sm font-normal normal-case tracking-normal text-[var(--foreground)] outline-none focus:border-[var(--accent)]"
             >
               {exposureLevels.map((level) => (
                 <option key={level}>{level}</option>
@@ -354,7 +354,7 @@ function ProfilePanel({
             </select>
           </label>
 
-          <label className="grid gap-1 text-xs font-semibold uppercase tracking-wide text-slate-400">
+          <label className="grid gap-1 text-xs font-semibold uppercase tracking-wide text-[var(--foreground-faint)]">
             Breathing sensitivity
             <select
               value={respiratorySensitivity}
@@ -363,7 +363,7 @@ function ProfilePanel({
                   event.target.value as RespiratorySensitivity
                 )
               }
-              className="h-11 rounded-lg border border-white/15 bg-[#12314f] px-3 text-sm font-normal normal-case tracking-normal text-white outline-none focus:border-[#4B9CD3]"
+              className="h-11 rounded-lg border border-[var(--rule)] bg-[var(--surface)] px-3 text-sm font-normal normal-case tracking-normal text-[var(--foreground)] outline-none focus:border-[var(--accent)]"
             >
               {respiratorySensitivityLevels.map((level) => (
                 <option key={level}>{level}</option>
@@ -372,28 +372,28 @@ function ProfilePanel({
           </label>
         </div>
 
-        <label className="grid gap-1 text-xs font-semibold uppercase tracking-wide text-slate-400">
+        <label className="grid gap-1 text-xs font-semibold uppercase tracking-wide text-[var(--foreground-faint)]">
           Place of birth
           <input
             type="text"
             value={placeOfBirth}
             onChange={(event) => setPlaceOfBirth(event.target.value)}
             placeholder="Optional"
-            className="h-11 rounded-lg border border-white/15 bg-white/10 px-3 text-sm font-normal normal-case tracking-normal text-white outline-none placeholder:text-slate-400 focus:border-[#4B9CD3]"
+            className="h-11 rounded-lg border border-[var(--rule)] bg-[var(--surface-muted)] px-3 text-sm font-normal normal-case tracking-normal text-[var(--foreground)] outline-none placeholder:text-slate-400 focus:border-[var(--accent)]"
           />
         </label>
 
         <button
           type="submit"
           disabled={savingProfile}
-          className="rounded-lg bg-[#4B9CD3] px-4 py-2 text-sm font-semibold text-[#061826] transition hover:bg-[#6CB6E4] disabled:bg-slate-700 disabled:text-slate-300"
+          className="rounded-lg bg-[var(--accent)] px-4 py-2 text-sm font-semibold text-[var(--background)] transition hover:bg-[var(--accent-ink)] disabled:bg-slate-700 disabled:text-slate-300"
         >
           {savingProfile ? "Saving profile" : "Save profile"}
         </button>
       </form>
 
       {(message || profileError) && (
-        <p className="mt-3 text-xs leading-5 text-slate-300">
+        <p className="mt-3 text-xs leading-5 text-[var(--foreground-muted)]">
           {profileError || message}
         </p>
       )}
@@ -412,19 +412,19 @@ function SavedLocationsPanel({
 }) {
   return (
     <section className="quiet-surface rounded-lg p-5">
-      <p className="text-xs font-semibold uppercase tracking-wide text-[#D7ECFA]">
+      <p className="text-xs font-semibold uppercase tracking-wide text-[var(--foreground-muted)]">
         My Locations
       </p>
-      <h2 className="mt-2 text-2xl font-semibold text-white">
+      <h2 className="mt-2 text-2xl font-semibold text-[var(--foreground)]">
         Saved places
       </h2>
       {message && (
-        <p className="mt-2 text-xs leading-5 text-slate-300">
+        <p className="mt-2 text-xs leading-5 text-[var(--foreground-muted)]">
           {message}
         </p>
       )}
       {locations.length === 0 ? (
-        <p className="mt-3 text-sm leading-6 text-slate-300">
+        <p className="mt-3 text-sm leading-6 text-[var(--foreground-muted)]">
           Saved locations will appear here after you save them from a ZIP code
           result.
         </p>
@@ -441,21 +441,21 @@ function SavedLocationsPanel({
                   className="min-w-0"
                 >
                   <span className="flex flex-wrap items-center gap-2">
-                    <span className="text-sm font-semibold text-white">
+                    <span className="text-sm font-semibold text-[var(--foreground)]">
                       {location.label}
                     </span>
-                    <span className="rounded-full border border-[#8FC6E8]/30 bg-[#B7D8F2]/10 px-2 py-0.5 text-[0.68rem] font-semibold uppercase tracking-wide text-[#D7ECFA]">
+                    <span className="rounded-full border border-[var(--secondary)]/30 bg-[var(--secondary)]/10 px-2 py-0.5 text-[0.68rem] font-semibold uppercase tracking-wide text-[var(--foreground-muted)]">
                       {location.location_type}
                     </span>
                   </span>
-                  <span className="mt-1 block text-xs text-slate-400">
+                  <span className="mt-1 block text-xs text-[var(--foreground-faint)]">
                     {location.city}, {location.state} · {location.zip_code}
                   </span>
                 </Link>
                 <button
                   type="button"
                   onClick={() => onDelete(location.id)}
-                  className="text-xs font-semibold text-rose-100 hover:text-white"
+                  className="text-xs font-semibold text-rose-100 hover:text-[var(--foreground)]"
                 >
                   Remove
                 </button>
@@ -558,20 +558,20 @@ export default function AccountPage() {
   }, []);
 
   return (
-    <main className="min-h-screen public-health-bg text-white">
+    <main className="min-h-screen public-health-bg text-[var(--foreground)]">
       <section className="mx-auto flex min-h-screen w-full max-w-[72rem] flex-col px-5 py-8 sm:px-8 lg:px-10">
-        <header className="flex flex-col gap-4 border-b border-white/10 pb-8 sm:flex-row sm:items-end sm:justify-between">
+        <header className="flex flex-col gap-4 border-b border-[var(--rule)] pb-8 sm:flex-row sm:items-end sm:justify-between">
           <div>
-            <p className="text-sm font-semibold uppercase tracking-wide text-[#D7ECFA]">
+            <p className="text-sm font-semibold uppercase tracking-wide text-[var(--foreground-muted)]">
               MyLocalHealth Account
             </p>
-            <h1 className="display-heading mt-3 text-4xl leading-tight text-white sm:text-5xl">
+            <h1 className="display-heading mt-3 text-4xl leading-tight text-[var(--foreground)] sm:text-5xl">
               Profile and saved places
             </h1>
           </div>
           <Link
             href="/"
-            className="w-fit rounded-lg border border-white/15 px-4 py-2 text-sm font-semibold text-white transition hover:border-[#4B9CD3]/50 hover:bg-white/10"
+            className="w-fit rounded-lg border border-[var(--rule)] px-4 py-2 text-sm font-semibold text-[var(--foreground)] transition hover:border-[var(--accent)]/50 hover:bg-[var(--surface-muted)]"
           >
             Back home
           </Link>
@@ -591,13 +591,13 @@ export default function AccountPage() {
             />
           ) : (
             <section className="quiet-surface rounded-lg p-5">
-              <p className="text-xs font-semibold uppercase tracking-wide text-[#D7ECFA]">
+              <p className="text-xs font-semibold uppercase tracking-wide text-[var(--foreground-muted)]">
                 Next
               </p>
-              <h2 className="mt-2 text-2xl font-semibold text-white">
+              <h2 className="mt-2 text-2xl font-semibold text-[var(--foreground)]">
                 After signing in
               </h2>
-              <p className="mt-3 text-sm leading-6 text-slate-300">
+              <p className="mt-3 text-sm leading-6 text-[var(--foreground-muted)]">
                 You will be able to enter profile details, manage saved
                 locations, and return to the dashboard for a personalized
                 health snapshot.

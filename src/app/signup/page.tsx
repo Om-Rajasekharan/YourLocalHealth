@@ -114,17 +114,17 @@ export default function SignUpPage() {
   };
 
   return (
-    <main className="min-h-screen public-health-bg text-white">
+    <main className="min-h-screen public-health-bg text-[var(--foreground)]">
       <section className="mx-auto flex min-h-screen w-full max-w-[72rem] flex-col px-5 py-8 sm:px-8 lg:px-10">
-        <header className="flex flex-col gap-4 border-b border-white/10 pb-8 sm:flex-row sm:items-end sm:justify-between">
+        <header className="flex flex-col gap-4 border-b border-[var(--rule)] pb-8 sm:flex-row sm:items-end sm:justify-between">
           <div>
-            <p className="text-sm font-semibold uppercase tracking-wide text-[#D7ECFA]">
+            <p className="text-sm font-semibold uppercase tracking-wide text-[var(--foreground-muted)]">
               Create Account
             </p>
-            <h1 className="display-heading mt-3 text-4xl leading-tight text-white sm:text-5xl">
+            <h1 className="display-heading mt-3 text-4xl leading-tight text-[var(--foreground)] sm:text-5xl">
               Personalize MyLocalHealth
             </h1>
-            <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-300">
+            <p className="mt-3 max-w-2xl text-sm leading-6 text-[var(--foreground-muted)]">
               Create your login and add the profile factors used to personalize
               your informational health snapshot.
             </p>
@@ -132,13 +132,13 @@ export default function SignUpPage() {
           <div className="flex flex-wrap gap-2">
             <Link
               href="/"
-              className="w-fit rounded-lg border border-white/15 px-4 py-2 text-sm font-semibold text-white transition hover:border-[#4B9CD3]/50 hover:bg-white/10"
+              className="w-fit rounded-lg border border-[var(--rule)] px-4 py-2 text-sm font-semibold text-[var(--foreground)] transition hover:border-[var(--accent)]/50 hover:bg-[var(--surface-muted)]"
             >
               Back home
             </Link>
             <Link
               href="/account"
-              className="w-fit rounded-lg bg-[#4B9CD3] px-4 py-2 text-sm font-semibold text-[#061826] transition hover:bg-[#6CB6E4]"
+              className="w-fit rounded-lg bg-[var(--accent)] px-4 py-2 text-sm font-semibold text-[var(--background)] transition hover:bg-[var(--accent-ink)]"
             >
               Already have an account?
             </Link>
@@ -151,24 +151,24 @@ export default function SignUpPage() {
         >
           <div className="grid gap-5 lg:grid-cols-[0.8fr_1.2fr]">
             <section>
-              <p className="text-xs font-semibold uppercase tracking-wide text-[#D7ECFA]">
+              <p className="text-xs font-semibold uppercase tracking-wide text-[var(--foreground-muted)]">
                 Login
               </p>
-              <h2 className="mt-2 text-2xl font-semibold text-white">
+              <h2 className="mt-2 text-2xl font-semibold text-[var(--foreground)]">
                 Account details
               </h2>
               <div className="mt-5 grid gap-4">
-                <label className="grid gap-1 text-xs font-semibold uppercase tracking-wide text-slate-400">
+                <label className="grid gap-1 text-xs font-semibold uppercase tracking-wide text-[var(--foreground-faint)]">
                   Email
                   <input
                     type="email"
                     required
                     value={email}
                     onChange={(event) => setEmail(event.target.value)}
-                    className="h-11 rounded-lg border border-white/15 bg-white/10 px-3 text-sm font-normal normal-case tracking-normal text-white outline-none placeholder:text-slate-400 focus:border-[#4B9CD3]"
+                    className="h-11 rounded-lg border border-[var(--rule)] bg-[var(--surface-muted)] px-3 text-sm font-normal normal-case tracking-normal text-[var(--foreground)] outline-none placeholder:text-slate-400 focus:border-[var(--accent)]"
                   />
                 </label>
-                <label className="grid gap-1 text-xs font-semibold uppercase tracking-wide text-slate-400">
+                <label className="grid gap-1 text-xs font-semibold uppercase tracking-wide text-[var(--foreground-faint)]">
                   Password
                   <input
                     type="password"
@@ -176,7 +176,7 @@ export default function SignUpPage() {
                     minLength={6}
                     value={password}
                     onChange={(event) => setPassword(event.target.value)}
-                    className="h-11 rounded-lg border border-white/15 bg-white/10 px-3 text-sm font-normal normal-case tracking-normal text-white outline-none placeholder:text-slate-400 focus:border-[#4B9CD3]"
+                    className="h-11 rounded-lg border border-[var(--rule)] bg-[var(--surface-muted)] px-3 text-sm font-normal normal-case tracking-normal text-[var(--foreground)] outline-none placeholder:text-slate-400 focus:border-[var(--accent)]"
                   />
                 </label>
               </div>
@@ -188,37 +188,37 @@ export default function SignUpPage() {
             </section>
 
             <section>
-              <p className="text-xs font-semibold uppercase tracking-wide text-[#D7ECFA]">
+              <p className="text-xs font-semibold uppercase tracking-wide text-[var(--foreground-muted)]">
                 Health Profile
               </p>
-              <h2 className="mt-2 text-2xl font-semibold text-white">
+              <h2 className="mt-2 text-2xl font-semibold text-[var(--foreground)]">
                 Personal details
               </h2>
-              <p className="mt-2 text-sm leading-6 text-slate-300">
+              <p className="mt-2 text-sm leading-6 text-[var(--foreground-muted)]">
                 These factors help adjust risk estimates. They are not a
                 diagnosis or medical record.
               </p>
 
               <div className="mt-5 grid gap-4">
-                <label className="grid gap-1 text-xs font-semibold uppercase tracking-wide text-slate-400">
+                <label className="grid gap-1 text-xs font-semibold uppercase tracking-wide text-[var(--foreground-faint)]">
                   Name
                   <input
                     type="text"
                     value={fullName}
                     onChange={(event) => setFullName(event.target.value)}
-                    className="h-11 rounded-lg border border-white/15 bg-white/10 px-3 text-sm font-normal normal-case tracking-normal text-white outline-none placeholder:text-slate-400 focus:border-[#4B9CD3]"
+                    className="h-11 rounded-lg border border-[var(--rule)] bg-[var(--surface-muted)] px-3 text-sm font-normal normal-case tracking-normal text-[var(--foreground)] outline-none placeholder:text-slate-400 focus:border-[var(--accent)]"
                   />
                 </label>
 
                 <div className="grid gap-4 sm:grid-cols-2">
-                  <label className="grid gap-1 text-xs font-semibold uppercase tracking-wide text-slate-400">
+                  <label className="grid gap-1 text-xs font-semibold uppercase tracking-wide text-[var(--foreground-faint)]">
                     Age range
                     <select
                       value={ageRange}
                       onChange={(event) =>
                         setAgeRange(event.target.value as AgeRange)
                       }
-                      className="h-11 rounded-lg border border-white/15 bg-[#12314f] px-3 text-sm font-normal normal-case tracking-normal text-white outline-none focus:border-[#4B9CD3]"
+                      className="h-11 rounded-lg border border-[var(--rule)] bg-[var(--surface)] px-3 text-sm font-normal normal-case tracking-normal text-[var(--foreground)] outline-none focus:border-[var(--accent)]"
                     >
                       {ageRanges.map((range) => (
                         <option key={range}>{range}</option>
@@ -226,12 +226,12 @@ export default function SignUpPage() {
                     </select>
                   </label>
 
-                  <label className="grid gap-1 text-xs font-semibold uppercase tracking-wide text-slate-400">
+                  <label className="grid gap-1 text-xs font-semibold uppercase tracking-wide text-[var(--foreground-faint)]">
                     Car type
                     <select
                       value={carType}
                       onChange={(event) => setCarType(event.target.value)}
-                      className="h-11 rounded-lg border border-white/15 bg-[#12314f] px-3 text-sm font-normal normal-case tracking-normal text-white outline-none focus:border-[#4B9CD3]"
+                      className="h-11 rounded-lg border border-[var(--rule)] bg-[var(--surface)] px-3 text-sm font-normal normal-case tracking-normal text-[var(--foreground)] outline-none focus:border-[var(--accent)]"
                     >
                       {carTypes.map((type) => (
                         <option key={type}>{type}</option>
@@ -241,14 +241,14 @@ export default function SignUpPage() {
                 </div>
 
                 <div className="grid gap-4 sm:grid-cols-2">
-                  <label className="grid gap-1 text-xs font-semibold uppercase tracking-wide text-slate-400">
+                  <label className="grid gap-1 text-xs font-semibold uppercase tracking-wide text-[var(--foreground-faint)]">
                     Time outside
                     <select
                       value={outdoorExposure}
                       onChange={(event) =>
                         setOutdoorExposure(event.target.value as ExposureLevel)
                       }
-                      className="h-11 rounded-lg border border-white/15 bg-[#12314f] px-3 text-sm font-normal normal-case tracking-normal text-white outline-none focus:border-[#4B9CD3]"
+                      className="h-11 rounded-lg border border-[var(--rule)] bg-[var(--surface)] px-3 text-sm font-normal normal-case tracking-normal text-[var(--foreground)] outline-none focus:border-[var(--accent)]"
                     >
                       {exposureLevels.map((level) => (
                         <option key={level}>{level}</option>
@@ -256,14 +256,14 @@ export default function SignUpPage() {
                     </select>
                   </label>
 
-                  <label className="grid gap-1 text-xs font-semibold uppercase tracking-wide text-slate-400">
+                  <label className="grid gap-1 text-xs font-semibold uppercase tracking-wide text-[var(--foreground-faint)]">
                     Activity level
                     <select
                       value={activityLevel}
                       onChange={(event) =>
                         setActivityLevel(event.target.value as ActivityLevel)
                       }
-                      className="h-11 rounded-lg border border-white/15 bg-[#12314f] px-3 text-sm font-normal normal-case tracking-normal text-white outline-none focus:border-[#4B9CD3]"
+                      className="h-11 rounded-lg border border-[var(--rule)] bg-[var(--surface)] px-3 text-sm font-normal normal-case tracking-normal text-[var(--foreground)] outline-none focus:border-[var(--accent)]"
                     >
                       {activityLevels.map((level) => (
                         <option key={level}>{level}</option>
@@ -273,14 +273,14 @@ export default function SignUpPage() {
                 </div>
 
                 <div className="grid gap-4 sm:grid-cols-2">
-                  <label className="grid gap-1 text-xs font-semibold uppercase tracking-wide text-slate-400">
+                  <label className="grid gap-1 text-xs font-semibold uppercase tracking-wide text-[var(--foreground-faint)]">
                     Traffic exposure
                     <select
                       value={commuteExposure}
                       onChange={(event) =>
                         setCommuteExposure(event.target.value as ExposureLevel)
                       }
-                      className="h-11 rounded-lg border border-white/15 bg-[#12314f] px-3 text-sm font-normal normal-case tracking-normal text-white outline-none focus:border-[#4B9CD3]"
+                      className="h-11 rounded-lg border border-[var(--rule)] bg-[var(--surface)] px-3 text-sm font-normal normal-case tracking-normal text-[var(--foreground)] outline-none focus:border-[var(--accent)]"
                     >
                       {exposureLevels.map((level) => (
                         <option key={level}>{level}</option>
@@ -288,7 +288,7 @@ export default function SignUpPage() {
                     </select>
                   </label>
 
-                  <label className="grid gap-1 text-xs font-semibold uppercase tracking-wide text-slate-400">
+                  <label className="grid gap-1 text-xs font-semibold uppercase tracking-wide text-[var(--foreground-faint)]">
                     Breathing sensitivity
                     <select
                       value={respiratorySensitivity}
@@ -297,7 +297,7 @@ export default function SignUpPage() {
                           event.target.value as RespiratorySensitivity
                         )
                       }
-                      className="h-11 rounded-lg border border-white/15 bg-[#12314f] px-3 text-sm font-normal normal-case tracking-normal text-white outline-none focus:border-[#4B9CD3]"
+                      className="h-11 rounded-lg border border-[var(--rule)] bg-[var(--surface)] px-3 text-sm font-normal normal-case tracking-normal text-[var(--foreground)] outline-none focus:border-[var(--accent)]"
                     >
                       {respiratorySensitivityLevels.map((level) => (
                         <option key={level}>{level}</option>
@@ -306,30 +306,30 @@ export default function SignUpPage() {
                   </label>
                 </div>
 
-                <label className="grid gap-1 text-xs font-semibold uppercase tracking-wide text-slate-400">
+                <label className="grid gap-1 text-xs font-semibold uppercase tracking-wide text-[var(--foreground-faint)]">
                   Place of birth
                   <input
                     type="text"
                     value={placeOfBirth}
                     onChange={(event) => setPlaceOfBirth(event.target.value)}
                     placeholder="Optional"
-                    className="h-11 rounded-lg border border-white/15 bg-white/10 px-3 text-sm font-normal normal-case tracking-normal text-white outline-none placeholder:text-slate-400 focus:border-[#4B9CD3]"
+                    className="h-11 rounded-lg border border-[var(--rule)] bg-[var(--surface-muted)] px-3 text-sm font-normal normal-case tracking-normal text-[var(--foreground)] outline-none placeholder:text-slate-400 focus:border-[var(--accent)]"
                   />
                 </label>
               </div>
             </section>
           </div>
 
-          <div className="mt-6 border-t border-white/10 pt-5">
+          <div className="mt-6 border-t border-[var(--rule)] pt-5">
             <button
               type="submit"
               disabled={loading}
-              className="w-full rounded-lg bg-[#4B9CD3] px-4 py-3 text-sm font-semibold text-[#061826] transition hover:bg-[#6CB6E4] disabled:bg-slate-700 disabled:text-slate-300"
+              className="w-full rounded-lg bg-[var(--accent)] px-4 py-3 text-sm font-semibold text-[var(--background)] transition hover:bg-[var(--accent-ink)] disabled:bg-slate-700 disabled:text-slate-300"
             >
               {loading ? "Creating account" : "Create account"}
             </button>
             {message && (
-              <p className="mt-3 text-sm leading-6 text-slate-300">
+              <p className="mt-3 text-sm leading-6 text-[var(--foreground-muted)]">
                 {message}
               </p>
             )}
