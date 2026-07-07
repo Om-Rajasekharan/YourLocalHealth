@@ -3,6 +3,7 @@
 import { Suspense, useEffect, useMemo, useState } from "react";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { stateRegionMap } from "../../../lib/regions";
+import { supabase } from "../../../lib/supabaseClient";
 import {
   getWastewaterTrends,
   type WastewaterPathogen,
@@ -765,6 +766,7 @@ function DetailsContent() {
   const params = useParams<{ topic: string }>();
   const searchParams = useSearchParams();
   const topic = params.topic;
+  const [signedIn, setSignedIn] = useState(false);
 
   const location = `${searchParams.get("city") || "Selected area"}, ${
     searchParams.get("state") || ""
@@ -821,6 +823,23 @@ function DetailsContent() {
   const placesSmoking = searchParams.get("placesSmoking") || "";
   const placesObesity = searchParams.get("placesObesity") || "";
   const placesDiabetes = searchParams.get("placesDiabetes") || "";
+  const summaryHref = `/?zipCode=${encodeURIComponent(zipCode)}`;
+
+  useEffect(() => {
+    if (!supabase) return;
+
+    void supabase.auth.getUser().then(({ data }) => {
+      setSignedIn(Boolean(data.user));
+    });
+
+    const { data } = supabase.auth.onAuthStateChange((_event, session) => {
+      setSignedIn(Boolean(session?.user));
+    });
+
+    return () => {
+      data.subscription.unsubscribe();
+    };
+  }, []);
 
   const detailsByTopic: Record<string, DetailContent> = {
     "air-quality": {
@@ -1034,28 +1053,68 @@ function DetailsContent() {
     };
 
   return (
-    <main className="min-h-screen bg-[#061826] text-white">
+    <main className="min-h-screen public-health-bg text-[var(--foreground)]">
       <section className="mx-auto w-full max-w-5xl px-5 py-8 sm:px-8 lg:px-10">
-        <button
-          type="button"
-          onClick={() =>
-            router.push(`/?zipCode=${encodeURIComponent(zipCode)}`)
-          }
-          className="inline-flex text-sm font-semibold text-[#D7ECFA] hover:text-white"
-        >
-          Back to summary
-        </button>
+        <nav className="flex flex-col gap-4 border-b border-[var(--border)] pb-5 sm:flex-row sm:items-center sm:justify-between">
+          <button
+            type="button"
+            onClick={() => router.push(summaryHref)}
+            className="flex w-fit items-center gap-3 text-[var(--primary-ink)]"
+          >
+            <span className="grid h-10 w-10 place-items-center rounded-xl bg-[var(--primary)] text-white">
+              +
+            </span>
+            <span className="font-heading text-xl font-semibold">
+              MyLocalHealth
+            </span>
+          </button>
+          <div className="flex flex-wrap gap-2">
+            <button
+              type="button"
+              onClick={() => router.push(summaryHref)}
+              className="rounded-full border border-[var(--border)] bg-white px-4 py-2 text-sm font-semibold text-[var(--primary-ink)] transition hover:bg-[var(--primary-soft)]"
+            >
+              Back to summary
+            </button>
+            {signedIn ? (
+              <button
+                type="button"
+                onClick={() => router.push("/account")}
+                className="rounded-full border border-[var(--border)] bg-white px-4 py-2 text-sm font-semibold text-[var(--primary-ink)] transition hover:bg-[var(--primary-soft)]"
+              >
+                Account
+              </button>
+            ) : (
+              <>
+                <button
+                  type="button"
+                  onClick={() => router.push("/account")}
+                  className="rounded-full border border-[var(--border)] bg-white px-4 py-2 text-sm font-semibold text-[var(--primary-ink)] transition hover:bg-[var(--primary-soft)]"
+                >
+                  Sign in
+                </button>
+                <button
+                  type="button"
+                  onClick={() => router.push("/signup")}
+                  className="rounded-full bg-[var(--primary)] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[var(--primary-ink)]"
+                >
+                  Sign up
+                </button>
+              </>
+            )}
+          </div>
+        </nav>
 
-        <header className="mt-8 rounded-lg border border-white/10 bg-[#0c2238]/90 p-6 shadow-xl shadow-black/25">
-          <p className="text-sm font-semibold uppercase tracking-wide text-[#D7ECFA]">
+        <header className="mt-8 rounded-[1.5rem] border border-[var(--border)] bg-white p-6 shadow-[0_18px_42px_-34px_rgba(19,41,75,0.5)]">
+          <p className="text-sm font-semibold uppercase tracking-wide text-[var(--primary)]">
             {detail.eyebrow}
           </p>
           <div className="mt-4 flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
             <div>
-              <h1 className="text-4xl font-bold text-white">
+              <h1 className="font-heading text-4xl font-bold text-[var(--primary-ink)]">
                 {detail.title}
               </h1>
-              <p className="mt-3 text-sm text-slate-400">
+              <p className="mt-3 text-sm text-[var(--muted-foreground)]">
                 {location} · {zipCode}
               </p>
             </div>
@@ -1067,7 +1126,7 @@ function DetailsContent() {
               {detail.value}
             </span>
           </div>
-          <p className="mt-5 max-w-3xl text-sm leading-6 text-slate-300">
+          <p className="mt-5 max-w-3xl text-sm leading-6 text-[var(--muted-foreground)]">
             {detail.summary}
           </p>
         </header>

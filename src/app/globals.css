@@ -4417,3 +4417,562 @@ body {
     linear-gradient(to bottom, rgba(75, 156, 211, 0.08) 1px, transparent 1px);
   background-size: 48px 48px;
 }
+
+/* ================================================================
+ * Standalone forecast/twin/model shell bridge
+ * ----------------------------------------------------------------
+ * The deep panels still contain the original detailed visual classes.
+ * These scoped overrides make them sit inside the new Lovable-style
+ * white/Carolina-blue product shell without changing their logic.
+ * ================================================================ */
+
+.lovable-dashboard-shell {
+  color: var(--foreground);
+}
+
+.lovable-dashboard-shell .editorial-surface,
+.lovable-dashboard-shell .quiet-surface,
+.lovable-dashboard-shell .inset-surface,
+.lovable-dashboard-shell .action-panel,
+.lovable-dashboard-shell .main-feature-panel,
+.lovable-dashboard-shell .today-brief-shell,
+.lovable-dashboard-shell .field-report,
+.lovable-dashboard-shell .model-data-feature,
+.lovable-dashboard-shell .twin-command-center,
+.lovable-dashboard-shell .twin-scenario-lab,
+.lovable-dashboard-shell .twin-trend-chart,
+.lovable-dashboard-shell .exposure-twin-hero,
+.lovable-dashboard-shell .exposure-twin-recommendation,
+.lovable-dashboard-shell .exposure-twin-streak,
+.lovable-dashboard-shell .exposure-twin-input-card,
+.lovable-dashboard-shell .twin-projection-card {
+  border-color: var(--border);
+  background: var(--card);
+  color: var(--card-foreground);
+  box-shadow:
+    0 1px 2px 0 rgba(19, 41, 75, 0.04),
+    0 14px 32px -22px rgba(19, 41, 75, 0.28);
+}
+
+.lovable-dashboard-shell .display-heading,
+.lovable-dashboard-shell h1,
+.lovable-dashboard-shell h2,
+.lovable-dashboard-shell h3 {
+  color: var(--primary-ink);
+  font-family: var(--font-display);
+}
+
+.lovable-dashboard-shell .eyebrow-text,
+.lovable-dashboard-shell .field-tag,
+.lovable-dashboard-shell .twin-confidence-chip,
+.lovable-dashboard-shell .exposure-twin-score-label,
+.lovable-dashboard-shell .twin-gauge-label {
+  color: var(--primary);
+}
+
+.lovable-dashboard-shell .bespoke-button,
+.lovable-dashboard-shell .twin-secondary-button,
+.lovable-dashboard-shell .twin-scenario-button.is-active,
+.lovable-dashboard-shell .twin-layer-button.is-active {
+  border-color: var(--primary);
+  background: var(--primary);
+  color: #fff;
+  border-radius: 999px;
+  box-shadow: 0 12px 24px -16px rgba(46, 111, 181, 0.55);
+}
+
+.lovable-dashboard-shell .bespoke-button:hover,
+.lovable-dashboard-shell .twin-secondary-button:hover {
+  background: var(--primary-ink);
+  border-color: var(--primary-ink);
+}
+
+.lovable-dashboard-shell .bespoke-control,
+.lovable-dashboard-shell input,
+.lovable-dashboard-shell select,
+.lovable-dashboard-shell textarea {
+  border-color: var(--input);
+  background: #fff;
+  color: var(--foreground);
+  border-radius: 0.9rem;
+}
+
+.lovable-dashboard-shell .bespoke-control:focus,
+.lovable-dashboard-shell input:focus,
+.lovable-dashboard-shell select:focus,
+.lovable-dashboard-shell textarea:focus {
+  border-color: var(--ring);
+  box-shadow: 0 0 0 4px rgba(75, 156, 211, 0.16);
+}
+
+.lovable-dashboard-shell .forecast-pulse-bar,
+.lovable-dashboard-shell .risk-meter-fill,
+.lovable-dashboard-shell .twin-trend-line,
+.lovable-dashboard-shell .twin-trend-peak-dot {
+  filter: saturate(0.95);
+}
+
+.lovable-dashboard-shell .twin-scan-shell,
+.lovable-dashboard-shell .presearch-visual-card,
+.lovable-dashboard-shell .health-map-shell {
+  border-color: var(--border);
+  background:
+    linear-gradient(135deg, rgba(231, 241, 249, 0.9), rgba(255, 255, 255, 0.9)),
+    var(--card);
+}
+
+.lovable-dashboard-shell .twin-layer-button,
+.lovable-dashboard-shell .twin-scenario-button {
+  border-radius: 999px;
+  border-color: var(--border);
+  background: var(--primary-soft);
+  color: var(--primary-ink);
+}
+
+@media (max-width: 768px) {
+  .lovable-dashboard-shell {
+    padding-inline: 1rem;
+  }
+
+  .lovable-dashboard-shell .editorial-surface,
+  .lovable-dashboard-shell .quiet-surface,
+  .lovable-dashboard-shell .main-feature-panel,
+  .lovable-dashboard-shell .today-brief-shell,
+  .lovable-dashboard-shell .field-report,
+  .lovable-dashboard-shell .exposure-twin-hero {
+    border-radius: 1rem;
+  }
+}
+
+/* ================================================================
+ * Unified post-Lovable polish pass
+ * ----------------------------------------------------------------
+ * These overrides intentionally sit last. They pull older feature
+ * surfaces, auth pages, and detail pages into the same clean
+ * white/Carolina-blue interface as the redesigned shell.
+ * ================================================================ */
+
+.public-health-bg {
+  background:
+    radial-gradient(circle at 12% 0%, rgba(75, 156, 211, 0.16), transparent 28rem),
+    linear-gradient(180deg, #f7fbff 0%, #fbfdfe 42%, #f3f8fc 100%);
+  color: var(--foreground);
+}
+
+.public-health-bg::before {
+  opacity: 0.22;
+  background-image:
+    linear-gradient(to right, rgba(75, 156, 211, 0.08) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(75, 156, 211, 0.08) 1px, transparent 1px);
+  background-size: 56px 56px;
+}
+
+.display-heading,
+.public-health-bg h1,
+.public-health-bg h2,
+.public-health-bg h3,
+.lovable-dashboard-shell h1,
+.lovable-dashboard-shell h2,
+.lovable-dashboard-shell h3 {
+  font-family: var(--font-display);
+  letter-spacing: -0.025em;
+}
+
+.eyebrow-text,
+.public-health-bg [class*="uppercase"],
+.lovable-dashboard-shell [class*="uppercase"] {
+  letter-spacing: 0.14em;
+}
+
+.quiet-surface,
+.editorial-surface,
+.inset-surface,
+.action-panel,
+.main-feature-panel,
+.model-data-feature,
+.today-brief-shell,
+.field-report,
+.health-signal-card,
+.health-zone-card,
+.community-hero-card,
+.presearch-visual-card,
+.lovable-dashboard-shell .quiet-surface,
+.lovable-dashboard-shell .editorial-surface,
+.lovable-dashboard-shell .inset-surface,
+.lovable-dashboard-shell .action-panel,
+.lovable-dashboard-shell .main-feature-panel,
+.lovable-dashboard-shell .model-data-feature,
+.lovable-dashboard-shell .today-brief-shell,
+.lovable-dashboard-shell .field-report {
+  border: 1px solid var(--border);
+  border-radius: 1.35rem;
+  background: rgba(255, 255, 255, 0.94);
+  color: var(--foreground);
+  box-shadow:
+    0 1px 2px rgba(19, 41, 75, 0.04),
+    0 18px 42px -32px rgba(19, 41, 75, 0.42);
+}
+
+.main-feature-panel::before,
+.model-data-feature::before {
+  background:
+    linear-gradient(to right, rgba(75, 156, 211, 0.08) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(75, 156, 211, 0.08) 1px, transparent 1px);
+  background-size: 48px 48px;
+  mask-image: linear-gradient(135deg, black, transparent 70%);
+  opacity: 0.5;
+}
+
+.exposure-twin-hero,
+.twin-command-center,
+.twin-scenario-lab,
+.exposure-twin-streak,
+.exposure-twin-recommendation,
+.twin-trend-chart,
+.twin-projection-card,
+.exposure-twin-input-card,
+.exposure-twin-score,
+.exposure-twin-streak-main,
+.exposure-twin-streak-note,
+.exposure-twin-row,
+.model-data-feature,
+.lovable-dashboard-shell .exposure-twin-hero,
+.lovable-dashboard-shell .twin-command-center,
+.lovable-dashboard-shell .twin-scenario-lab,
+.lovable-dashboard-shell .exposure-twin-streak,
+.lovable-dashboard-shell .exposure-twin-recommendation,
+.lovable-dashboard-shell .twin-trend-chart,
+.lovable-dashboard-shell .twin-projection-card,
+.lovable-dashboard-shell .exposure-twin-input-card,
+.lovable-dashboard-shell .exposure-twin-score,
+.lovable-dashboard-shell .exposure-twin-streak-main,
+.lovable-dashboard-shell .exposure-twin-streak-note,
+.lovable-dashboard-shell .exposure-twin-row {
+  border-color: var(--border);
+  background: #fff;
+  color: var(--foreground);
+  box-shadow:
+    0 1px 2px rgba(19, 41, 75, 0.04),
+    0 16px 40px -34px rgba(19, 41, 75, 0.46);
+}
+
+.exposure-twin-hero,
+.twin-command-center {
+  border-radius: 1.75rem;
+  background:
+    radial-gradient(circle at 82% 18%, rgba(75, 156, 211, 0.14), transparent 22rem),
+    linear-gradient(135deg, rgba(231, 241, 249, 0.72), #fff 52%);
+}
+
+.twin-scan-stage {
+  border-color: var(--border);
+  border-radius: 1.5rem;
+  background:
+    linear-gradient(to right, rgba(75, 156, 211, 0.09) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(75, 156, 211, 0.09) 1px, transparent 1px),
+    radial-gradient(circle at 48% 42%, rgba(75, 156, 211, 0.12), transparent 24rem),
+    #f8fbfe;
+  background-size: 62px 62px, 62px 62px, auto, auto;
+  box-shadow: inset 0 0 0 1px rgba(75, 156, 211, 0.08);
+}
+
+.twin-scan-grid {
+  opacity: 0.45;
+}
+
+.twin-scan-tooltip,
+.twin-trend-tooltip {
+  border-color: var(--border);
+  background: var(--primary-ink);
+  color: #fff;
+}
+
+.twin-layer-button,
+.twin-scenario-button,
+.exposure-twin-streak-button,
+.twin-secondary-button,
+.bespoke-button,
+.public-health-bg button,
+.public-health-bg a[class*="rounded"],
+.lovable-dashboard-shell .twin-layer-button,
+.lovable-dashboard-shell .twin-scenario-button,
+.lovable-dashboard-shell .exposure-twin-streak-button,
+.lovable-dashboard-shell .twin-secondary-button,
+.lovable-dashboard-shell .bespoke-button {
+  border-radius: 999px;
+}
+
+.twin-secondary-button,
+.exposure-twin-streak-button,
+.bespoke-button,
+.public-health-bg button[type="submit"],
+.lovable-dashboard-shell .twin-secondary-button,
+.lovable-dashboard-shell .exposure-twin-streak-button,
+.lovable-dashboard-shell .bespoke-button {
+  border-color: var(--primary);
+  background: var(--primary);
+  color: #fff;
+  box-shadow: 0 14px 24px -18px rgba(46, 111, 181, 0.65);
+}
+
+.twin-secondary-button:hover,
+.exposure-twin-streak-button:hover,
+.bespoke-button:hover {
+  border-color: var(--primary-ink);
+  background: var(--primary-ink);
+}
+
+.twin-scenario-button,
+.twin-layer-button,
+.exposure-twin-day {
+  border-color: var(--border);
+  background: var(--primary-soft);
+  color: var(--primary-ink);
+}
+
+.twin-scenario-button:hover,
+.twin-scenario-button:focus-visible,
+.twin-scenario-button.is-active,
+.twin-layer-button:hover,
+.twin-layer-button:focus-visible,
+.twin-layer-button.is-active,
+.exposure-twin-day:hover,
+.exposure-twin-day.is-selected {
+  border-color: var(--primary);
+  background: var(--primary);
+  color: #fff;
+}
+
+.exposure-twin-day.is-complete {
+  border-color: rgba(31, 157, 110, 0.35);
+  background: rgba(31, 157, 110, 0.12);
+  color: var(--success);
+}
+
+.exposure-twin-day.is-complete.is-selected,
+.exposure-twin-day.is-complete:hover {
+  background: var(--success);
+  color: #fff;
+}
+
+.exposure-twin-streak-track,
+.twin-layer-button span {
+  background: #e5edf5;
+}
+
+.exposure-twin-streak-track span,
+.twin-layer-button b,
+.twin-trend-line,
+.twin-trend-peak-dot {
+  background: linear-gradient(90deg, var(--primary), var(--accent));
+  box-shadow: none;
+}
+
+.twin-trend-line {
+  stroke: var(--primary);
+}
+
+.twin-trend-peak-dot {
+  fill: var(--accent);
+}
+
+.exposure-twin-input-card span,
+.exposure-twin-input-card p,
+.exposure-twin-score-label,
+.exposure-twin-score-detail,
+.twin-projection-card span,
+.twin-projection-card p,
+.exposure-twin-streak-badge span,
+.exposure-twin-streak-note p {
+  color: var(--muted-foreground);
+}
+
+.exposure-twin-input-card strong,
+.exposure-twin-streak-badge strong,
+.exposure-twin-streak-note span,
+.twin-gauge-value strong,
+.twin-projection-card strong {
+  color: var(--primary-ink);
+}
+
+.twin-confidence-chip {
+  border-left-color: var(--primary);
+  border-radius: 999px;
+  background: var(--primary-soft);
+  color: var(--primary);
+  font-family: var(--font-app);
+}
+
+.public-health-bg input,
+.public-health-bg select,
+.public-health-bg textarea,
+.lovable-dashboard-shell input,
+.lovable-dashboard-shell select,
+.lovable-dashboard-shell textarea {
+  border-color: var(--border);
+  border-radius: 1rem;
+  background: #fff;
+  color: var(--foreground);
+}
+
+.public-health-bg input:focus,
+.public-health-bg select:focus,
+.public-health-bg textarea:focus,
+.lovable-dashboard-shell input:focus,
+.lovable-dashboard-shell select:focus,
+.lovable-dashboard-shell textarea:focus {
+  border-color: var(--ring);
+  box-shadow: 0 0 0 4px rgba(75, 156, 211, 0.16);
+}
+
+.public-health-bg header,
+.details-shell header {
+  border-color: var(--border);
+}
+
+@media (max-width: 760px) {
+  .exposure-twin-week {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
+  .twin-scan-stage {
+    height: 32rem;
+  }
+
+  .exposure-twin-hero,
+  .twin-command-center,
+  .twin-scenario-lab,
+  .exposure-twin-streak {
+    border-radius: 1.25rem;
+  }
+}
+
+/* ================================================================
+ * Exposure Twin 3D stage
+ * ================================================================ */
+
+.twin3d-root {
+  position: relative;
+  min-height: 34rem;
+  overflow: hidden;
+  border: 1px solid #1b3a6b;
+  border-radius: 1.5rem;
+  background: radial-gradient(
+    120% 80% at 50% 40%,
+    #0b2447 0%,
+    #061530 55%,
+    #030a1c 100%
+  );
+  box-shadow:
+    inset 0 0 0 1px rgba(125, 211, 252, 0.08),
+    0 24px 60px -36px rgba(6, 21, 48, 0.75);
+}
+
+.twin3d-grid {
+  position: absolute;
+  inset: 0;
+  opacity: 0.4;
+  pointer-events: none;
+  background-image:
+    linear-gradient(rgba(75, 156, 211, 0.18) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(75, 156, 211, 0.18) 1px, transparent 1px);
+  background-size: 26px 26px;
+  mask-image: radial-gradient(ellipse at 50% 55%, black 45%, transparent 80%);
+}
+
+.twin3d-aura {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 18rem;
+  height: 18rem;
+  transform: translate(-50%, -50%);
+  border-radius: 9999px;
+  background: radial-gradient(circle, rgba(75, 156, 211, 0.3), transparent 65%);
+  filter: blur(8px);
+  pointer-events: none;
+}
+
+.twin3d-stage {
+  position: relative;
+  width: 100%;
+  min-height: 34rem;
+  aspect-ratio: 16 / 12;
+}
+
+.twin3d-hud {
+  position: absolute;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 10px;
+  letter-spacing: 0.2em;
+  pointer-events: none;
+  text-transform: uppercase;
+}
+
+.twin3d-hud-tl {
+  left: 12px;
+  top: 12px;
+  color: rgba(125, 211, 252, 0.8);
+}
+
+.twin3d-hud-tl span {
+  margin-left: 4px;
+  color: rgba(255, 255, 255, 0.5);
+  text-transform: none;
+}
+
+.twin3d-hud-bl {
+  bottom: 12px;
+  left: 12px;
+  color: rgba(255, 255, 255, 0.62);
+}
+
+.twin3d-hud-br {
+  bottom: 12px;
+  right: 12px;
+  color: rgba(255, 255, 255, 0.62);
+}
+
+.twin3d-node-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid #2c5a8a;
+  border-radius: 6px;
+  padding: 2px 6px;
+  background: rgba(6, 21, 48, 0.85);
+  backdrop-filter: blur(6px);
+  white-space: nowrap;
+}
+
+.twin3d-node-dot {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  border-radius: 9999px;
+}
+
+.twin3d-node-name {
+  color: #bfe0ff;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.twin3d-node-value {
+  color: rgba(255, 255, 255, 0.9);
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 9px;
+}
+
+@media (max-width: 760px) {
+  .twin3d-root,
+  .twin3d-stage {
+    min-height: 28rem;
+  }
+
+  .twin3d-hud-br {
+    display: none;
+  }
+}

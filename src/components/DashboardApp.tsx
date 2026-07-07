@@ -2,13 +2,14 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { FormEvent, useMemo, useState } from "react";
+import { FormEvent, useEffect, useMemo, useState } from "react";
 import { useDashboardData } from "../contexts/DashboardDataContext";
 import {
-  dashboardGroups,
+  HealthEquityPanel,
+  SymptomCheckinPanel,
   getDashboardUrl,
   getDashboardView,
-  primaryDashboardViews,
+  isDashboardView,
   type DashboardView,
 } from "./DashboardApp.panels";
 
@@ -25,8 +26,10 @@ export {
   DataConfidencePanel,
   ExposureTwinPanel,
   ForecastPanel,
+  HealthEquityPanel,
   ModelDataSourcesPanel,
   RiskTransparencyPanel,
+  SymptomCheckinPanel,
 } from "./DashboardApp.panels";
 
 type IconName =
@@ -140,6 +143,36 @@ function BrandMark({ small = false }: { small?: boolean }) {
   );
 }
 
+function AccountActions({ user }: { user: ReturnType<typeof useDashboardData>["user"] }) {
+  if (user) {
+    return (
+      <Link
+        className="rounded-full border border-[var(--border)] bg-white px-4 py-2 text-sm font-medium text-[var(--primary-ink)] hover:bg-[var(--primary-soft)]"
+        href="/account"
+      >
+        Account
+      </Link>
+    );
+  }
+
+  return (
+    <div className="flex items-center gap-2">
+      <Link
+        className="hidden rounded-full border border-[var(--border)] bg-white px-4 py-2 text-sm font-medium text-[var(--primary-ink)] hover:bg-[var(--primary-soft)] sm:inline-flex"
+        href="/account"
+      >
+        Sign in
+      </Link>
+      <Link
+        className="rounded-full bg-[var(--primary-ink)] px-4 py-2 text-sm font-medium text-white hover:bg-[var(--primary)]"
+        href="/signup"
+      >
+        Sign up
+      </Link>
+    </div>
+  );
+}
+
 function toneClass(value: string) {
   const lower = value.toLowerCase();
   if (lower.includes("high") || lower.includes("severe")) {
@@ -170,14 +203,27 @@ const featureLinks: { label: string; href: string; hash?: string }[] = [
   { label: "Public health", href: "#about", hash: "about" },
 ];
 
+const visibleDashboardViews: DashboardView[] = [
+  "overview",
+  "forecast",
+  "twin",
+  "model",
+  "signals",
+  "equity",
+  "checkin",
+  "news",
+];
+
 function LandingHero({
   loading,
   error,
   onSubmit,
+  user,
 }: {
   loading: boolean;
   error: string;
   onSubmit: (zip: string) => void;
+  user: ReturnType<typeof useDashboardData>["user"];
 }) {
   const [zip, setZip] = useState("");
   const valid = /^\d{5}$/.test(zip.trim());
@@ -205,11 +251,9 @@ function LandingHero({
             ))}
           </nav>
           <div className="flex items-center gap-2">
-            <Link className="hidden rounded-full px-4 py-2 text-sm font-medium text-[var(--primary-ink)] hover:bg-[var(--primary-soft)] sm:inline-flex" href="/account">
-              Sign in
-            </Link>
+            <AccountActions user={user} />
             <button
-              className="inline-flex items-center gap-1.5 rounded-full bg-[var(--primary-ink)] px-4 py-2 text-sm font-medium text-white hover:bg-[var(--primary)]"
+              className="hidden items-center gap-1.5 rounded-full bg-[var(--primary)] px-4 py-2 text-sm font-medium text-white hover:bg-[var(--primary-ink)] lg:inline-flex"
               onClick={() => onSubmit("27514")}
               type="button"
             >
@@ -269,6 +313,24 @@ function LandingHero({
                   {loading ? "Loading" : "See my forecast"}
                 </button>
               </form>
+              {loading && (
+                <div className="mt-5 max-w-lg rounded-2xl border border-[var(--border)] bg-white p-4 shadow-sm">
+                  <div className="flex items-center gap-3">
+                    <span className="relative flex h-3 w-3">
+                      <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[var(--primary)]/50" />
+                      <span className="relative inline-flex h-3 w-3 rounded-full bg-[var(--primary)]" />
+                    </span>
+                    <p className="text-sm font-medium text-[var(--primary-ink)]">
+                      Building your local health snapshot
+                    </p>
+                  </div>
+                  <div className="mt-4 grid gap-2">
+                    <div className="h-2 rounded-full bg-[var(--primary-soft)]" />
+                    <div className="h-2 w-4/5 rounded-full bg-[var(--primary-soft)]" />
+                    <div className="h-2 w-2/3 rounded-full bg-[var(--primary-soft)]" />
+                  </div>
+                </div>
+              )}
               <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-[var(--muted-foreground)]">
                 <span>Try:</span>
                 {["27514", "10025", "94110", "60614"].map((sample) => (
@@ -518,11 +580,6 @@ export function DashboardSidebar({
   state: string;
   zipCode: string;
 }) {
-  const nav = [
-    ...primaryDashboardViews,
-    ...dashboardGroups.flatMap((group) => group.views),
-  ].filter((view, index, all) => all.indexOf(view) === index);
-
   return (
     <aside className="hidden w-64 shrink-0 border-r border-[var(--border)] bg-white lg:flex lg:flex-col">
       <div className="flex h-16 items-center gap-2 border-b border-[var(--border)] px-6">
@@ -535,7 +592,7 @@ export function DashboardSidebar({
         <p className="px-3 pb-2 text-[10px] font-semibold uppercase tracking-widest text-[var(--muted-foreground)]">
           Workspace
         </p>
-        {nav.map((viewId) => {
+        {visibleDashboardViews.map((viewId) => {
           const view = getDashboardView(viewId);
           const isActive = activeView === viewId;
           return (
@@ -564,6 +621,114 @@ export function DashboardSidebar({
         </p>
       </div>
     </aside>
+  );
+}
+
+export function DashboardPageShell({
+  activeView,
+  children,
+  city,
+  eyebrow,
+  onNavigate,
+  state,
+  title,
+  zipCode,
+}: {
+  activeView: DashboardView;
+  children: React.ReactNode;
+  city: string;
+  eyebrow: string;
+  onNavigate: (view: DashboardView) => void;
+  state: string;
+  title: string;
+  zipCode: string;
+}) {
+  const { user } = useDashboardData();
+  const dashboardHref = getDashboardUrl(zipCode, "overview");
+
+  return (
+    <div className="flex min-h-screen bg-[var(--primary-soft)]/30">
+      <DashboardSidebar
+        activeView={activeView}
+        city={city}
+        onChange={onNavigate}
+        state={state}
+        zipCode={zipCode}
+      />
+      <div className="flex min-w-0 flex-1 flex-col">
+        <header className="sticky top-0 z-20 flex min-h-16 items-center gap-4 border-b border-[var(--border)] bg-white/85 px-6 py-3 backdrop-blur lg:px-10">
+          <Link
+            className="flex shrink-0 items-center gap-2 lg:hidden"
+            href={dashboardHref}
+          >
+            <BrandMark small />
+            <span className="font-heading text-base font-semibold text-[var(--primary-ink)]">
+              MyLocalHealth
+            </span>
+          </Link>
+          <div className="min-w-0">
+            <div className="text-[11px] font-semibold uppercase tracking-widest text-[var(--muted-foreground)]">
+              {eyebrow}
+            </div>
+            <h1 className="truncate font-heading text-lg font-semibold text-[var(--primary-ink)]">
+              {title} · ZIP {zipCode}
+            </h1>
+          </div>
+          <Link
+            className="ml-auto rounded-full border border-[var(--border)] bg-white px-4 py-2 text-sm font-medium text-[var(--primary-ink)] hover:bg-[var(--primary-soft)]"
+            href={dashboardHref}
+          >
+            Dashboard
+          </Link>
+          <Link
+            className="hidden rounded-full bg-[var(--primary-ink)] px-4 py-2 text-sm font-medium text-white hover:bg-[var(--primary)] sm:inline-flex"
+            href="/"
+          >
+            New search
+          </Link>
+          <AccountActions user={user} />
+        </header>
+        <main className="lovable-dashboard-shell flex-1 px-6 py-6 lg:px-10">
+          <div className="mx-auto max-w-[86rem]">{children}</div>
+        </main>
+      </div>
+    </div>
+  );
+}
+
+export function EmptyDashboardState({
+  copy,
+  eyebrow,
+  title,
+}: {
+  copy: string;
+  eyebrow: string;
+  title: string;
+}) {
+  return (
+    <main className="grid min-h-screen place-items-center bg-[var(--background)] px-6 py-12">
+      <section className="lifted-shadow relative w-full max-w-2xl overflow-hidden rounded-3xl border border-[var(--border)] bg-white p-8">
+        <div className="hero-grid-bg absolute inset-0 opacity-60" />
+        <div className="relative">
+          <BrandMark />
+          <p className="mt-6 text-xs font-semibold uppercase tracking-[0.2em] text-[var(--primary)]">
+            {eyebrow}
+          </p>
+          <h1 className="mt-3 font-heading text-4xl font-semibold tracking-tight text-[var(--primary-ink)]">
+            {title}
+          </h1>
+          <p className="mt-4 max-w-xl text-sm leading-6 text-[var(--muted-foreground)]">
+            {copy}
+          </p>
+          <Link
+            className="mt-6 inline-flex rounded-full bg-[var(--primary)] px-5 py-3 text-sm font-medium text-white hover:bg-[var(--primary-ink)]"
+            href="/"
+          >
+            Search a ZIP code
+          </Link>
+        </div>
+      </section>
+    </main>
   );
 }
 
@@ -936,6 +1101,123 @@ function NewsPanel({ localNews }: { localNews: ReturnType<typeof useDashboardDat
   );
 }
 
+function SignalsView({
+  aqi,
+  airQualityLabel,
+  alertRisk,
+  covidActivity,
+  dominantPollutant,
+  fluActivity,
+  heatRisk,
+  pollutantRisk,
+  respiratoryRisk,
+  uvRisk,
+}: {
+  aqi: number | null;
+  airQualityLabel: string;
+  alertRisk: string;
+  covidActivity: string;
+  dominantPollutant: string;
+  fluActivity: string;
+  heatRisk: string;
+  pollutantRisk: string;
+  respiratoryRisk: string;
+  uvRisk: string;
+}) {
+  const signals = [
+    {
+      icon: "activity" as IconName,
+      label: "Respiratory risk",
+      detail: "Combines flu, COVID wastewater, and air conditions.",
+      value: respiratoryRisk,
+    },
+    {
+      icon: "wind" as IconName,
+      label: "Air quality",
+      detail: aqi === null ? "AQI unavailable" : `AQI ${aqi}`,
+      value: airQualityLabel,
+    },
+    {
+      icon: "thermo" as IconName,
+      label: "Heat risk",
+      detail: "Outdoor heat stress signal.",
+      value: heatRisk,
+    },
+    {
+      icon: "spark" as IconName,
+      label: "UV risk",
+      detail: "Sun exposure risk from forecast data.",
+      value: uvRisk,
+    },
+    {
+      icon: "droplet" as IconName,
+      label: "COVID wastewater",
+      detail: "CDC wastewater viral activity.",
+      value: covidActivity,
+    },
+    {
+      icon: "activity" as IconName,
+      label: "Flu activity",
+      detail: "CDC respiratory illness activity.",
+      value: fluActivity,
+    },
+    {
+      icon: "alert" as IconName,
+      label: "Weather alerts",
+      detail: "National Weather Service alert context.",
+      value: alertRisk,
+    },
+    {
+      icon: "wind" as IconName,
+      label: dominantPollutant || "Dominant pollutant",
+      detail: "Pollutant-specific burden.",
+      value: pollutantRisk,
+    },
+  ];
+
+  return (
+    <section className="space-y-6">
+      <div className="rounded-[1.75rem] border border-[var(--border)] bg-white p-6 shadow-[0_18px_42px_-34px_rgba(19,41,75,0.5)]">
+        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--primary)]">
+          Health signals
+        </p>
+        <h2 className="mt-3 font-heading text-4xl font-semibold tracking-tight text-[var(--primary-ink)]">
+          The readings behind today&apos;s snapshot.
+        </h2>
+        <p className="mt-3 max-w-3xl text-sm leading-6 text-[var(--muted-foreground)]">
+          These are the local environmental and respiratory inputs currently
+          feeding the dashboard. Use this page when you want the raw signal
+          view instead of the combined forecast.
+        </p>
+      </div>
+
+      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+        {signals.map((signal) => (
+          <article
+            className="rounded-2xl border border-[var(--border)] bg-white p-5 shadow-[0_12px_34px_-28px_rgba(19,41,75,0.45)]"
+            key={signal.label}
+          >
+            <div className="flex items-start justify-between gap-4">
+              <span className="grid h-10 w-10 place-items-center rounded-xl bg-[var(--primary-soft)] text-[var(--primary)]">
+                <Icon name={signal.icon} className="h-5 w-5" />
+              </span>
+              <span className={`rounded-full px-3 py-1 text-xs font-semibold ${toneClass(signal.value)}`}>
+                {signal.value}
+              </span>
+            </div>
+            <h3 className="mt-5 font-heading text-xl font-semibold text-[var(--primary-ink)]">
+              {signal.label}
+            </h3>
+            <p className="mt-2 text-sm leading-6 text-[var(--muted-foreground)]">
+              {signal.detail}
+            </p>
+          </article>
+        ))}
+      </div>
+    </section>
+  );
+}
+
 export default function Home() {
   const router = useRouter();
   const {
@@ -952,6 +1234,7 @@ export default function Home() {
     uvRisk,
     alertRisk,
     dominantPollutant,
+    pollutantRisk,
     airQualityLabel,
     healthRisk,
     respiratoryRisk,
@@ -959,21 +1242,44 @@ export default function Home() {
     mainTwinLevel,
     localNews,
     healthEquityData,
+    equityError,
     healthForecastData,
     scoreBreakdown,
     userProfile,
+    user,
+    latestSnapshot,
+    snapshotStatus,
+    checkinStreak,
     searchZipCode,
     resetSearch,
     setZipCode,
+    refreshCheckinStreak,
   } = useDashboardData();
   const [dashboardView, setDashboardView] = useState<DashboardView>("overview");
 
   const navigateDashboardView = (view: DashboardView) => {
     setDashboardView(view);
-    if (view === "forecast" || view === "twin" || view === "model") {
-      router.push(getDashboardUrl(zipCode, view));
-    }
+    router.push(getDashboardUrl(zipCode, view));
   };
+
+  useEffect(() => {
+    const syncViewFromUrl = () => {
+      if (typeof window === "undefined") return;
+      const urlView = new URLSearchParams(window.location.search).get("view");
+      if (isDashboardView(urlView)) {
+        setDashboardView(urlView);
+      } else {
+        setDashboardView("overview");
+      }
+    };
+
+    syncViewFromUrl();
+    window.addEventListener("popstate", syncViewFromUrl);
+
+    return () => {
+      window.removeEventListener("popstate", syncViewFromUrl);
+    };
+  }, []);
 
   const dashboardTitle = city && state ? `${city}, ${state}` : "Local dashboard";
 
@@ -991,6 +1297,7 @@ export default function Home() {
           setZipCode(zip);
           void searchZipCode(zip);
         }}
+        user={user}
       />
     );
   }
@@ -1006,6 +1313,15 @@ export default function Home() {
       />
       <div className="flex min-w-0 flex-1 flex-col">
         <header className="sticky top-0 z-20 flex min-h-16 items-center gap-4 border-b border-[var(--border)] bg-white/85 px-6 py-3 backdrop-blur lg:px-10">
+          <Link
+            className="flex shrink-0 items-center gap-2 lg:hidden"
+            href={getDashboardUrl(zipCode, "overview")}
+          >
+            <BrandMark small />
+            <span className="font-heading text-base font-semibold text-[var(--primary-ink)]">
+              MyLocalHealth
+            </span>
+          </Link>
           <div>
             <div className="text-[11px] font-semibold uppercase tracking-widest text-[var(--muted-foreground)]">
               Local health · live snapshot
@@ -1033,40 +1349,92 @@ export default function Home() {
           <button className="rounded-full bg-[var(--primary-ink)] px-4 py-2 text-sm font-medium text-white hover:bg-[var(--primary)]" onClick={resetSearch} type="button">
             New search
           </button>
+          <AccountActions user={user} />
         </header>
 
         <main className="flex-1 space-y-6 px-6 py-6 lg:px-10">
-          <SummaryRow
-            airQualityLabel={airQualityLabel}
-            aqi={aqi}
-            covidActivity={covidActivity}
-            healthRisk={healthRisk}
-            heatRisk={heatRisk}
-          />
-          <div className="grid gap-6 xl:grid-cols-[1.7fr_1fr]">
-            <DashboardForecastPanel
+          {dashboardView === "overview" && (
+            <>
+              <SummaryRow
+                airQualityLabel={airQualityLabel}
+                aqi={aqi}
+                covidActivity={covidActivity}
+                healthRisk={healthRisk}
+                heatRisk={heatRisk}
+              />
+              <div className="grid gap-6 xl:grid-cols-[1.7fr_1fr]">
+                <DashboardForecastPanel
+                  airQualityLabel={airQualityLabel}
+                  healthForecastData={healthForecastData}
+                  heatRisk={heatRisk}
+                  zipCode={zipCode}
+                />
+                <DashboardTwinPanel
+                  level={mainTwinLevel}
+                  respiratoryRisk={respiratoryRisk}
+                  score={mainTwinScore}
+                  userProfile={userProfile}
+                />
+              </div>
+              <div className="grid gap-6 xl:grid-cols-[1.2fr_1fr]">
+                <ContributorsPanel scoreBreakdown={scoreBreakdown} zipCode={zipCode} />
+                <SecondaryPanels
+                  alertRisk={alertRisk}
+                  fluActivity={fluActivity}
+                  healthEquityLevel={healthEquityData?.equityLevel ?? "Unknown"}
+                  localNews={localNews}
+                />
+              </div>
+              <NewsPanel localNews={localNews} />
+            </>
+          )}
+
+          {dashboardView === "signals" && (
+            <SignalsView
+              aqi={aqi}
               airQualityLabel={airQualityLabel}
-              healthForecastData={healthForecastData}
-              heatRisk={heatRisk}
-              zipCode={zipCode}
-            />
-            <DashboardTwinPanel
-              level={mainTwinLevel}
-              respiratoryRisk={respiratoryRisk}
-              score={mainTwinScore}
-              userProfile={userProfile}
-            />
-          </div>
-          <div className="grid gap-6 xl:grid-cols-[1.2fr_1fr]">
-            <ContributorsPanel scoreBreakdown={scoreBreakdown} zipCode={zipCode} />
-            <SecondaryPanels
               alertRisk={alertRisk}
+              covidActivity={covidActivity}
+              dominantPollutant={dominantPollutant}
               fluActivity={fluActivity}
-              healthEquityLevel={healthEquityData?.equityLevel ?? "Unknown"}
-              localNews={localNews}
+              heatRisk={heatRisk}
+              pollutantRisk={pollutantRisk}
+              respiratoryRisk={respiratoryRisk}
+              uvRisk={uvRisk}
             />
-          </div>
-          <NewsPanel localNews={localNews} />
+          )}
+
+          {dashboardView === "equity" && (
+            <div className="lovable-dashboard-shell">
+              <HealthEquityPanel
+                equityData={healthEquityData}
+                equityError={equityError}
+                heatRisk={heatRisk}
+                pollutantRisk={pollutantRisk}
+                dominantPollutant={dominantPollutant}
+              />
+            </div>
+          )}
+
+          {dashboardView === "checkin" && (
+            <div className="lovable-dashboard-shell">
+              <SymptomCheckinPanel
+                user={user}
+                zipCode={zipCode}
+                latestSnapshot={latestSnapshot}
+                snapshotStatus={snapshotStatus}
+                checkinStreak={checkinStreak}
+                onCheckinSaved={async () => {
+                  if (user) {
+                    await refreshCheckinStreak(user.id);
+                  }
+                }}
+              />
+            </div>
+          )}
+
+          {dashboardView === "news" && <NewsPanel localNews={localNews} />}
+
           <p className="text-xs leading-5 text-[var(--muted-foreground)]">
             MyLocalHealth is informational only and does not provide medical advice,
             diagnosis, or treatment. {contextLine}

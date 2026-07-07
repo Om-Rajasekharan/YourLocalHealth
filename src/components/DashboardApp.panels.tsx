@@ -46,6 +46,7 @@ import {
   type CheckinStreak,
   type SavedHealthSnapshot,
 } from "../services/mlTrainingData";
+import { Twin3D, type TwinNode3D } from "./Twin3D";
 
 type ChatMessage = {
   role: "user" | "assistant";
@@ -2218,7 +2219,7 @@ function equityBadgeClass(level: string) {
   return "border-[var(--rule)] bg-[var(--surface-muted)] text-[var(--foreground)]";
 }
 
-function HealthEquityPanel({
+export function HealthEquityPanel({
   equityData,
   equityError,
   heatRisk,
@@ -2639,6 +2640,8 @@ function TwinScoreGauge({
   );
 }
 
+// Kept temporarily as a fallback for the previous non-Three.js scan.
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 function ExposureTwinPersonScan({
   rotation,
   onRotationChange,
@@ -3202,8 +3205,6 @@ export function ExposureTwinPanel({
   onOpenCheckin: () => void;
   onOpenForecast?: () => void;
 }) {
-  const [fieldRotation, setFieldRotation] = useState(18);
-  const [fieldAutoRotate, setFieldAutoRotate] = useState(true);
   const [selectedLayerId, setSelectedLayerId] =
     useState<TwinLayer["id"]>("environment");
   const [scenario, setScenario] = useState<TwinScenario>("current");
@@ -3275,6 +3276,58 @@ export function ExposureTwinPanel({
   const selectedLayer =
     twinLayers.find((layer) => layer.id === selectedLayerId) ??
     twinLayers[0];
+  const peakUvIndex =
+    forecastData?.hours.reduce((max, hour) => {
+      if (hour.uvIndex === null) return max;
+      return Math.max(max, hour.uvIndex);
+    }, 0) ?? 0;
+  const peakFeelsLike =
+    forecastData?.hours.reduce((max, hour) => {
+      if (hour.apparentTemperature === null) return max;
+      return Math.max(max, hour.apparentTemperature);
+    }, 0) ?? 0;
+  const twin3dNodes: TwinNode3D[] = [
+    {
+      id: "uv",
+      label: "UV / Skin",
+      value: clampScore(Math.max(peakUvIndex * 10, 24)),
+      tone: peakUvIndex >= 6 ? "warn" : "info",
+      pos: [0, 1.65, 0.18],
+    },
+    {
+      id: "resp",
+      label: "Respiratory",
+      value: twinLayers[1]?.intensity ?? 34,
+      tone:
+        respiratoryRisk === "High"
+          ? "warn"
+          : respiratoryRisk === "Moderate"
+          ? "info"
+          : "ok",
+      pos: [0.05, 1.1, 0.25],
+    },
+    {
+      id: "cardio",
+      label: "Cardio / Heat",
+      value: clampScore(peakFeelsLike > 0 ? (peakFeelsLike - 60) * 2 : baseScore),
+      tone: peakFeelsLike >= 90 || baseScore >= 67 ? "warn" : "info",
+      pos: [-0.12, 0.95, 0.25],
+    },
+    {
+      id: "immune",
+      label: "Immune Load",
+      value: clampScore(baseScore * 0.5 + twinLayers[1].intensity * 0.5),
+      tone: respiratoryRisk === "Low" ? "ok" : "warn",
+      pos: [0.1, 0.65, 0.25],
+    },
+    {
+      id: "learning",
+      label: "Learning Loop",
+      value: twinLayers[3]?.intensity ?? 0,
+      tone: checkinStreak.currentStreak > 0 ? "ok" : "info",
+      pos: [0, 0.35, 0.25],
+    },
+  ];
   const inputCards = [
     {
       label: "Local baseline",
@@ -3396,12 +3449,13 @@ export function ExposureTwinPanel({
             Inspect the body scan and exposure layers.
           </h4>
           <p className="mt-3 text-sm leading-6 text-[var(--foreground-muted)]">
-            This scan is a visual stand-in for the current ZIP code, forecast,
-            profile, and learning loop. It is not a clinical diagnostic model;
-            it is a way to make the exposure simulation easier to understand.
+            This 3D scan is a visual stand-in for the current ZIP code,
+            forecast, profile, and learning loop. It is not a clinical
+            diagnostic model; it is a way to make the exposure simulation
+            easier to understand.
           </p>
 
-          <div className="mt-5 rounded-lg border border-[var(--secondary)]/20 bg-[var(--secondary)]/10 p-4">
+          <div className="mt-5 rounded-2xl border border-[var(--border)] bg-white/80 p-4">
             <p className="text-xs font-bold uppercase tracking-wide text-[var(--foreground-muted)]">
               Selected layer
             </p>
@@ -3413,29 +3467,33 @@ export function ExposureTwinPanel({
             </p>
           </div>
 
-          <div className="mt-5 grid gap-3">
-            <p className="text-sm font-semibold text-[var(--foreground-muted)]">
-              Drag the scan to rotate · {Math.round(fieldRotation)}°
-            </p>
-            <button
-              type="button"
-              onClick={() => setFieldAutoRotate((current) => !current)}
-              className="twin-secondary-button"
-            >
-              {fieldAutoRotate ? "Pause scan motion" : "Resume scan motion"}
-            </button>
+          <div className="mt-5 grid gap-3 sm:grid-cols-2">
+            {twin3dNodes.slice(0, 4).map((node) => (
+              <button
+                type="button"
+                key={node.id}
+                onClick={() => {
+                  if (node.id === "resp") setSelectedLayerId("respiratory");
+                  else if (node.id === "learning") setSelectedLayerId("learning");
+                  else setSelectedLayerId("environment");
+                }}
+                className="rounded-2xl border border-[var(--border)] bg-white px-3 py-3 text-left transition hover:border-[var(--primary)] hover:bg-[var(--primary-soft)]"
+              >
+                <span className="text-xs font-semibold uppercase tracking-wide text-[var(--muted-foreground)]">
+                  {node.label}
+                </span>
+                <strong className="mt-1 block text-lg text-[var(--primary-ink)]">
+                  {node.value}/100
+                </strong>
+              </button>
+            ))}
           </div>
         </div>
 
-        <ExposureTwinPersonScan
-          rotation={fieldRotation}
-          onRotationChange={setFieldRotation}
-          autoRotate={fieldAutoRotate}
-          onAutoRotateChange={setFieldAutoRotate}
-          twinScore={projectedTwinScore}
-          layers={twinLayers}
-          selectedLayerId={selectedLayerId}
-          onSelectLayer={setSelectedLayerId}
+        <Twin3D
+          className="min-h-[34rem]"
+          nodes={twin3dNodes}
+          scanLabel={`SCAN · ${projectedTwinScore} / 100`}
         />
       </section>
 
@@ -3693,6 +3751,8 @@ export function ForecastPanel({
   city: string;
   state: string;
 }) {
+  const [selectedHourIndex, setSelectedHourIndex] = useState(0);
+  const [showHourlyDetails, setShowHourlyDetails] = useState(false);
   const formatTrendValue = (
     value: number | null,
     unit: string,
@@ -3703,196 +3763,172 @@ export function ForecastPanel({
     if (unit === "F") return `${value.toFixed(0)}°F`;
     return `${value.toFixed(digits)} ${unit}`;
   };
-  const [showHourlyDetails, setShowHourlyDetails] = useState(false);
+  const selectedHour = forecastData?.hours[selectedHourIndex] ?? null;
+  const selectedExplanation = selectedHour
+    ? buildForecastHourExplanation(selectedHour)
+    : null;
+  const leadingDrivers =
+    selectedHour?.drivers.length
+      ? selectedHour.drivers
+      : forecastData?.worstWindow?.drivers ?? [];
+  const normalizedSelectedIndex =
+    forecastData && selectedHourIndex >= forecastData.hours.length
+      ? 0
+      : selectedHourIndex;
 
   return (
-    <section className="main-feature-panel rounded-lg border border-[var(--rule)] bg-[var(--surface)] p-5 shadow-sm">
-      <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-        <div>
-          <p className="text-sm font-semibold uppercase tracking-wide text-[var(--foreground-muted)]">
-            Health Risk Forecast
-          </p>
-          <h3 className="display-heading mt-2 text-3xl leading-tight text-[var(--foreground)] sm:text-4xl">
-            Predict the best and worst windows before you step outside.
-          </h3>
-          <p className="mt-3 max-w-3xl text-sm leading-6 text-[var(--foreground-muted)]">
-            This forecast estimates the next 24 hours in {city}, {state} using
-            predicted U.S. AQI, PM2.5, ozone, heat index, UV, pollen, and alert
-            signals.
-          </p>
-        </div>
-        {forecastData && (
-          <div className="rounded-lg border border-[var(--secondary)]/20 bg-[var(--secondary)]/10 p-4">
-            <p className="text-xs font-semibold uppercase tracking-wide text-[var(--foreground-muted)]">
-              Peak forecast risk
-            </p>
-            <p className="mt-2 text-3xl font-bold text-[var(--foreground)]">
-              {forecastData.peakScore}/100
-            </p>
-            <RiskBadge value={exposureLabel(forecastData.peakScore)} />
+    <section className="space-y-6">
+      <div className="overflow-hidden rounded-[1.75rem] border border-[var(--border)] bg-white shadow-[0_18px_55px_-38px_rgba(19,41,75,0.5)]">
+        <div className="grid gap-0 lg:grid-cols-[1.05fr_0.95fr]">
+          <div className="relative p-6 sm:p-8">
+            <div className="hero-grid-bg absolute inset-0 opacity-60" />
+            <div className="relative">
+              <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[var(--primary)]">
+                Health Risk Forecast
+              </p>
+              <h3 className="mt-3 font-heading text-4xl font-semibold leading-[1.03] tracking-tight text-[var(--primary-ink)] sm:text-5xl">
+                Find the safest window before you step outside.
+              </h3>
+              <p className="mt-4 max-w-2xl text-sm leading-6 text-[var(--muted-foreground)] sm:text-base">
+                A 24-hour local forecast for {city}, {state}, built from air
+                quality, PM2.5, ozone, heat, UV, pollen, and alert signals.
+              </p>
+
+              {forecastData && (
+                <div className="mt-7 grid gap-3 sm:grid-cols-3">
+                  <ForecastInsightCard
+                    label="Average"
+                    value={`${forecastData.averageScore}/100`}
+                    detail="Expected risk across the next 24 hours"
+                    tone={exposureLabel(forecastData.averageScore)}
+                  />
+                  <ForecastInsightCard
+                    label="Best window"
+                    value={forecastData.bestWindow?.displayTime ?? "Unavailable"}
+                    detail={
+                      forecastData.bestWindow
+                        ? `Risk ${forecastData.bestWindow.score}/100`
+                        : "Not enough hourly data"
+                    }
+                    tone={forecastData.bestWindow?.risk ?? "Low"}
+                  />
+                  <ForecastInsightCard
+                    label="Peak"
+                    value={`${forecastData.peakScore}/100`}
+                    detail={forecastData.worstWindow?.displayTime ?? "Unavailable"}
+                    tone={exposureLabel(forecastData.peakScore)}
+                  />
+                </div>
+              )}
+            </div>
           </div>
-        )}
+
+          <div className="border-t border-[var(--border)] bg-[var(--primary-soft)]/55 p-6 sm:p-8 lg:border-l lg:border-t-0">
+            {forecastData ? (
+              <div className="flex h-full flex-col justify-between">
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[var(--primary)]">
+                    Right now to next day
+                  </p>
+                  <p className="mt-3 text-lg font-semibold leading-7 text-[var(--primary-ink)]">
+                    {forecastData.summary}
+                  </p>
+                </div>
+
+                <div className="mt-8 rounded-2xl border border-[var(--border)] bg-white p-4">
+                  <div className="flex items-start justify-between gap-4">
+                    <div>
+                      <p className="text-xs font-semibold uppercase tracking-wide text-[var(--muted-foreground)]">
+                        Selected hour
+                      </p>
+                      <h4 className="mt-1 font-heading text-2xl font-semibold text-[var(--primary-ink)]">
+                        {selectedHour?.displayTime ?? "Unavailable"}
+                      </h4>
+                    </div>
+                    <RiskBadge value={selectedHour?.risk ?? "Unknown"} />
+                  </div>
+                  <div className="mt-4 grid grid-cols-2 gap-3 text-sm">
+                    <ForecastMetric label="Risk" value={selectedHour ? `${selectedHour.score}/100` : "n/a"} />
+                    <ForecastMetric label="AQI" value={selectedHour?.usAqi?.toString() ?? "n/a"} />
+                    <ForecastMetric label="Feels like" value={selectedHour?.apparentTemperature === null || selectedHour?.apparentTemperature === undefined ? "n/a" : `${selectedHour.apparentTemperature.toFixed(0)}°F`} />
+                    <ForecastMetric label="Pollen" value={selectedHour?.pollenRisk ?? "Unknown"} />
+                  </div>
+                  <p className="mt-4 text-sm leading-6 text-[var(--muted-foreground)]">
+                    {selectedExplanation?.drivers ?? "Choose an hour to inspect the active drivers."}
+                  </p>
+                </div>
+              </div>
+            ) : (
+              <div className="grid h-full place-items-center rounded-2xl border border-dashed border-[var(--border)] bg-white p-8 text-center">
+                <div>
+                  <p className="font-heading text-2xl font-semibold text-[var(--primary-ink)]">
+                    Waiting for forecast data
+                  </p>
+                  <p className="mt-2 text-sm leading-6 text-[var(--muted-foreground)]">
+                    Search a ZIP code to load the forecast curve.
+                  </p>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
       </div>
 
       {forecastError && (
-        <p className="mt-5 rounded-lg border border-rose-200 bg-rose-50 p-4 text-sm text-rose-700">
+        <p className="rounded-2xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-700">
           {forecastError}
         </p>
       )}
 
       {!forecastData && !forecastError && (
-        <p className="mt-5 rounded-lg border border-[var(--rule)] bg-[var(--surface-muted)] p-4 text-sm leading-6 text-[var(--foreground-muted)]">
+        <p className="rounded-2xl border border-[var(--border)] bg-white p-4 text-sm leading-6 text-[var(--muted-foreground)]">
           Forecast data will appear here after a ZIP code search.
         </p>
       )}
 
       {forecastData && (
         <>
-          <div className="mt-5 grid gap-4 lg:grid-cols-4">
-            <article className="rounded-lg border border-[var(--rule)] bg-[var(--surface-muted)] p-4">
-              <p className="text-xs font-semibold uppercase tracking-wide text-[var(--foreground-faint)]">
-                Forecast summary
-              </p>
-              <p className="mt-3 text-sm leading-6 text-[var(--foreground)]">
-                {forecastData.summary}
-              </p>
-            </article>
-            <article className="rounded-lg border border-[var(--rule)] bg-[var(--surface-muted)] p-4">
-              <p className="text-xs font-semibold uppercase tracking-wide text-[var(--foreground-faint)]">
-                Best outdoor window
-              </p>
-              <p className="mt-3 text-lg font-semibold text-[var(--foreground)]">
-                {forecastData.bestWindow?.displayTime ?? "Unavailable"}
-              </p>
-              <p className="mt-2 text-sm leading-6 text-[var(--foreground-muted)]">
-                Estimated risk{" "}
-                {forecastData.bestWindow
-                  ? `${forecastData.bestWindow.score}/100`
-                  : "unavailable"}
-              </p>
-            </article>
-            <article className="rounded-lg border border-[var(--rule)] bg-[var(--surface-muted)] p-4">
-              <p className="text-xs font-semibold uppercase tracking-wide text-[var(--foreground-faint)]">
-                Worst exposure window
-              </p>
-              <p className="mt-3 text-lg font-semibold text-[var(--foreground)]">
-                {forecastData.worstWindow?.displayTime ?? "Unavailable"}
-              </p>
-              <p className="mt-2 text-sm leading-6 text-[var(--foreground-muted)]">
-                Estimated risk{" "}
-                {forecastData.worstWindow
-                  ? `${forecastData.worstWindow.score}/100`
-                  : "unavailable"}
-              </p>
-            </article>
-            <article className="rounded-lg border border-[var(--rule)] bg-[var(--surface-muted)] p-4">
-              <p className="text-xs font-semibold uppercase tracking-wide text-[var(--foreground-faint)]">
-                Allergy peak
-              </p>
-              <p className="mt-3 text-lg font-semibold text-[var(--foreground)]">
-                {forecastData.allergyPeakWindow?.displayTime ?? "Unavailable"}
-              </p>
-              <p className="mt-2 text-sm leading-6 text-[var(--foreground-muted)]">
-                Pollen{" "}
-                {forecastData.allergyPeakScore !== null
-                  ? `${forecastData.allergyPeakScore} grains/m3`
-                  : "unavailable"}{" "}
-                · {forecastData.allergyPeakWindow?.pollenRisk ?? "Unknown"}
-              </p>
-            </article>
-          </div>
-
-          <div className="mt-5 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-            {forecastData.trends.map((trend) => {
-              const range =
-                trend.max !== null && trend.min !== null
-                  ? trend.max - trend.min
-                  : 0;
-
-              return (
-                <article
-                  className="rounded-lg border border-[var(--rule)] bg-[var(--surface-muted)] p-4"
-                  key={trend.label}
-                >
-                  <div className="flex items-start justify-between gap-3">
-                    <div>
-                      <p className="text-sm font-semibold text-[var(--foreground)]">
-                        {trend.label}
-                      </p>
-                      <p className="mt-1 text-xs leading-5 text-[var(--foreground-faint)]">
-                        {trend.direction} · peak around {trend.peakTime}
-                      </p>
-                    </div>
-                    <span className="rounded-full border border-[var(--rule)] bg-black/20 px-2 py-1 text-xs font-semibold text-[var(--foreground)]">
-                      {formatTrendValue(trend.max, trend.unit, 1)}
-                    </span>
-                  </div>
-                  <div className="mt-4 flex h-14 items-end gap-1">
-                    {trend.values.map((value, index) => {
-                      const normalized =
-                        value === null || trend.min === null || range === 0
-                          ? 20
-                          : 16 + ((value - trend.min) / range) * 84;
-
-                      return (
-                        <div
-                          className="flex flex-1 items-end rounded bg-[var(--surface-muted)]"
-                          key={`${trend.label}-${index}`}
-                          title={
-                            value === null
-                              ? "No value"
-                              : formatTrendValue(value, trend.unit, 1)
-                          }
-                        >
-                          <div
-                            className="w-full rounded bg-[var(--secondary)]/80"
-                            style={{ height: `${normalized}%` }}
-                          />
-                        </div>
-                      );
-                    })}
-                  </div>
-                  <p className="mt-3 text-xs leading-5 text-slate-500">
-                    Range: {formatTrendValue(trend.min, trend.unit, 1)} to{" "}
-                    {formatTrendValue(trend.max, trend.unit, 1)}
-                  </p>
-                </article>
-              );
-            })}
-          </div>
-
-          <div className="mt-5 rounded-lg border border-[var(--rule)] bg-black/10 p-4">
+          <div className="rounded-[1.5rem] border border-[var(--border)] bg-white p-5 shadow-[0_12px_34px_-26px_rgba(19,41,75,0.45)] sm:p-6">
             <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
               <div>
-                <p className="text-xs font-semibold uppercase tracking-wide text-[var(--foreground-faint)]">
+                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--primary)]">
                   24-hour forecast curve
                 </p>
-                <p className="mt-1 text-sm text-[var(--foreground-muted)]">
-                  Average forecast risk: {forecastData.averageScore}/100
+                <p className="mt-1 text-sm text-[var(--muted-foreground)]">
+                  Click any hour to see why the score changes.
                 </p>
               </div>
-              <p className="text-xs text-slate-500">
-                Source: Open-Meteo weather and air-quality forecasts
-              </p>
+              <div className="flex flex-wrap gap-2 text-xs font-medium text-[var(--muted-foreground)]">
+                <span className="rounded-full bg-[var(--primary-soft)] px-3 py-1">Low</span>
+                <span className="rounded-full bg-amber-100 px-3 py-1 text-amber-800">Moderate</span>
+                <span className="rounded-full bg-rose-100 px-3 py-1 text-rose-700">High</span>
+              </div>
             </div>
             <div className="-mx-2 overflow-x-auto px-2 pb-2">
-              <div className="mt-5 grid min-w-[54rem] gap-2 [grid-template-columns:repeat(24,minmax(0,1fr))] lg:min-w-0">
-                {forecastData.hours.map((hour) => {
+              <div className="mt-6 grid min-w-[58rem] gap-2 [grid-template-columns:repeat(24,minmax(0,1fr))] xl:min-w-0">
+                {forecastData.hours.map((hour, index) => {
                   const explanation = buildForecastHourExplanation(hour);
+                  const isSelected = index === normalizedSelectedIndex;
 
                   return (
-                    <div
-                      className="group relative flex min-h-36 flex-col justify-end gap-2 outline-none"
+                    <button
+                      aria-label={`Inspect ${hour.displayTime}`}
+                      className={`group relative flex min-h-40 flex-col justify-end gap-2 rounded-xl border p-1.5 text-left outline-none transition ${
+                        isSelected
+                          ? "border-[var(--primary)] bg-[var(--primary-soft)] shadow-[0_12px_24px_-18px_rgba(46,111,181,0.6)]"
+                          : "border-transparent hover:border-[var(--border)] hover:bg-[var(--primary-soft)]/45 focus:border-[var(--primary)]"
+                      }`}
                       key={hour.time}
-                      tabIndex={0}
+                      onClick={() => setSelectedHourIndex(index)}
+                      type="button"
                     >
-                      <div className="flex h-24 items-end rounded bg-[var(--surface-muted)] p-1 transition group-hover:bg-[var(--surface-muted)] group-focus:bg-[var(--surface-muted)]">
+                      <div className="flex h-28 items-end rounded-lg bg-slate-100 p-1 transition">
                         <div
-                          className={`forecast-pulse-bar w-full rounded ${
+                          className={`forecast-pulse-bar w-full rounded-md ${
                             hour.score >= 67
-                              ? "bg-[var(--accent)]"
+                              ? "bg-rose-500"
                               : hour.score >= 34
-                              ? "bg-[var(--accent)]"
+                              ? "bg-amber-400"
                               : "bg-[var(--secondary)]"
                           }`}
                           style={{ height: `${Math.max(8, hour.score)}%` }}
@@ -3912,28 +3948,133 @@ export function ForecastPanel({
                       <p className="truncate text-[10px] leading-4 text-[var(--foreground-faint)] group-hover:text-[var(--foreground)] group-focus:text-[var(--foreground)]">
                         {hour.displayTime.replace(/^[A-Za-z]+,?\s?/, "")}
                       </p>
-                    </div>
+                    </button>
                   );
                 })}
               </div>
             </div>
           </div>
 
-          <div className="mt-5 rounded-lg border border-[var(--rule)] bg-[var(--surface-muted)] p-4">
+          <div className="grid gap-6 lg:grid-cols-[0.9fr_1.1fr]">
+            <article className="rounded-[1.5rem] border border-[var(--border)] bg-white p-5 shadow-[0_12px_34px_-26px_rgba(19,41,75,0.45)] sm:p-6">
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--primary)]">
+                What is driving it
+              </p>
+              <h4 className="mt-2 font-heading text-2xl font-semibold text-[var(--primary-ink)]">
+                {selectedHour
+                  ? `${selectedHour.displayTime}: ${selectedHour.score}/100`
+                  : "Hourly drivers"}
+              </h4>
+              <p className="mt-3 text-sm leading-6 text-[var(--muted-foreground)]">
+                {selectedExplanation?.metrics ??
+                  "Select an hour on the chart to inspect the environmental values."}
+              </p>
+              <div className="mt-5 space-y-3">
+                {(leadingDrivers.length > 0
+                  ? leadingDrivers
+                  : ["No major elevated driver detected for the selected hour."]
+                ).map((driver) => (
+                  <div
+                    className="flex items-start gap-3 rounded-2xl border border-[var(--border)] bg-[var(--primary-soft)]/45 p-3"
+                    key={driver}
+                  >
+                    <span className="mt-1 h-2 w-2 rounded-full bg-[var(--primary)]" />
+                    <p className="text-sm leading-6 text-[var(--primary-ink)]">
+                      {driver}
+                    </p>
+                  </div>
+                ))}
+              </div>
+              <div className="mt-5 rounded-2xl border border-[var(--border)] bg-slate-50 p-4">
+                <p className="text-xs font-semibold uppercase tracking-wide text-[var(--muted-foreground)]">
+                  Allergy peak
+                </p>
+                <p className="mt-2 text-lg font-semibold text-[var(--primary-ink)]">
+                  {forecastData.allergyPeakWindow?.displayTime ?? "Unavailable"}
+                </p>
+                <p className="mt-1 text-sm leading-6 text-[var(--muted-foreground)]">
+                  {forecastData.allergyPeakScore !== null
+                    ? `${forecastData.allergyPeakScore} grains/m3`
+                    : "Pollen forecast unavailable"}{" "}
+                  · {forecastData.allergyPeakWindow?.pollenRisk ?? "Unknown"}
+                </p>
+              </div>
+            </article>
+
+            <div className="grid gap-3 md:grid-cols-2">
+              {forecastData.trends.slice(0, 6).map((trend) => {
+                const range =
+                  trend.max !== null && trend.min !== null
+                    ? trend.max - trend.min
+                    : 0;
+
+                return (
+                  <article
+                    className="rounded-2xl border border-[var(--border)] bg-white p-4 shadow-[0_10px_26px_-24px_rgba(19,41,75,0.45)]"
+                    key={trend.label}
+                  >
+                    <div className="flex items-start justify-between gap-3">
+                      <div>
+                        <p className="text-sm font-semibold text-[var(--primary-ink)]">
+                          {trend.label}
+                        </p>
+                        <p className="mt-1 text-xs leading-5 text-[var(--muted-foreground)]">
+                          {trend.direction} · peak {trend.peakTime}
+                        </p>
+                      </div>
+                      <span className="rounded-full border border-[var(--border)] bg-[var(--primary-soft)] px-2 py-1 text-xs font-semibold text-[var(--primary)]">
+                        {formatTrendValue(trend.max, trend.unit, 1)}
+                      </span>
+                    </div>
+                    <div className="mt-4 flex h-14 items-end gap-1">
+                      {trend.values.slice(0, 24).map((value, index) => {
+                        const normalized =
+                          value === null || trend.min === null || range === 0
+                            ? 20
+                            : 16 + ((value - trend.min) / range) * 84;
+
+                        return (
+                          <div
+                            className="flex flex-1 items-end rounded bg-slate-100"
+                            key={`${trend.label}-${index}`}
+                            title={
+                              value === null
+                                ? "No value"
+                                : formatTrendValue(value, trend.unit, 1)
+                            }
+                          >
+                            <div
+                              className="w-full rounded bg-[var(--primary)]/75"
+                              style={{ height: `${normalized}%` }}
+                            />
+                          </div>
+                        );
+                      })}
+                    </div>
+                    <p className="mt-3 text-xs leading-5 text-[var(--muted-foreground)]">
+                      Range: {formatTrendValue(trend.min, trend.unit, 1)} to{" "}
+                      {formatTrendValue(trend.max, trend.unit, 1)}
+                    </p>
+                  </article>
+                );
+              })}
+            </div>
+          </div>
+
+          <div className="rounded-[1.5rem] border border-[var(--border)] bg-white p-5 shadow-[0_12px_34px_-26px_rgba(19,41,75,0.45)]">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <div>
-                <p className="text-xs font-semibold uppercase tracking-wide text-[var(--foreground-faint)]">
+                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--primary)]">
                   Hourly details
                 </p>
-                <p className="mt-1 text-sm leading-6 text-[var(--foreground-muted)]">
-                  Expand when you want to inspect the underlying forecast
-                  values.
+                <p className="mt-1 text-sm leading-6 text-[var(--muted-foreground)]">
+                  Inspect the underlying values used by the forecast score.
                 </p>
               </div>
               <button
                 type="button"
                 onClick={() => setShowHourlyDetails((current) => !current)}
-                className="h-10 rounded-lg border border-[var(--rule)] px-4 text-sm font-semibold text-[var(--foreground)] transition hover:border-[var(--accent)]/50 hover:bg-[var(--surface-muted)]"
+                className="h-10 rounded-full border border-[var(--border)] px-4 text-sm font-semibold text-[var(--primary-ink)] transition hover:border-[var(--primary)] hover:bg-[var(--primary-soft)]"
               >
                 {showHourlyDetails ? "Hide details" : "Show details"}
               </button>
@@ -3943,15 +4084,15 @@ export function ForecastPanel({
               <div className="mt-4 grid gap-3 md:grid-cols-2">
                 {forecastData.hours.slice(0, 12).map((hour) => (
                   <article
-                    className="rounded-lg border border-[var(--rule)] bg-black/10 p-3"
+                    className="rounded-2xl border border-[var(--border)] bg-slate-50 p-3"
                     key={hour.time}
                   >
                     <div className="flex items-start justify-between gap-3">
                       <div>
-                        <p className="text-sm font-semibold text-[var(--foreground)]">
+                        <p className="text-sm font-semibold text-[var(--primary-ink)]">
                           {hour.displayTime}
                         </p>
-                        <p className="mt-1 text-xs leading-5 text-[var(--foreground-faint)]">
+                        <p className="mt-1 text-xs leading-5 text-[var(--muted-foreground)]">
                           AQI {hour.usAqi ?? "n/a"} · PM2.5{" "}
                           {hour.pm25?.toFixed(1) ?? "n/a"} · Ozone{" "}
                           {hour.ozone?.toFixed(1) ?? "n/a"} · Feels{" "}
@@ -3962,7 +4103,7 @@ export function ForecastPanel({
                       </div>
                       <RiskBadge value={hour.risk} />
                     </div>
-                    <p className="mt-2 text-xs leading-5 text-slate-500">
+                    <p className="mt-2 text-xs leading-5 text-[var(--muted-foreground)]">
                       {hour.drivers.length > 0
                         ? hour.drivers.join(", ")
                         : "No major forecast driver."}
@@ -3976,6 +4117,53 @@ export function ForecastPanel({
       )}
     </section>
   );
+}
+
+function ForecastInsightCard({
+  detail,
+  label,
+  tone,
+  value,
+}: {
+  detail: string;
+  label: string;
+  tone: string;
+  value: string;
+}) {
+  return (
+    <article className="rounded-2xl border border-[var(--border)] bg-white/90 p-4 shadow-sm">
+      <div className="flex items-start justify-between gap-3">
+        <p className="text-[11px] font-semibold uppercase tracking-wide text-[var(--muted-foreground)]">
+          {label}
+        </p>
+        <span className={`h-2.5 w-2.5 rounded-full ${forecastToneDot(tone)}`} />
+      </div>
+      <p className="mt-3 font-heading text-xl font-semibold leading-tight text-[var(--primary-ink)]">
+        {value}
+      </p>
+      <p className="mt-2 text-xs leading-5 text-[var(--muted-foreground)]">
+        {detail}
+      </p>
+    </article>
+  );
+}
+
+function ForecastMetric({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-xl bg-slate-50 px-3 py-2">
+      <p className="text-[10px] font-semibold uppercase tracking-wide text-[var(--muted-foreground)]">
+        {label}
+      </p>
+      <p className="mt-1 font-semibold text-[var(--primary-ink)]">{value}</p>
+    </div>
+  );
+}
+
+function forecastToneDot(tone: string) {
+  const lower = tone.toLowerCase();
+  if (lower.includes("high")) return "bg-rose-500";
+  if (lower.includes("moderate") || lower.includes("fair")) return "bg-amber-400";
+  return "bg-[var(--success)]";
 }
 
 function timeToMinutes(time: string) {
@@ -4632,7 +4820,7 @@ function AiHealthPlanPanel({
   );
 }
 
-function SymptomCheckinPanel({
+export function SymptomCheckinPanel({
   user,
   zipCode,
   latestSnapshot,

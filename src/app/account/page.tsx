@@ -560,8 +560,37 @@ export default function AccountPage() {
   return (
     <main className="min-h-screen public-health-bg text-[var(--foreground)]">
       <section className="mx-auto flex min-h-screen w-full max-w-[72rem] flex-col px-5 py-8 sm:px-8 lg:px-10">
-        <header className="flex flex-col gap-4 border-b border-[var(--rule)] pb-8 sm:flex-row sm:items-end sm:justify-between">
-          <div>
+        <header className="border-b border-[var(--rule)] pb-8">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <Link
+              href="/"
+              className="flex w-fit items-center gap-3 text-[var(--primary-ink)]"
+            >
+              <span className="grid h-10 w-10 place-items-center rounded-xl bg-[var(--primary)] text-white">
+                +
+              </span>
+              <span className="font-heading text-xl font-semibold">
+                MyLocalHealth
+              </span>
+            </Link>
+            <div className="flex flex-wrap gap-2">
+              <Link
+                href="/"
+                className="w-fit rounded-full border border-[var(--rule)] bg-white px-4 py-2 text-sm font-semibold text-[var(--foreground)] transition hover:border-[var(--accent)]/50 hover:bg-[var(--surface-muted)]"
+              >
+                Dashboard
+              </Link>
+              {!user && (
+                <Link
+                  href="/signup"
+                  className="w-fit rounded-full bg-[var(--primary)] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[var(--primary-ink)]"
+                >
+                  Sign up
+                </Link>
+              )}
+            </div>
+          </div>
+          <div className="mt-8">
             <p className="text-sm font-semibold uppercase tracking-wide text-[var(--foreground-muted)]">
               MyLocalHealth Account
             </p>
@@ -569,12 +598,6 @@ export default function AccountPage() {
               Profile and saved places
             </h1>
           </div>
-          <Link
-            href="/"
-            className="w-fit rounded-lg border border-[var(--rule)] px-4 py-2 text-sm font-semibold text-[var(--foreground)] transition hover:border-[var(--accent)]/50 hover:bg-[var(--surface-muted)]"
-          >
-            Back home
-          </Link>
         </header>
 
         <section className="grid gap-5 py-8 lg:grid-cols-[0.8fr_1.2fr]">
