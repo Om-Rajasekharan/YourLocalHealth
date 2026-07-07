@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import Image from "next/image";
 import {
   type CSSProperties,
@@ -12,74 +13,39 @@ import {
   useState,
 } from "react";
 import type { User } from "@supabase/supabase-js";
+import { useDashboardData } from "../contexts/DashboardDataContext";
 import {
   getAirQualityLabel,
-  getDominantPollutant,
   getPollutantRiskLabel,
 } from "../lib/airQuality";
 import {
   evaluateRiskModel,
-  type DataStatus,
   type RiskCategoryScore,
   type RiskModelConfidence,
   type RiskModelItem,
 } from "../lib/riskModel";
 import { getLocation } from "../services/location";
-import {
-  getAirQuality,
-  type AirQualityData,
-} from "../services/airsQuality";
+import { getAirQuality } from "../services/airsQuality";
 import { getFluData } from "../services/flu";
-import {
-  getCovidData,
-  type CovidActivityData,
-} from "../services/covid";
-import {
-  getLocalHealthNews,
-  type LocalHealthNewsArticle,
-} from "../services/localNews";
+import { getCovidData } from "../services/covid";
 import {
   getEnvironmentData,
   getHeatRiskLabel,
   getUvRiskLabel,
-  type EnvironmentData,
 } from "../services/environment";
 import {
   getWeatherAlerts,
   summarizeAlertRisk,
   type WeatherAlert,
 } from "../services/weatherAlerts";
+import { type UserProfile } from "../services/userProfile";
+import { type HealthEquityData } from "../services/healthEquity";
+import { type HealthForecastData } from "../services/healthForecast";
 import {
-  getUserProfile,
-  type UserProfile,
-} from "../services/userProfile";
-import {
-  getHealthEquityData,
-  type HealthEquityData,
-} from "../services/healthEquity";
-import {
-  getHealthForecast,
-  type HealthForecastData,
-} from "../services/healthForecast";
-import {
-  emptyCheckinStreak,
-  getSymptomCheckinStreak,
-  saveHealthSnapshot,
   saveSymptomCheckin,
   type CheckinStreak,
   type SavedHealthSnapshot,
 } from "../services/mlTrainingData";
-import { supabase } from "../lib/supabaseClient";
-
-const unknownCovidData: CovidActivityData = {
-  activity: "Unknown",
-  value: null,
-  numberOfSites: 0,
-  coverage: "Unknown",
-  timePeriod: "Unknown",
-  updatedAt: "Unknown",
-  weekEnd: "Unknown",
-};
 
 type ChatMessage = {
   role: "user" | "assistant";
@@ -181,7 +147,7 @@ type TimelineLocationSnapshot = {
   uvRisk: string;
 };
 
-type DashboardView =
+export type DashboardView =
   | "overview"
   | "twin"
   | "plan"
@@ -194,7 +160,7 @@ type DashboardView =
   | "analytics"
   | "model";
 
-const dashboardViews: { id: DashboardView; label: string; description: string }[] = [
+export const dashboardViews: { id: DashboardView; label: string; description: string }[] = [
   {
     id: "overview",
     label: "Today",
@@ -252,14 +218,14 @@ const dashboardViews: { id: DashboardView; label: string; description: string }[
   },
 ];
 
-const primaryDashboardViews: DashboardView[] = [
+export const primaryDashboardViews: DashboardView[] = [
   "overview",
   "forecast",
   "twin",
   "model",
 ];
 
-const dashboardGroups: {
+export const dashboardGroups: {
   label: string;
   description: string;
   views: DashboardView[];
@@ -276,18 +242,25 @@ const dashboardGroups: {
   },
 ];
 
-function getDashboardView(viewId: DashboardView) {
+export function getDashboardView(viewId: DashboardView) {
   return (
     dashboardViews.find((view) => view.id === viewId) ??
     dashboardViews[0]
   );
 }
 
-function isDashboardView(value: string | null): value is DashboardView {
+export function isDashboardView(value: string | null): value is DashboardView {
   return dashboardViews.some((view) => view.id === value);
 }
 
-function getDashboardUrl(zipCode: string, view: DashboardView) {
+const standaloneDashboardViews: DashboardView[] = ["forecast", "twin", "model"];
+
+export function getDashboardUrl(zipCode: string, view: DashboardView) {
+  if (standaloneDashboardViews.includes(view)) {
+    const params = new URLSearchParams({ zipCode });
+    return `/${view}?${params.toString()}`;
+  }
+
   const params = new URLSearchParams({
     zipCode,
     view,
@@ -424,7 +397,7 @@ function DashboardNav({
   );
 }
 
-function DashboardSidebar({
+export function DashboardSidebar({
   activeView,
   onChange,
   city,
@@ -1888,7 +1861,7 @@ function DeterminantRadarChart({
   );
 }
 
-function RiskTransparencyPanel({
+export function RiskTransparencyPanel({
   score,
   items,
   topDrivers,
@@ -2052,7 +2025,7 @@ function RiskTransparencyPanel({
   );
 }
 
-function DataConfidencePanel({
+export function DataConfidencePanel({
   confidence,
 }: {
   confidence: RiskModelConfidence;
@@ -2114,7 +2087,7 @@ function DataConfidencePanel({
   );
 }
 
-function ModelDataSourcesPanel({
+export function ModelDataSourcesPanel({
   forecastData,
   equityData,
 }: {
@@ -3300,7 +3273,7 @@ function TwinTrendChart({
   );
 }
 
-function ExposureTwinPanel({
+export function ExposureTwinPanel({
   user,
   zipCode,
   city,
@@ -3314,6 +3287,7 @@ function ExposureTwinPanel({
   dataConfidence,
   checkinStreak,
   onOpenCheckin,
+  onOpenForecast,
 }: {
   user: User | null;
   zipCode: string;
@@ -3328,6 +3302,7 @@ function ExposureTwinPanel({
   dataConfidence: RiskModelConfidence;
   checkinStreak: CheckinStreak;
   onOpenCheckin: () => void;
+  onOpenForecast?: () => void;
 }) {
   const [fieldRotation, setFieldRotation] = useState(18);
   const [fieldAutoRotate, setFieldAutoRotate] = useState(true);
@@ -3570,6 +3545,7 @@ function ExposureTwinPanel({
         hours={forecastData?.hours ?? []}
         modifier={modifier}
         scenario={scenario}
+        onOpenForecast={onOpenForecast}
       />
 
       <section className="twin-scenario-lab">
@@ -3808,7 +3784,7 @@ function ExposureTwinPanel({
   );
 }
 
-function ForecastPanel({
+export function ForecastPanel({
   forecastData,
   forecastError,
   city,
@@ -5115,6 +5091,7 @@ function HealthChatPanel({ context }: { context: HealthChatContext }) {
 }
 
 export default function Home() {
+  const router = useRouter();
   const analyticsEmbedUrl =
     process.env.NEXT_PUBLIC_LOOKER_STUDIO_EMBED_URL ??
     process.env.NEXT_PUBLIC_TABLEAU_EMBED_URL ??
@@ -5125,96 +5102,71 @@ export default function Home() {
     ? "Tableau"
     : "Ready for Tableau or Looker";
 
-  const restoredZipRef = useRef("");
-  const [user, setUser] = useState<User | null>(null);
-  const [zipCode, setZipCode] = useState("");
-  const [searched, setSearched] = useState(false);
-  const [dashboardView, setDashboardView] =
-    useState<DashboardView>("overview");
-  const [isChatOpen, setIsChatOpen] = useState(false);
-
-  const [city, setCity] = useState("");
-  const [state, setState] = useState("");
-  const [aqi, setAqi] = useState<number | null>(null);
-  const [latitude, setLatitude] = useState("");
-  const [longitude, setLongitude] = useState("");
-  const [error, setError] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [newsLoading, setNewsLoading] = useState(false);
-  const [newsError, setNewsError] = useState("");
-  const [equityError, setEquityError] = useState("");
-  const [forecastError, setForecastError] = useState("");
-  const [fluActivity, setFluActivity] = useState("Unknown");
-  const [covidData, setCovidData] =
-    useState<CovidActivityData | null>(null);
-  const [environmentData, setEnvironmentData] =
-    useState<EnvironmentData | null>(null);
-  const [weatherAlerts, setWeatherAlerts] = useState<WeatherAlert[]>(
-    []
-  );
-  const [airComponents, setAirComponents] =
-    useState<Record<string, number>>();
-  const [localNews, setLocalNews] = useState<LocalHealthNewsArticle[]>(
-    []
-  );
-  const [healthEquityData, setHealthEquityData] =
-    useState<HealthEquityData | null>(null);
-  const [healthForecastData, setHealthForecastData] =
-    useState<HealthForecastData | null>(null);
-  const [latestSnapshot, setLatestSnapshot] =
-    useState<SavedHealthSnapshot | null>(null);
-  const [snapshotStatus, setSnapshotStatus] = useState("");
-  const [checkinStreak, setCheckinStreak] = useState<CheckinStreak>(
-    emptyCheckinStreak
-  );
-  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
-  const [mapClickLoading, setMapClickLoading] = useState(false);
-  const [mapClickMessage, setMapClickMessage] = useState("");
-  const [dataStatus, setDataStatus] = useState<DataStatus>({
-    airQuality: false,
-    pollutants: false,
-    heatUv: false,
-    weatherAlerts: false,
-    flu: false,
-    covid: false,
-    news: false,
-  });
-
-  const covidActivity = covidData?.activity ?? "Unknown";
-  const heatRisk = getHeatRiskLabel(
-    environmentData?.apparentTemperatureMax ??
-      environmentData?.apparentTemperature ??
-      null
-  );
-  const uvRisk = getUvRiskLabel(environmentData?.uvIndexMax ?? null);
-  const alertRisk = summarizeAlertRisk(weatherAlerts);
-  const pollutantRisk = getPollutantRiskLabel(airComponents);
-  const dominantPollutant = getDominantPollutant(airComponents);
-  const airQualityLabel = getAirQualityLabel(aqi);
-  const riskModel = evaluateRiskModel({
+  const {
+    zipCode,
+    city,
+    state,
+    latitude,
+    longitude,
+    searched,
+    loading,
+    error,
+    user,
+    userProfile,
+    checkinStreak,
     aqi,
-    airQualityLabel,
-    pollutantRisk,
+    fluActivity,
+    covidData,
+    environmentData,
+    weatherAlerts,
+    localNews,
+    healthEquityData,
+    healthForecastData,
+    newsLoading,
+    newsError,
+    equityError,
+    latestSnapshot,
+    snapshotStatus,
+    covidActivity,
     heatRisk,
     uvRisk,
     alertRisk,
-    fluActivity,
-    covidActivity,
-    covidCoverage: covidData?.coverage ?? "Unknown",
-    dataStatus,
-    profile: userProfile,
-  });
-  const healthRisk = riskModel.healthRisk;
-  const respiratoryRisk = riskModel.respiratoryRisk;
-  const personalizationSummary = riskModel.personalizationSummary;
-  const scoreBreakdown = riskModel.scoreBreakdown;
-  const dataConfidence = riskModel.dataConfidence;
-  const mainTwinScore = clampScore(
-    scoreBreakdown.score * 0.68 +
-      (healthForecastData?.peakScore ?? scoreBreakdown.score) * 0.22 +
-      profileModifier(userProfile)
-  );
-  const mainTwinLevel = exposureLabel(mainTwinScore);
+    pollutantRisk,
+    dominantPollutant,
+    airQualityLabel,
+    healthRisk,
+    respiratoryRisk,
+    baseHealthRisk,
+    baseRespiratoryRisk,
+    personalizationSummary,
+    personalizedRiskReasons,
+    isPersonalized,
+    modelVersion,
+    methodology,
+    scoreBreakdown,
+    dataConfidence,
+    mainTwinScore,
+    mainTwinLevel,
+    searchZipCode: contextSearchZipCode,
+    resetSearch,
+    setZipCode,
+    refreshCheckinStreak,
+  } = useDashboardData();
+
+  const [dashboardView, setDashboardView] =
+    useState<DashboardView>("overview");
+  const [isChatOpen, setIsChatOpen] = useState(false);
+  const [mapClickLoading, setMapClickLoading] = useState(false);
+  const [mapClickMessage, setMapClickMessage] = useState("");
+
+  const riskModel = {
+    personalizedRiskReasons,
+    isPersonalized,
+    modelVersion,
+    methodology,
+    baseHealthRisk,
+    baseRespiratoryRisk,
+  };
   const latitudeValue = Number(latitude);
   const longitudeValue = Number(longitude);
   const hasMapLocation =
@@ -5403,389 +5355,36 @@ export default function Home() {
     options: { updateUrl?: boolean; view?: DashboardView } = {}
   ) => {
     const nextView = options.view ?? "overview";
-
-    setZipCode(zipToSearch);
-    setError("");
-    setNewsError("");
-    setEquityError("");
-    setForecastError("");
-    setLocalNews([]);
-    setHealthEquityData(null);
-    setHealthForecastData(null);
-    setLatestSnapshot(null);
-    setSnapshotStatus("");
-    setEnvironmentData(null);
-    setWeatherAlerts([]);
-    setAirComponents(undefined);
-    setDataStatus({
-      airQuality: false,
-      pollutants: false,
-      heatUv: false,
-      weatherAlerts: false,
-      flu: false,
-      covid: false,
-      news: false,
-    });
-    setSearched(false);
     setDashboardView(nextView);
-    setLoading(true);
+    await contextSearchZipCode(zipToSearch);
 
-    try {
-      const location = await getLocation(zipToSearch);
-
-      setCity(location.city);
-      setState(location.state);
-      setLatitude(location.latitude);
-      setLongitude(location.longitude);
-      setSearched(true);
-      setLoading(false);
-      restoredZipRef.current = zipToSearch;
-
-      if (options.updateUrl !== false && typeof window !== "undefined") {
-        window.history.pushState(
-          { zipCode: zipToSearch, view: nextView },
-          "",
-          getDashboardUrl(zipToSearch, nextView)
-        );
-      }
-
-      const currentUser = user;
-      const currentProfile = userProfile;
-
-      void (async () => {
-        setNewsLoading(true);
-
-        const fluPromise = getFluData(location.state)
-          .then((fluData) => {
-            setFluActivity(fluData);
-            setDataStatus((current) => ({
-              ...current,
-              flu: fluData !== "Unknown",
-            }));
-            return fluData;
-          })
-          .catch((error) => {
-            console.error("Flu data unavailable", error);
-            return "Unknown";
-          });
-
-        const covidPromise = getCovidData(location.state)
-          .then((covidActivityData) => {
-            setCovidData(covidActivityData);
-            setDataStatus((current) => ({
-              ...current,
-              covid: covidActivityData.activity !== "Unknown",
-            }));
-            return covidActivityData;
-          })
-          .catch((error) => {
-            console.error("COVID wastewater data unavailable", error);
-            setCovidData(unknownCovidData);
-            return unknownCovidData;
-          });
-
-        const coreDataPromise = Promise.all([
-          getAirQuality(location.latitude, location.longitude).catch(
-            (error) => {
-              console.error("Air quality data unavailable", error);
-              return {} as AirQualityData;
-            }
-          ),
-          getEnvironmentData(location.latitude, location.longitude).catch(
-            (error) => {
-              console.error("Heat and UV data unavailable", error);
-              return {
-                temperature: null,
-                apparentTemperature: null,
-                humidity: null,
-                uvIndexMax: null,
-                temperatureMax: null,
-                apparentTemperatureMax: null,
-              };
-            }
-          ),
-          getWeatherAlerts(location.latitude, location.longitude).catch(
-            (error) => {
-              console.error("Weather alerts unavailable", error);
-              return [];
-            }
-          ),
-          getHealthForecast(location.latitude, location.longitude).catch(
-            (error) => {
-              setForecastError(
-                error instanceof Error
-                  ? error.message
-                  : "Forecast data is temporarily unavailable."
-              );
-              return null;
-            }
-          ),
-        ]).then(([airData, environment, alerts, forecast]) => {
-          setAqi(airData.list?.[0]?.main.aqi ?? null);
-          setAirComponents(airData.list?.[0]?.components);
-          setEnvironmentData(environment);
-          setWeatherAlerts(alerts);
-          setHealthForecastData(forecast);
-          setDataStatus((current) => ({
-            ...current,
-            airQuality: airData.list?.[0]?.main.aqi !== undefined,
-            pollutants: Boolean(airData.list?.[0]?.components),
-            heatUv:
-              environment.apparentTemperature !== null ||
-              environment.apparentTemperatureMax !== null ||
-              environment.uvIndexMax !== null,
-            weatherAlerts: true,
-          }));
-
-          return { airData, environment, alerts, forecast };
-        });
-
-        const equityPromise = getHealthEquityData(
-          zipToSearch,
-          location.latitude,
-          location.longitude
-        )
-          .then((equityData) => {
-            setHealthEquityData(equityData);
-            return equityData;
-          })
-          .catch((error) => {
-            setEquityError(
-              error instanceof Error
-                ? error.message
-                : "Health equity data is temporarily unavailable."
-            );
-            return null;
-          });
-
-        const newsPromise = getLocalHealthNews(
-          location.city,
-          location.state
-        )
-          .then((news) => {
-            setLocalNews(news);
-            setDataStatus((current) => ({ ...current, news: true }));
-          })
-          .catch(() => {
-            setNewsError("Local health news is temporarily unavailable.");
-          })
-          .finally(() => {
-            setNewsLoading(false);
-          });
-
-        const [fluData, covidActivityData, coreData, loadedEquityData] =
-          await Promise.all([
-            fluPromise,
-            covidPromise,
-            coreDataPromise,
-            equityPromise,
-          ]);
-
-        if (currentUser) {
-          const nextAqi = coreData.airData.list?.[0]?.main.aqi ?? null;
-          const nextAirQualityLabel = getAirQualityLabel(nextAqi);
-          const nextAirComponents = coreData.airData.list?.[0]?.components;
-          const nextPollutantRisk =
-            getPollutantRiskLabel(nextAirComponents);
-          const nextDominantPollutant =
-            getDominantPollutant(nextAirComponents);
-          const nextHeatRisk = getHeatRiskLabel(
-            coreData.environment.apparentTemperatureMax ??
-              coreData.environment.apparentTemperature ??
-              null
-          );
-          const nextUvRisk = getUvRiskLabel(
-            coreData.environment.uvIndexMax ?? null
-          );
-          const nextAlertRisk = summarizeAlertRisk(coreData.alerts);
-          const nextRiskModel = evaluateRiskModel({
-            aqi: nextAqi,
-            airQualityLabel: nextAirQualityLabel,
-            pollutantRisk: nextPollutantRisk,
-            heatRisk: nextHeatRisk,
-            uvRisk: nextUvRisk,
-            alertRisk: nextAlertRisk,
-            fluActivity: fluData,
-            covidActivity: covidActivityData.activity,
-            covidCoverage: covidActivityData.coverage,
-            dataStatus: {
-              airQuality: nextAqi !== null,
-              pollutants: Boolean(nextAirComponents),
-              heatUv:
-                coreData.environment.apparentTemperature !== null ||
-                coreData.environment.apparentTemperatureMax !== null ||
-                coreData.environment.uvIndexMax !== null,
-              weatherAlerts: true,
-              flu: fluData !== "Unknown",
-              covid: covidActivityData.activity !== "Unknown",
-              news: false,
-            },
-            profile: currentProfile,
-          });
-
-          try {
-            const snapshot = await saveHealthSnapshot({
-              userId: currentUser.id,
-              zipCode: zipToSearch,
-              city: location.city,
-              state: location.state,
-              latitude: location.latitude,
-              longitude: location.longitude,
-              modelVersion: nextRiskModel.modelVersion,
-              modelScore: nextRiskModel.scoreBreakdown.score,
-              healthRisk: nextRiskModel.healthRisk,
-              respiratoryRisk: nextRiskModel.respiratoryRisk,
-              airQuality: nextAirQualityLabel,
-              aqi: nextAqi,
-              dominantPollutant: nextDominantPollutant,
-              pollutantRisk: nextPollutantRisk,
-              heatRisk: nextHeatRisk,
-              uvRisk: nextUvRisk,
-              alertRisk: nextAlertRisk,
-              fluActivity: fluData,
-              covidActivity: covidActivityData.activity,
-              covidCoverage: covidActivityData.coverage,
-              forecastAverageScore:
-                coreData.forecast?.averageScore ?? null,
-              forecastPeakScore: coreData.forecast?.peakScore ?? null,
-              forecastBestWindow:
-                coreData.forecast?.bestWindow?.displayTime ?? null,
-              forecastWorstWindow:
-                coreData.forecast?.worstWindow?.displayTime ?? null,
-              forecastAllergyPeakScore:
-                coreData.forecast?.allergyPeakScore ?? null,
-              forecastAllergyPeakWindow:
-                coreData.forecast?.allergyPeakWindow?.displayTime ?? null,
-              forecastPollenRisk:
-                coreData.forecast?.allergyPeakWindow?.pollenRisk ?? null,
-              equityScore: loadedEquityData?.equityScore ?? null,
-              equityLevel: loadedEquityData?.equityLevel ?? null,
-              placesChronicBurdenScore:
-                loadedEquityData?.cdcPlaces?.chronicBurdenScore ?? null,
-              placesAsthma: loadedEquityData?.cdcPlaces?.asthma ?? null,
-              placesCopd: loadedEquityData?.cdcPlaces?.copd ?? null,
-              placesSmoking: loadedEquityData?.cdcPlaces?.smoking ?? null,
-              placesObesity: loadedEquityData?.cdcPlaces?.obesity ?? null,
-              placesDiabetes: loadedEquityData?.cdcPlaces?.diabetes ?? null,
-              profileSummary: nextRiskModel.personalizationSummary,
-            });
-            setLatestSnapshot(snapshot);
-            setSnapshotStatus(
-              "Today's local conditions were saved for this check-in."
-            );
-          } catch (error) {
-            setSnapshotStatus(
-              error instanceof Error
-                ? `Snapshot not saved: ${error.message}`
-                : "Snapshot not saved."
-            );
-          }
-        }
-
-        await newsPromise;
-      })();
-    } catch (error) {
-      console.error(error);
-      if (error instanceof Error) {
-        setError(error.message);
-      } else {
-        setError("Unable to retrieve health data.");
-      }
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const loadUserProfile = async (userId: string) => {
-    try {
-      const profile = await getUserProfile(userId);
-      setUserProfile(profile);
-    } catch (error) {
-      console.error(error);
-    }
-  };
-
-  const loadCheckinStreak = async (userId: string) => {
-    try {
-      const streak = await getSymptomCheckinStreak(userId);
-      setCheckinStreak(streak);
-    } catch (error) {
-      console.error(error);
-      setCheckinStreak(emptyCheckinStreak());
+    if (options.updateUrl !== false && typeof window !== "undefined") {
+      window.history.pushState(
+        { zipCode: zipToSearch, view: nextView },
+        "",
+        getDashboardUrl(zipToSearch, nextView)
+      );
     }
   };
 
   useEffect(() => {
-    const restoreFromUrl = () => {
+    const restoreDashboardViewFromUrl = () => {
+      if (typeof window === "undefined") return;
+
       const params = new URLSearchParams(window.location.search);
-      const restoredZipCode = params.get("zipCode");
       const viewParam = params.get("view");
       const restoredView: DashboardView = isDashboardView(viewParam)
         ? viewParam
         : "overview";
 
-      if (!restoredZipCode) {
-        restoredZipRef.current = "";
-        setSearched(false);
-        setDashboardView("overview");
-        setError("");
-        setZipCode("");
-        return;
-      }
-
-      if (restoredZipCode !== restoredZipRef.current) {
-        restoredZipRef.current = restoredZipCode;
-        setZipCode(restoredZipCode);
-        void searchZipCode(restoredZipCode, {
-          updateUrl: false,
-          view: restoredView,
-        });
-        return;
-      }
-
       setDashboardView(restoredView);
     };
 
-    restoreFromUrl();
-    window.addEventListener("popstate", restoreFromUrl);
+    restoreDashboardViewFromUrl();
+    window.addEventListener("popstate", restoreDashboardViewFromUrl);
 
     return () => {
-      window.removeEventListener("popstate", restoreFromUrl);
-    };
-    // This restores shared URLs and browser Back/Forward without re-triggering searches unnecessarily.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  useEffect(() => {
-    if (!supabase) return;
-
-    void supabase.auth.getUser().then(({ data }) => {
-      setUser(data.user);
-      if (data.user) {
-        void loadUserProfile(data.user.id);
-        void loadCheckinStreak(data.user.id);
-      } else {
-        setCheckinStreak(emptyCheckinStreak());
-      }
-    });
-
-    const { data } = supabase.auth.onAuthStateChange(
-      (_event, session) => {
-        const nextUser = session?.user ?? null;
-        setUser(nextUser);
-
-        if (nextUser) {
-          void loadUserProfile(nextUser.id);
-          void loadCheckinStreak(nextUser.id);
-        } else {
-          setUserProfile(null);
-          setCheckinStreak(emptyCheckinStreak());
-        }
-      }
-    );
-
-    return () => {
-      data.subscription.unsubscribe();
+      window.removeEventListener("popstate", restoreDashboardViewFromUrl);
     };
   }, []);
 
@@ -5836,6 +5435,11 @@ export default function Home() {
   };
 
   const navigateDashboardView = (view: DashboardView) => {
+    if (standaloneDashboardViews.includes(view) && zipCode) {
+      router.push(getDashboardUrl(zipCode, view));
+      return;
+    }
+
     setDashboardView(view);
 
     if (searched && zipCode && typeof window !== "undefined") {
@@ -5849,14 +5453,10 @@ export default function Home() {
   };
 
   const resetToHome = () => {
-    setSearched(false);
+    resetSearch();
     setDashboardView("overview");
-    setError("");
-    setLoading(false);
-    setZipCode("");
     setMapClickLoading(false);
     setMapClickMessage("");
-    restoredZipRef.current = "";
 
     if (typeof window !== "undefined") {
       window.history.pushState(null, "", "/");
@@ -6467,52 +6067,8 @@ export default function Home() {
               </>
             )}
 
-            {dashboardView === "twin" && (
-              <ExposureTwinPanel
-                user={user}
-                zipCode={zipCode}
-                city={city}
-                state={state}
-                baseScore={scoreBreakdown.score}
-                healthRisk={healthRisk}
-                respiratoryRisk={respiratoryRisk}
-                profile={userProfile}
-                forecastData={healthForecastData}
-                topDrivers={scoreBreakdown.topDrivers}
-                dataConfidence={dataConfidence}
-                checkinStreak={checkinStreak}
-                onOpenCheckin={() => navigateDashboardView("checkin")}
-              />
-            )}
-
-            {dashboardView === "model" && (
-              <>
-            <RiskTransparencyPanel
-              score={scoreBreakdown.score}
-              items={scoreBreakdown.items}
-              topDrivers={scoreBreakdown.topDrivers}
-              categoryScores={scoreBreakdown.categoryScores}
-              methodology={riskModel.methodology}
-            />
-                <DataConfidencePanel confidence={dataConfidence} />
-                <ModelDataSourcesPanel
-                  forecastData={healthForecastData}
-                  equityData={healthEquityData}
-                />
-              </>
-            )}
-
             {dashboardView === "plan" && (
               <AiHealthPlanPanel planContext={healthPlanContext} />
-            )}
-
-            {dashboardView === "forecast" && (
-              <ForecastPanel
-                forecastData={healthForecastData}
-                forecastError={forecastError}
-                city={city}
-                state={state}
-              />
             )}
 
             {dashboardView === "timeline" && (
@@ -6549,7 +6105,7 @@ export default function Home() {
                 checkinStreak={checkinStreak}
                 onCheckinSaved={async () => {
                   if (user) {
-                    await loadCheckinStreak(user.id);
+                    await refreshCheckinStreak(user.id);
                   }
                 }}
               />

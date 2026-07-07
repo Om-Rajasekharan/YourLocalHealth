@@ -2612,6 +2612,11 @@ svg[data-selected-layer="learning"] .twin-scan-hotspots circle {
   scrollbar-color: rgba(23, 23, 26, 0.2) transparent;
 }
 
+.dashboard-sidebar .quiet-surface {
+  border-color: var(--rule-strong);
+  box-shadow: 0 4px 16px rgba(23, 23, 26, 0.08);
+}
+
 .sidebar-nav-item {
   position: relative;
   border: 1px solid transparent;
