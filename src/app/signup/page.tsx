@@ -138,7 +138,7 @@ export default function SignUpPage() {
             </Link>
             <Link
               href="/account"
-              className="w-fit rounded-lg bg-[var(--accent)] px-4 py-2 text-sm font-semibold text-[var(--background)] transition hover:bg-[var(--accent-ink)]"
+              className="w-fit rounded-lg bg-[var(--accent)] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[var(--accent-ink)]"
             >
               Already have an account?
             </Link>
@@ -181,7 +181,7 @@ export default function SignUpPage() {
                 </label>
               </div>
               {!isSupabaseConfigured && (
-                <p className="mt-4 rounded-lg border border-amber-300/30 bg-amber-500/10 p-3 text-xs leading-5 text-amber-100">
+                <p className="mt-4 rounded-lg border border-amber-200 bg-amber-50 p-3 text-xs leading-5 text-amber-900">
                   Supabase is not configured yet.
                 </p>
               )}
@@ -324,7 +324,7 @@ export default function SignUpPage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full rounded-lg bg-[var(--accent)] px-4 py-3 text-sm font-semibold text-[var(--background)] transition hover:bg-[var(--accent-ink)] disabled:bg-slate-700 disabled:text-slate-300"
+              className="w-full rounded-lg bg-[var(--accent)] px-4 py-3 text-sm font-semibold text-white transition hover:bg-[var(--accent-ink)] disabled:bg-slate-200 disabled:text-slate-500"
             >
               {loading ? "Creating account" : "Create account"}
             </button>

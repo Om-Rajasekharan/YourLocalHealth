@@ -125,7 +125,7 @@ function AuthPanel({
         Sign in to manage your profile and saved places.
       </p>
       {!isSupabaseConfigured && (
-        <p className="mt-3 rounded-lg border border-amber-300/30 bg-amber-500/10 p-3 text-xs leading-5 text-amber-100">
+        <p className="mt-3 rounded-lg border border-amber-200 bg-amber-50 p-3 text-xs leading-5 text-amber-900">
           Supabase is not configured yet.
         </p>
       )}
@@ -150,7 +150,7 @@ function AuthPanel({
           type="button"
           disabled={authLoading}
           onClick={() => void handleSignIn()}
-          className="rounded-lg bg-[var(--accent)] px-4 py-2 text-sm font-semibold text-[var(--background)] transition hover:bg-[var(--accent-ink)] disabled:bg-slate-700 disabled:text-slate-300"
+          className="rounded-lg bg-[var(--accent)] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[var(--accent-ink)] disabled:bg-slate-200 disabled:text-slate-500"
         >
           Sign in
         </button>
@@ -386,7 +386,7 @@ function ProfilePanel({
         <button
           type="submit"
           disabled={savingProfile}
-          className="rounded-lg bg-[var(--accent)] px-4 py-2 text-sm font-semibold text-[var(--background)] transition hover:bg-[var(--accent-ink)] disabled:bg-slate-700 disabled:text-slate-300"
+          className="rounded-lg bg-[var(--accent)] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[var(--accent-ink)] disabled:bg-slate-200 disabled:text-slate-500"
         >
           {savingProfile ? "Saving profile" : "Save profile"}
         </button>
@@ -455,7 +455,7 @@ function SavedLocationsPanel({
                 <button
                   type="button"
                   onClick={() => onDelete(location.id)}
-                  className="text-xs font-semibold text-rose-100 hover:text-[var(--foreground)]"
+                  className="text-xs font-semibold text-rose-700 hover:text-rose-900"
                 >
                   Remove
                 </button>
