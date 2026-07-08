@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useMemo, useRef } from "react";
+import { Suspense, useMemo, useRef, useState } from "react";
 import { Canvas, useFrame } from "@react-three/fiber";
 import { Float, Html, OrbitControls, useGLTF } from "@react-three/drei";
 import * as THREE from "three";
@@ -20,6 +20,7 @@ const toneColor: Record<Tone, string> = {
 
 export type TwinNode3D = {
   id: string;
+  info?: string;
   label: string;
   value: number;
   tone: Tone;
@@ -33,6 +34,7 @@ const defaultNodes: TwinNode3D[] = [
     value: 61,
     tone: "warn",
     pos: [0, 1.65, 0.18],
+    info: "Estimates outdoor skin and eye exposure from the strongest UV window in the local forecast.",
   },
   {
     id: "resp",
@@ -40,6 +42,7 @@ const defaultNodes: TwinNode3D[] = [
     value: 72,
     tone: "warn",
     pos: [0.05, 1.1, 0.25],
+    info: "Combines illness activity, air quality, and pollutant context that can affect breathing.",
   },
   {
     id: "cardio",
@@ -47,6 +50,7 @@ const defaultNodes: TwinNode3D[] = [
     value: 44,
     tone: "info",
     pos: [-0.12, 0.95, 0.25],
+    info: "Represents heat stress and exertion burden from temperature, humidity, and baseline risk.",
   },
   {
     id: "immune",
@@ -54,6 +58,7 @@ const defaultNodes: TwinNode3D[] = [
     value: 38,
     tone: "ok",
     pos: [0.1, 0.65, 0.25],
+    info: "Shows how illness and environmental stressors are stacking in the current local snapshot.",
   },
   {
     id: "hydration",
@@ -61,6 +66,7 @@ const defaultNodes: TwinNode3D[] = [
     value: 55,
     tone: "info",
     pos: [0, 0.35, 0.25],
+    info: "Flags heat and activity conditions where fluid breaks may matter more.",
   },
 ];
 
@@ -221,7 +227,21 @@ function ScanRing() {
   );
 }
 
-function NodeMarker({ node }: { node: TwinNode3D }) {
+function NodeMarker({
+  active,
+  node,
+  onActivate,
+  onDeactivate,
+  onTogglePin,
+  pinned,
+}: {
+  active: boolean;
+  node: TwinNode3D;
+  onActivate: (id: string) => void;
+  onDeactivate: (id: string) => void;
+  onTogglePin: (id: string) => void;
+  pinned: boolean;
+}) {
   const color = toneColor[node.tone];
   const ref = useRef<THREE.Mesh>(null);
 
@@ -248,15 +268,41 @@ function NodeMarker({ node }: { node: TwinNode3D }) {
       <Html
         distanceFactor={6}
         position={[node.pos[0] > 0 ? 0.4 : -0.4, 0.02, 0]}
-        style={{ pointerEvents: "none", transform: "translate(-50%, -50%)" }}
+        style={{ pointerEvents: "auto", transform: "translate(-50%, -50%)" }}
       >
-        <div className="twin3d-node-label">
-          <span
-            className="twin3d-node-dot"
-            style={{ background: color, boxShadow: `0 0 8px ${color}` }}
-          />
-          <span className="twin3d-node-name">{node.label}</span>
-          <span className="twin3d-node-value">{node.value}</span>
+        <div
+          className="twin3d-node-wrap"
+          onMouseEnter={() => onActivate(node.id)}
+          onMouseLeave={() => onDeactivate(node.id)}
+        >
+          <button
+            type="button"
+            aria-expanded={active}
+            className={`twin3d-node-label ${active ? "is-active" : ""}`}
+            onBlur={() => onDeactivate(node.id)}
+            onClick={(event) => {
+              event.stopPropagation();
+              onTogglePin(node.id);
+            }}
+            onFocus={() => onActivate(node.id)}
+          >
+            <span
+              className="twin3d-node-dot"
+              style={{ background: color, boxShadow: `0 0 8px ${color}` }}
+            />
+            <span className="twin3d-node-name">{node.label}</span>
+            <span className="twin3d-node-value">{node.value}</span>
+          </button>
+          {active && (
+            <div className="twin3d-node-popover">
+              <p className="twin3d-node-popover-title">{node.label}</p>
+              <p>
+                {node.info ??
+                  "This layer contributes to the exposure twin score."}
+              </p>
+              <span>{pinned ? "Click again to unpin" : "Click to pin"}</span>
+            </div>
+          )}
         </div>
       </Html>
     </group>
@@ -297,6 +343,21 @@ export function Twin3D({
   nodes?: TwinNode3D[];
   scanLabel?: string;
 }) {
+  const [hoveredNodeId, setHoveredNodeId] = useState<string | null>(null);
+  const [pinnedNodeId, setPinnedNodeId] = useState<string | null>(null);
+  const activeNodeId = pinnedNodeId ?? hoveredNodeId;
+
+  const handleDeactivate = (id: string) => {
+    if (pinnedNodeId !== id) {
+      setHoveredNodeId(null);
+    }
+  };
+
+  const handleTogglePin = (id: string) => {
+    setPinnedNodeId((current) => (current === id ? null : id));
+    setHoveredNodeId(id);
+  };
+
   return (
     <div className={`twin3d-root ${className}`}>
       <div className="twin3d-grid" />
@@ -324,7 +385,15 @@ export function Twin3D({
                 <Humanoid />
                 <ScanRing />
                 {nodes.map((node) => (
-                  <NodeMarker key={node.id} node={node} />
+                  <NodeMarker
+                    key={node.id}
+                    active={activeNodeId === node.id}
+                    node={node}
+                    onActivate={setHoveredNodeId}
+                    onDeactivate={handleDeactivate}
+                    onTogglePin={handleTogglePin}
+                    pinned={pinnedNodeId === node.id}
+                  />
                 ))}
               </group>
             </Float>

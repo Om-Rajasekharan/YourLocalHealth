@@ -3293,6 +3293,8 @@ export function ExposureTwinPanel({
       value: clampScore(Math.max(peakUvIndex * 10, 24)),
       tone: peakUvIndex >= 6 ? "warn" : "info",
       pos: [0, 1.65, 0.18],
+      info:
+        "Estimated from the highest UV forecast for the next 24 hours. Higher values mean more skin and eye exposure risk outdoors.",
     },
     {
       id: "resp",
@@ -3305,6 +3307,8 @@ export function ExposureTwinPanel({
           ? "info"
           : "ok",
       pos: [0.05, 1.1, 0.25],
+      info:
+        "Built from respiratory risk, flu and COVID wastewater context, and air-quality conditions that may affect breathing.",
     },
     {
       id: "cardio",
@@ -3312,6 +3316,8 @@ export function ExposureTwinPanel({
       value: clampScore(peakFeelsLike > 0 ? (peakFeelsLike - 60) * 2 : baseScore),
       tone: peakFeelsLike >= 90 || baseScore >= 67 ? "warn" : "info",
       pos: [-0.12, 0.95, 0.25],
+      info:
+        "Uses feels-like temperature and the baseline local score to represent heat stress and exertion burden.",
     },
     {
       id: "immune",
@@ -3319,6 +3325,8 @@ export function ExposureTwinPanel({
       value: clampScore(baseScore * 0.5 + twinLayers[1].intensity * 0.5),
       tone: respiratoryRisk === "Low" ? "ok" : "warn",
       pos: [0.1, 0.65, 0.25],
+      info:
+        "A combined illness-context marker that rises when respiratory and environmental signals stack together.",
     },
     {
       id: "learning",
@@ -3326,6 +3334,8 @@ export function ExposureTwinPanel({
       value: twinLayers[3]?.intensity ?? 0,
       tone: checkinStreak.currentStreak > 0 ? "ok" : "info",
       pos: [0, 0.35, 0.25],
+      info:
+        "Reflects symptom check-in streaks. More check-ins create better outcome labels for future model training.",
     },
   ];
   const inputCards = [

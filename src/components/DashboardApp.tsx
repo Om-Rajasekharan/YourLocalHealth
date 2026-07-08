@@ -590,7 +590,7 @@ export function DashboardSidebar({
       </div>
       <div className="flex-1 space-y-1 p-4">
         <p className="px-3 pb-2 text-[10px] font-semibold uppercase tracking-widest text-[var(--muted-foreground)]">
-          Workspace
+          Health tools
         </p>
         {visibleDashboardViews.map((viewId) => {
           const view = getDashboardView(viewId);

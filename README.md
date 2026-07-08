@@ -26,6 +26,8 @@ vulnerability.
 - Symptom check-ins for future model training
 - AI health assistant and AI daily health plan
 - Synthetic ML training pipeline for demo/testing
+- Python model reporting for ML transparency
+- Native C++ risk scoring kernel for scoring experiments
 
 ## Tech Stack
 
@@ -35,6 +37,7 @@ vulnerability.
 - Supabase
 - OpenWeather / Open-Meteo / CDC public datasets
 - Python, pandas, scikit-learn, joblib for ML experiments
+- C++17 for portable risk-scoring experiments
 
 ## Run Locally
 
@@ -117,6 +120,48 @@ ml/models/
 ```
 
 Generated datasets and model artifacts are ignored by git.
+
+### Generate a Model Report
+
+After training, create a human-readable report from the local model artifacts:
+
+```bash
+python3 ml/generate_model_report.py --output ml/model_report.md
+```
+
+The report summarizes trained targets, holdout metrics, top predictors, and
+guardrails. It is useful for demos and project review, but it is not clinical
+validation.
+
+## Native Risk Kernel
+
+The repo also includes a small C++17 scoring kernel in `native/`. It mirrors the
+transparent risk-index idea outside the UI and can later become a backend or
+WebAssembly scoring component.
+
+Build it locally:
+
+```bash
+clang++ -std=c++17 -O2 -Wall -Wextra native/risk_kernel.cpp -o /tmp/mylocalhealth-risk
+```
+
+Run a sample score:
+
+```bash
+/tmp/mylocalhealth-risk \
+  --aqi 72 \
+  --heat 61 \
+  --uv 55 \
+  --pollen 44 \
+  --illness 38 \
+  --equity 52 \
+  --chronic 48 \
+  --profile 12 \
+  --forecast 67
+```
+
+The output is compact JSON with a score, risk level, dominant contributor, and
+data-confidence estimate.
 
 ## Tableau or Looker Studio
 
