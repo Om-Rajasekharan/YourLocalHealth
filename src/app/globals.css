@@ -4830,6 +4830,61 @@ body {
   border-color: var(--border);
 }
 
+.auth-page-shell {
+  background:
+    radial-gradient(circle at 16% 8%, rgba(75, 156, 211, 0.18), transparent 24rem),
+    radial-gradient(circle at 88% 18%, rgba(15, 159, 142, 0.1), transparent 22rem),
+    linear-gradient(180deg, #f8fbff 0%, #f4f8fc 100%);
+}
+
+.auth-header {
+  border: 1px solid var(--border);
+  border-radius: 1.75rem;
+  background: rgba(255, 255, 255, 0.82);
+  box-shadow:
+    0 1px 2px rgba(19, 41, 75, 0.04),
+    0 18px 42px -34px rgba(19, 41, 75, 0.48);
+  padding: clamp(1.25rem, 3vw, 2rem);
+  backdrop-filter: blur(16px);
+}
+
+.auth-grid {
+  align-items: start;
+}
+
+.auth-card {
+  border: 1px solid var(--border);
+  border-radius: 1.5rem;
+  background: rgba(255, 255, 255, 0.94);
+  box-shadow:
+    0 1px 2px rgba(19, 41, 75, 0.04),
+    0 18px 42px -34px rgba(19, 41, 75, 0.48);
+  padding: clamp(1.1rem, 2.6vw, 1.5rem);
+}
+
+.auth-card input,
+.auth-card select,
+.auth-card textarea {
+  min-height: 2.85rem;
+}
+
+.auth-card button,
+.auth-card a[class*="rounded"] {
+  border-radius: 999px;
+}
+
+.auth-card button[type="submit"],
+.auth-card button:not([type]),
+.auth-card button[type="button"].auth-primary-action {
+  background: var(--primary);
+}
+
+.auth-card button[type="submit"]:hover,
+.auth-card button:not([type]):hover,
+.auth-card button[type="button"].auth-primary-action:hover {
+  background: var(--primary-ink);
+}
+
 @media (max-width: 760px) {
   .exposure-twin-week {
     grid-template-columns: repeat(4, minmax(0, 1fr));

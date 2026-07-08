@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { FormEvent, useEffect, useState } from "react";
 import type { User } from "@supabase/supabase-js";
@@ -60,6 +61,11 @@ function AuthPanel({
   const handleSignIn = async () => {
     setAuthMessage("");
 
+    if (!email.trim() || !password) {
+      setAuthMessage("Enter your email and password to sign in.");
+      return;
+    }
+
     if (!supabase) {
       setAuthMessage("Add Supabase environment variables to enable sign in.");
       return;
@@ -83,6 +89,11 @@ function AuthPanel({
     setAuthLoading(false);
   };
 
+  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    void handleSignIn();
+  };
+
   const handleSignOut = async () => {
     if (!supabase) return;
     await supabase.auth.signOut();
@@ -92,7 +103,7 @@ function AuthPanel({
 
   if (user) {
     return (
-      <section className="quiet-surface rounded-lg p-5">
+      <section className="auth-card">
         <p className="text-xs font-semibold uppercase tracking-wide text-[var(--foreground-muted)]">
           Account
         </p>
@@ -114,7 +125,7 @@ function AuthPanel({
   }
 
   return (
-    <section className="quiet-surface rounded-lg p-5">
+    <form className="auth-card" onSubmit={handleSubmit}>
       <p className="text-xs font-semibold uppercase tracking-wide text-[var(--foreground-muted)]">
         Sign In
       </p>
@@ -147,12 +158,11 @@ function AuthPanel({
       </div>
       <div className="mt-4 flex flex-wrap gap-2">
         <button
-          type="button"
+          type="submit"
           disabled={authLoading}
-          onClick={() => void handleSignIn()}
           className="rounded-lg bg-[var(--accent)] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[var(--accent-ink)] disabled:bg-slate-200 disabled:text-slate-500"
         >
-          Sign in
+          {authLoading ? "Signing in" : "Sign in"}
         </button>
         <Link
           href="/signup"
@@ -166,7 +176,7 @@ function AuthPanel({
           {authMessage}
         </p>
       )}
-    </section>
+    </form>
   );
 }
 
@@ -253,7 +263,7 @@ function ProfilePanel({
   };
 
   return (
-    <section className="quiet-surface rounded-lg p-5">
+    <section className="auth-card">
       <p className="text-xs font-semibold uppercase tracking-wide text-[var(--foreground-muted)]">
         Health Profile
       </p>
@@ -411,7 +421,7 @@ function SavedLocationsPanel({
   message: string;
 }) {
   return (
-    <section className="quiet-surface rounded-lg p-5">
+    <section className="auth-card">
       <p className="text-xs font-semibold uppercase tracking-wide text-[var(--foreground-muted)]">
         My Locations
       </p>
@@ -525,6 +535,19 @@ export default function AccountPage() {
     }
   };
 
+  const handleAuthChange = (nextUser: User | null) => {
+    setUser(nextUser);
+
+    if (nextUser) {
+      void loadSavedLocations(nextUser.id);
+      void loadUserProfile(nextUser.id);
+    } else {
+      setSavedLocations([]);
+      setUserProfile(null);
+      setProfileMessage("");
+    }
+  };
+
   useEffect(() => {
     if (!supabase) return;
 
@@ -558,17 +581,22 @@ export default function AccountPage() {
   }, []);
 
   return (
-    <main className="min-h-screen public-health-bg text-[var(--foreground)]">
-      <section className="mx-auto flex min-h-screen w-full max-w-[72rem] flex-col px-5 py-8 sm:px-8 lg:px-10">
-        <header className="border-b border-[var(--rule)] pb-8">
+    <main className="auth-page-shell min-h-screen public-health-bg text-[var(--foreground)]">
+      <section className="mx-auto flex min-h-screen w-full max-w-7xl flex-col px-5 py-6 sm:px-8 lg:px-10">
+        <header className="auth-header">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <Link
               href="/"
               className="flex w-fit items-center gap-3 text-[var(--primary-ink)]"
             >
-              <span className="grid h-10 w-10 place-items-center rounded-xl bg-[var(--primary)] text-white">
-                +
-              </span>
+              <Image
+                src="/mylocalhealth-icon-white.png"
+                alt=""
+                width={154}
+                height={123}
+                priority
+                className="h-auto w-10 shrink-0 invert"
+              />
               <span className="font-heading text-xl font-semibold">
                 MyLocalHealth
               </span>
@@ -595,13 +623,17 @@ export default function AccountPage() {
               MyLocalHealth Account
             </p>
             <h1 className="display-heading mt-3 text-4xl leading-tight text-[var(--foreground)] sm:text-5xl">
-              Profile and saved places
+              Sign in and personalize your snapshot
             </h1>
+            <p className="mt-3 max-w-2xl text-sm leading-6 text-[var(--foreground-muted)]">
+              Manage your saved locations and the profile factors that adjust
+              your informational risk estimate.
+            </p>
           </div>
         </header>
 
-        <section className="grid gap-5 py-8 lg:grid-cols-[0.8fr_1.2fr]">
-          <AuthPanel user={user} onAuthChange={setUser} />
+        <section className="auth-grid grid gap-5 py-8 lg:grid-cols-[0.8fr_1.2fr]">
+          <AuthPanel user={user} onAuthChange={handleAuthChange} />
           {user ? (
             <ProfilePanel
               profile={userProfile}
@@ -613,7 +645,7 @@ export default function AccountPage() {
               }}
             />
           ) : (
-            <section className="quiet-surface rounded-lg p-5">
+            <section className="auth-card">
               <p className="text-xs font-semibold uppercase tracking-wide text-[var(--foreground-muted)]">
                 Next
               </p>

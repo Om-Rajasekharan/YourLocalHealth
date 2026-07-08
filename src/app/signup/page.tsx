@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
@@ -61,6 +62,11 @@ export default function SignUpPage() {
     event.preventDefault();
     setMessage("");
 
+    if (!email.trim() || !password) {
+      setMessage("Enter an email and password to create your account.");
+      return;
+    }
+
     if (!supabase) {
       setMessage("Supabase is not configured yet.");
       return;
@@ -114,17 +120,22 @@ export default function SignUpPage() {
   };
 
   return (
-    <main className="min-h-screen public-health-bg text-[var(--foreground)]">
-      <section className="mx-auto flex min-h-screen w-full max-w-[72rem] flex-col px-5 py-8 sm:px-8 lg:px-10">
-        <header className="border-b border-[var(--rule)] pb-8">
+    <main className="auth-page-shell min-h-screen public-health-bg text-[var(--foreground)]">
+      <section className="mx-auto flex min-h-screen w-full max-w-7xl flex-col px-5 py-6 sm:px-8 lg:px-10">
+        <header className="auth-header">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <Link
               href="/"
               className="flex w-fit items-center gap-3 text-[var(--primary-ink)]"
             >
-              <span className="grid h-10 w-10 place-items-center rounded-xl bg-[var(--primary)] text-white">
-                +
-              </span>
+              <Image
+                src="/mylocalhealth-icon-white.png"
+                alt=""
+                width={154}
+                height={123}
+                priority
+                className="h-auto w-10 shrink-0 invert"
+              />
               <span className="font-heading text-xl font-semibold">
                 MyLocalHealth
               </span>
@@ -149,18 +160,18 @@ export default function SignUpPage() {
               Create Account
             </p>
             <h1 className="display-heading mt-3 text-4xl leading-tight text-[var(--foreground)] sm:text-5xl">
-              Personalize MyLocalHealth
+              Set up your health profile
             </h1>
             <p className="mt-3 max-w-2xl text-sm leading-6 text-[var(--foreground-muted)]">
-              Create your login and add the profile factors used to personalize
-              your informational health snapshot.
+              Create your login and add the few profile factors used to
+              personalize your informational ZIP-code snapshot.
             </p>
           </div>
         </header>
 
         <form
           onSubmit={handleSubmit}
-          className="mt-8 quiet-surface rounded-lg p-5"
+          className="auth-card mt-8"
         >
           <div className="grid gap-5 lg:grid-cols-[0.8fr_1.2fr]">
             <section>

@@ -1776,149 +1776,147 @@ export function RiskTransparencyPanel({
   const [showWeights, setShowWeights] = useState(false);
 
   return (
-    <section className="mt-5">
-      <article className="model-data-feature rounded-lg border border-[var(--rule)] bg-[var(--surface)] p-5 shadow-sm">
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+    <section className="grid gap-5">
+      <article className="model-data-feature rounded-[1.75rem] border border-[var(--border)] bg-white p-6 shadow-[0_18px_55px_-38px_rgba(19,41,75,0.5)]">
+        <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
           <div>
-            <p className="text-sm font-semibold uppercase tracking-wide text-[var(--foreground-faint)]">
+            <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[var(--primary)]">
               Model & Data
             </p>
-            <h3 className="display-heading mt-2 text-3xl leading-tight text-[var(--foreground)] sm:text-4xl">
-              The spider chart shows what is actually driving risk.
+            <h3 className="display-heading mt-2 max-w-3xl text-3xl leading-tight text-[var(--foreground)] sm:text-5xl">
+              See why the score changed.
             </h3>
-            <p className="mt-2 max-w-3xl text-sm leading-6 text-[var(--foreground-muted)]">
-              Every score is broken into determinants, weights, source
-              coverage, and the strongest local drivers so the forecast does
-              not feel like a black box.
+            <p className="mt-3 max-w-2xl text-sm leading-6 text-[var(--foreground-muted)]">
+              The radar chart turns the model into plain visual contributors:
+              environment, illness, forecast, equity, and chronic-disease
+              context.
             </p>
           </div>
-          <div className="rounded-lg border border-[var(--secondary)]/25 bg-[var(--secondary)]/10 p-4 text-right">
+          <div className="rounded-2xl border border-[var(--primary)]/25 bg-[var(--primary-soft)] p-5 text-right">
             <p className="text-xs font-bold uppercase tracking-wide text-[var(--foreground-muted)]">
               Risk Index
             </p>
-            <p className="mt-1 text-4xl font-black text-[var(--foreground)]">{score}/100</p>
+            <p className="mt-1 text-5xl font-black text-[var(--primary-ink)]">
+              {score}
+            </p>
+            <p className="text-sm font-semibold text-[var(--foreground-muted)]">
+              out of 100
+            </p>
           </div>
         </div>
-        <div className="mt-5 h-3 overflow-hidden rounded-full bg-[var(--surface-muted)]">
-          <div
-            className="h-full rounded-full bg-[var(--accent)]"
-            style={{ width: `${score}%` }}
-          />
-        </div>
 
-        <DeterminantRadarChart items={items} overallScore={score} />
+        <div className="mt-6 grid gap-6 lg:grid-cols-[1.1fr_0.9fr] lg:items-center">
+          <DeterminantRadarChart items={items} overallScore={score} />
 
-        {topDrivers.length > 0 && (
-          <div className="mt-5 rounded-lg border border-[var(--accent)]/25 bg-[var(--accent)]/10 p-4">
-            <p className="text-xs font-semibold uppercase tracking-wide text-[var(--foreground-muted)]">
-              Top drivers
+          <div className="grid gap-3">
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--primary)]">
+              Biggest drivers
             </p>
-            <div className="mt-3 grid gap-3 md:grid-cols-2">
-              {topDrivers.map((driver) => (
+            {(topDrivers.length > 0 ? topDrivers : items.slice(0, 3)).map(
+              (driver) => (
                 <div
-                  className="rounded-lg border border-[var(--rule)] bg-black/10 p-3"
+                  className="rounded-2xl border border-[var(--border)] bg-[var(--primary-soft)]/45 p-4"
                   key={driver.label}
                 >
-                  <div className="flex items-center justify-between gap-3">
-                    <p className="text-sm font-semibold text-[var(--foreground)]">
+                  <div className="flex items-start justify-between gap-3">
+                    <p className="text-sm font-semibold text-[var(--primary-ink)]">
                       {driver.label}
                     </p>
-                    <p className="text-sm font-semibold text-[var(--foreground-muted)]">
+                    <p className="text-sm font-semibold text-[var(--primary)]">
                       +{driver.points}
                     </p>
                   </div>
-                  <p className="mt-1 text-xs leading-5 text-[var(--foreground-muted)]/80">
-                    {driver.detail} · {driver.category}
+                  <p className="mt-2 text-xs leading-5 text-[var(--muted-foreground)]">
+                    {driver.detail}
                   </p>
                 </div>
-              ))}
-            </div>
+              )
+            )}
           </div>
-        )}
+        </div>
+      </article>
+
+      <article className="rounded-[1.5rem] border border-[var(--border)] bg-white p-5 shadow-[0_12px_34px_-26px_rgba(19,41,75,0.45)]">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--primary)]">
+              Score ingredients
+            </p>
+            <p className="mt-1 text-sm leading-6 text-[var(--muted-foreground)]">
+              The simplified categories below are the easiest way to audit the
+              model.
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={() => setShowWeights((current) => !current)}
+            className="h-10 rounded-full border border-[var(--border)] px-4 text-sm font-semibold text-[var(--primary-ink)] transition hover:border-[var(--primary)] hover:bg-[var(--primary-soft)]"
+          >
+            {showWeights ? "Hide full weights" : "Show full weights"}
+          </button>
+        </div>
 
         <div className="mt-5 grid gap-3 md:grid-cols-4">
           {categoryScores.map((category) => (
             <div
-              className="rounded-lg border border-[var(--rule)] bg-[var(--surface-muted)] p-3"
+              className="rounded-2xl border border-[var(--border)] bg-slate-50 p-4"
               key={category.label}
             >
               <div className="flex items-center justify-between gap-3">
-                <p className="text-sm font-semibold text-[var(--foreground)]">
+                <p className="text-sm font-semibold text-[var(--primary-ink)]">
                   {category.label}
                 </p>
-                <p className="text-sm font-semibold text-[var(--foreground-muted)]">
+                <p className="text-sm font-semibold text-[var(--primary)]">
                   {category.score}
                 </p>
               </div>
-              <div className="mt-3 h-2 overflow-hidden rounded-full bg-[var(--surface-muted)]">
+              <div className="mt-3 h-2 overflow-hidden rounded-full bg-white">
                 <div
-                  className="h-full rounded-full bg-[var(--secondary)]"
+                  className="h-full rounded-full bg-[var(--primary)]"
                   style={{ width: `${category.score}%` }}
                 />
               </div>
-              <p className="mt-3 text-xs leading-5 text-[var(--foreground-faint)]">
-                {category.detail}
-              </p>
             </div>
           ))}
         </div>
 
-        <div className="mt-5 rounded-lg border border-[var(--rule)] bg-black/10 p-4">
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-wide text-[var(--foreground-faint)]">
-                Weighted inputs
-              </p>
-              <p className="mt-1 text-sm leading-6 text-[var(--foreground-muted)]">
-                Expand the scoring table when you want the full calculation.
-              </p>
-            </div>
-            <button
-              type="button"
-              onClick={() => setShowWeights((current) => !current)}
-              className="h-10 rounded-lg border border-[var(--rule)] px-4 text-sm font-semibold text-[var(--foreground)] transition hover:border-[var(--accent)]/50 hover:bg-[var(--surface-muted)]"
-            >
-              {showWeights ? "Hide weights" : "Show weights"}
-            </button>
-          </div>
-
-          {showWeights && (
-            <div className="mt-4 grid gap-3">
-              {items.map((item) => (
-                <div
-                  className="grid gap-2 rounded-lg border border-[var(--rule)] bg-[var(--surface-muted)] p-3 sm:grid-cols-[1fr_auto]"
-                  key={item.label}
-                >
-                  <div>
-                    <p className="text-sm font-semibold text-[var(--foreground)]">
-                      {item.label}
-                    </p>
-                    <p className="mt-1 text-xs leading-5 text-[var(--foreground-faint)]">
-                      {item.detail}
-                    </p>
-                    <p className="mt-1 text-xs leading-5 text-slate-500">
-                      {item.category} · Weight: {item.weight} · Max{" "}
-                      {item.maxPoints} points
-                    </p>
-                  </div>
-                    <p className="text-sm font-semibold text-[var(--foreground-muted)]">
-                    +{item.points}
+        {showWeights && (
+          <div className="mt-5 grid gap-3">
+            {items.map((item) => (
+              <div
+                className="grid gap-2 rounded-2xl border border-[var(--border)] bg-slate-50 p-4 sm:grid-cols-[1fr_auto]"
+                key={item.label}
+              >
+                <div>
+                  <p className="text-sm font-semibold text-[var(--primary-ink)]">
+                    {item.label}
+                  </p>
+                  <p className="mt-1 text-xs leading-5 text-[var(--muted-foreground)]">
+                    {item.detail}
+                  </p>
+                  <p className="mt-1 text-xs leading-5 text-[var(--foreground-faint)]">
+                    {item.category} · Weight: {item.weight} · Max{" "}
+                    {item.maxPoints} points
                   </p>
                 </div>
-              ))}
-            </div>
-          )}
-        </div>
-        <div className="mt-5 rounded-lg border border-[var(--rule)] bg-black/10 p-4">
-          <p className="text-xs font-semibold uppercase tracking-wide text-[var(--foreground-faint)]">
-            How this score is calculated
-          </p>
-          <ul className="mt-3 grid gap-2 text-xs leading-5 text-[var(--foreground-muted)]">
+                <p className="text-sm font-semibold text-[var(--primary)]">
+                  +{item.points}
+                </p>
+              </div>
+            ))}
+          </div>
+        )}
+
+        <details className="mt-5 rounded-2xl border border-[var(--border)] bg-slate-50 p-4">
+          <summary className="cursor-pointer text-sm font-semibold text-[var(--primary-ink)]">
+            How the score is calculated
+          </summary>
+          <ul className="mt-3 grid gap-2 text-xs leading-5 text-[var(--muted-foreground)]">
             {methodology.map((item) => (
               <li key={item}>{item}</li>
             ))}
           </ul>
-        </div>
+        </details>
       </article>
     </section>
   );
@@ -1930,57 +1928,36 @@ export function DataConfidencePanel({
   confidence: RiskModelConfidence;
 }) {
   return (
-    <section className="mt-5 rounded-lg border border-[var(--rule)] bg-[var(--surface)] p-5 shadow-sm">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+    <section className="mt-5 rounded-[1.5rem] border border-[var(--border)] bg-white p-5 shadow-[0_12px_34px_-26px_rgba(19,41,75,0.45)]">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <p className="text-sm font-semibold uppercase tracking-wide text-[var(--foreground-faint)]">
+          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--primary)]">
             Data Confidence
           </p>
-          <h3 className="mt-1 text-xl font-semibold text-[var(--foreground)]">
-            Source completeness
+          <h3 className="mt-1 font-heading text-2xl font-semibold text-[var(--primary-ink)]">
+            {confidence.availableCount}/{confidence.totalCount} source groups loaded
           </h3>
         </div>
         <RiskBadge value={confidence.label} />
       </div>
-      <p className="mt-4 text-sm leading-6 text-[var(--foreground-muted)]">
-        {confidence.availableCount} of {confidence.totalCount} source groups
-        loaded for this snapshot.
-      </p>
-      <div className="mt-5 grid gap-2 md:grid-cols-2">
-        {confidence.sources.map((source) => (
-          <div
-            className="flex items-center justify-between gap-3 rounded-lg border border-[var(--rule)] bg-[var(--surface-muted)] px-3 py-2"
-            key={source.label}
-          >
-            <div>
-              <p className="text-sm font-semibold text-[var(--foreground)]">
+      <div className="mt-5 grid gap-2 md:grid-cols-3">
+        {confidence.sources.slice(0, 6).map((source) => (
+          <div className="rounded-2xl border border-[var(--border)] bg-slate-50 p-3" key={source.label}>
+            <div className="flex items-center justify-between gap-3">
+              <p className="text-sm font-semibold text-[var(--primary-ink)]">
                 {source.label}
               </p>
-              <p className="text-xs text-[var(--foreground-faint)]">{source.source}</p>
+              <span className={source.available ? "text-[var(--success)]" : "text-rose-600"}>
+                {source.available ? "Loaded" : "Missing"}
+              </span>
             </div>
-            <span
-              className={`rounded-full border px-2 py-1 text-xs font-semibold ${
-                source.available
-                  ? "border-[var(--secondary)]/30 bg-[var(--secondary)]/10 text-[var(--secondary)]"
-                  : "border-rose-200 bg-rose-50 text-rose-700"
-              }`}
-            >
-              {source.available ? "Loaded" : "Missing"}
-            </span>
           </div>
         ))}
       </div>
       {confidence.caveats.length > 0 && (
-        <div className="mt-4 rounded-lg border border-amber-200 bg-amber-50 p-3">
-          <p className="text-xs font-semibold uppercase tracking-wide text-amber-800">
-            Caveats
-          </p>
-          <ul className="mt-2 grid gap-1 text-xs leading-5 text-amber-900">
-            {confidence.caveats.map((caveat) => (
-              <li key={caveat}>{caveat}</li>
-            ))}
-          </ul>
-        </div>
+        <p className="mt-4 rounded-2xl border border-amber-200 bg-amber-50 p-3 text-sm leading-6 text-amber-900">
+          {confidence.caveats[0]}
+        </p>
       )}
     </section>
   );
@@ -2045,32 +2022,27 @@ export function ModelDataSourcesPanel({
   ];
 
   return (
-    <section className="mt-5 rounded-lg border border-[var(--rule)] bg-[var(--surface)] p-5 shadow-sm">
+    <section className="mt-5 rounded-[1.5rem] border border-[var(--border)] bg-white p-5 shadow-[0_12px_34px_-26px_rgba(19,41,75,0.45)]">
       <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <p className="text-sm font-semibold uppercase tracking-wide text-[var(--foreground-faint)]">
-            Model Data Sources
+          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--primary)]">
+            Data sources
           </p>
-          <h3 className="mt-1 text-xl font-semibold text-[var(--foreground)]">
-            What the app is using
+          <h3 className="mt-1 font-heading text-2xl font-semibold text-[var(--primary-ink)]">
+            What feeds the score
           </h3>
-          <p className="mt-2 max-w-3xl text-sm leading-6 text-[var(--foreground-muted)]">
-            These sources feed the dashboard, AI context, and training dataset.
-            Some sources affect the current risk index directly; others provide
-            explainability and future ML features.
-          </p>
         </div>
       </div>
 
-      <div className="mt-5 grid gap-3 md:grid-cols-2">
-        {sources.map((source) => (
+      <div className="mt-5 grid gap-3 md:grid-cols-3">
+        {sources.slice(0, 6).map((source) => (
           <article
-            className="rounded-lg border border-[var(--rule)] bg-[var(--surface-muted)] p-4"
+            className="rounded-2xl border border-[var(--border)] bg-slate-50 p-4"
             key={source.label}
           >
             <div className="flex items-start justify-between gap-3">
               <div>
-                <p className="text-sm font-semibold text-[var(--foreground)]">
+                <p className="text-sm font-semibold text-[var(--primary-ink)]">
                   {source.label}
                 </p>
                 <p className="mt-1 text-xs leading-5 text-[var(--foreground-faint)]">
@@ -3013,167 +2985,6 @@ function ExposureTwinPersonScan({
   );
 }
 
-function personalHourScore(
-  hour: HealthForecastData["hours"][number],
-  modifier: number,
-  scenario: TwinScenario
-) {
-  return clampScore(hour.score + modifier + scenarioAdjustment(scenario));
-}
-
-function buildSmoothPath(points: { x: number; y: number }[]) {
-  if (points.length === 0) return "";
-  if (points.length === 1) return `M ${points[0].x},${points[0].y}`;
-
-  let d = `M ${points[0].x},${points[0].y}`;
-
-  for (let index = 1; index < points.length; index += 1) {
-    const previous = points[index - 1];
-    const current = points[index];
-    const midX = (previous.x + current.x) / 2;
-    const midY = (previous.y + current.y) / 2;
-    d += ` Q ${previous.x},${previous.y} ${midX},${midY}`;
-  }
-
-  const last = points[points.length - 1];
-  d += ` L ${last.x},${last.y}`;
-  return d;
-}
-
-function TwinTrendChart({
-  hours,
-  modifier,
-  scenario,
-  onOpenForecast,
-}: {
-  hours: HealthForecastData["hours"];
-  modifier: number;
-  scenario: TwinScenario;
-  onOpenForecast?: () => void;
-}) {
-  if (hours.length === 0) {
-    return null;
-  }
-
-  const width = 720;
-  const height = 200;
-  const paddingX = 12;
-  const paddingY = 18;
-  const usableWidth = width - paddingX * 2;
-  const usableHeight = height - paddingY * 2;
-  const displayHours = hours.slice(0, 24);
-  const scored = displayHours.map((hour) => ({
-    hour,
-    score: personalHourScore(hour, modifier, scenario),
-  }));
-  const xStep = scored.length > 1 ? usableWidth / (scored.length - 1) : 0;
-  const points = scored.map((item, index) => ({
-    ...item,
-    x: paddingX + index * xStep,
-    y: paddingY + usableHeight - (item.score / 100) * usableHeight,
-  }));
-  const linePath = buildSmoothPath(points);
-  const baseY = paddingY + usableHeight;
-  const areaPath = `${linePath} L ${points[points.length - 1].x},${baseY} L ${points[0].x},${baseY} Z`;
-  const peak = points.reduce(
-    (max, point) => (point.score > max.score ? point : max),
-    points[0]
-  );
-
-  return (
-    <section className="twin-trend-chart">
-      <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
-        <div>
-          <p className="eyebrow-text">Your day, personalized</p>
-          <h4 className="display-heading mt-1 text-2xl leading-tight text-[var(--foreground)]">
-            24-hour projected exposure
-          </h4>
-          <p className="mt-2 max-w-xl text-sm leading-6 text-[var(--foreground-muted)]">
-            The same hourly forecast for this ZIP code, adjusted for your
-            profile and whichever scenario is selected below.
-          </p>
-        </div>
-        {onOpenForecast && (
-          <button
-            type="button"
-            onClick={onOpenForecast}
-            className="w-fit rounded-full border border-[var(--rule)] px-3 py-2 text-sm font-semibold text-[var(--foreground-muted)] transition hover:border-[var(--accent)]/40 hover:bg-[var(--surface-muted)] hover:text-[var(--foreground)]"
-          >
-            Open full forecast
-          </button>
-        )}
-      </div>
-
-      <div className="twin-trend-chart-plot mt-5">
-        <svg
-          viewBox={`0 0 ${width} ${height}`}
-          preserveAspectRatio="none"
-          className="twin-trend-chart-svg"
-          role="img"
-          aria-label={`24-hour personalized exposure trend, peaking at ${peak.score} of 100 around ${peak.hour.displayTime}`}
-        >
-          <defs>
-            <linearGradient id="twinTrendGradient" x1="0" x2="0" y1="0" y2="1">
-              <stop offset="0%" stopColor="var(--accent)" stopOpacity="0.26" />
-              <stop offset="100%" stopColor="var(--accent)" stopOpacity="0" />
-            </linearGradient>
-          </defs>
-          <path d={areaPath} className="twin-trend-area" stroke="none" />
-          <path
-            d={linePath}
-            fill="none"
-            strokeWidth="2.5"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            className="twin-trend-line"
-          />
-          <circle cx={peak.x} cy={peak.y} r="4" className="twin-trend-peak-dot" />
-        </svg>
-
-        <div className="twin-trend-hover-columns">
-          {points.map((point) => {
-            const explanation = buildForecastHourExplanation(point.hour);
-
-            return (
-              <div
-                key={point.hour.time}
-                className="group relative flex-1"
-                tabIndex={0}
-              >
-                <div className="twin-trend-tooltip">
-                  <p className="font-semibold text-white">
-                    {point.hour.displayTime} · {point.score}/100
-                  </p>
-                  <p className="mt-1 leading-5 text-[var(--foreground-muted)]">
-                    {explanation.drivers}
-                  </p>
-                  <p className="mt-2 leading-5 text-[var(--foreground-faint)]">
-                    {explanation.metrics}
-                  </p>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      </div>
-
-      <div className="mt-3 flex justify-between font-mono text-[0.68rem] font-semibold uppercase tracking-wide text-[var(--foreground-faint)]">
-        <span>{points[0]?.hour.displayTime.replace(/^[A-Za-z]+,?\s/, "")}</span>
-        <span>
-          Peak {peak.score}/100 ·{" "}
-          {peak.hour.displayTime.replace(/^[A-Za-z]+,?\s/, "")}
-        </span>
-        <span>
-          {points[points.length - 1]?.hour.displayTime.replace(
-            /^[A-Za-z]+,?\s/,
-            ""
-          )}
-        </span>
-      </div>
-    </section>
-  );
-}
-
 export function ExposureTwinPanel({
   user,
   zipCode,
@@ -3208,11 +3019,6 @@ export function ExposureTwinPanel({
   const [selectedLayerId, setSelectedLayerId] =
     useState<TwinLayer["id"]>("environment");
   const [scenario, setScenario] = useState<TwinScenario>("current");
-  const [selectedStreakDate, setSelectedStreakDate] = useState(
-    checkinStreak.week.find((day) => day.isToday)?.date ??
-      checkinStreak.week.at(-1)?.date ??
-      ""
-  );
   const modifier = profileModifier(profile);
   const peakForecastScore = forecastData?.peakScore ?? baseScore;
   const twinScore = clampScore(
@@ -3226,9 +3032,7 @@ export function ExposureTwinPanel({
     forecastData?.bestWindow?.displayTime ?? "a lower-risk morning window";
   const worstWindow =
     forecastData?.worstWindow?.displayTime ?? "the highest forecast window";
-  const twinLevel = exposureLabel(twinScore);
-  const primaryDriver = topDrivers[0];
-  const secondaryDriver = topDrivers[1];
+  const mainDriver = topDrivers[0];
   const forecastLoaded = Boolean(forecastData);
   const profileLoaded = Boolean(profile);
   const twinLayers: TwinLayer[] = [
@@ -3359,28 +3163,6 @@ export function ExposureTwinPanel({
         : "Sign in and add a profile to personalize this estimate.",
     },
   ];
-  const simulatedDay = [
-    {
-      label: "Morning baseline",
-      score: clampScore(twinScore * 0.72),
-      detail: `Starts from ${city}'s current public-health snapshot and your profile context.`,
-    },
-    {
-      label: "Peak exposure",
-      score: clampScore(Math.max(twinScore, peakForecastScore)),
-      detail: `${worstWindow} is treated as the day's highest-risk exposure window.`,
-    },
-    {
-      label: "Best adjustment",
-      score: clampScore(Math.max(8, twinScore - 18)),
-      detail: `Moving flexible outdoor time toward ${bestWindow} is the clearest risk-reduction lever.`,
-    },
-  ];
-  const differentiators = [
-    "Combines place, time, environmental hazards, illness activity, and personal sensitivity.",
-    "Turns symptom check-ins into outcome labels for future model training.",
-    "Explains the one practical schedule change most likely to lower exposure today.",
-  ];
   const recommendedAction = forecastLoaded
     ? `If your schedule is flexible, move outdoor activity toward ${bestWindow} and avoid stacking heavy activity during ${worstWindow}.`
     : "Add forecast data by retrying the search, then compare your best and worst exposure windows.";
@@ -3392,9 +3174,6 @@ export function ExposureTwinPanel({
       : scenario === "protect"
       ? "Models added protection such as indoor breaks, filtered air, or lower exertion."
       : "Uses the current profile, location, and forecast without behavior changes.";
-  const selectedStreakDay =
-    checkinStreak.week.find((day) => day.date === selectedStreakDate) ??
-    checkinStreak.week.at(-1);
   const streakProgress = Math.min(
     100,
     Math.round(
@@ -3410,18 +3189,29 @@ export function ExposureTwinPanel({
     : "Log how today felt to keep your streak alive and improve the Twin over time.";
 
   return (
-    <section className="mt-5 grid gap-5">
-      <article className="exposure-twin-hero">
+    <section className="grid gap-5">
+      <article className="grid gap-5 rounded-[1.75rem] border border-[var(--border)] bg-white p-6 shadow-[0_18px_55px_-38px_rgba(19,41,75,0.5)] lg:grid-cols-[1fr_auto] lg:items-center">
         <div>
           <p className="eyebrow-text">Exposure Twin</p>
-          <h3 className="display-heading mt-2 max-w-4xl text-3xl leading-tight text-[var(--foreground)] sm:text-5xl">
-            A personal simulation of today&apos;s local exposure.
+          <h3 className="display-heading mt-2 max-w-3xl text-3xl leading-tight text-[var(--foreground)] sm:text-5xl">
+            Your local exposure, simplified.
           </h3>
-          <p className="mt-4 max-w-3xl text-sm leading-6 text-[var(--foreground-muted)]">
-            Instead of only showing the risk for ZIP {zipCode}, it estimates
-            how today&apos;s conditions may interact with a real routine,
-            profile, and location context.
+          <p className="mt-4 max-w-2xl text-sm leading-6 text-[var(--foreground-muted)]">
+            The Twin combines ZIP {zipCode} in {city}, {state}, forecast
+            conditions, respiratory context, profile factors, and check-ins
+            into one personal exposure estimate.
           </p>
+          <div className="mt-4 flex flex-wrap gap-2 text-xs font-semibold text-[var(--primary-ink)]">
+            <span className="rounded-full bg-[var(--primary-soft)] px-3 py-1">
+              {dataConfidence.availableCount}/{dataConfidence.totalCount} data
+              groups loaded
+            </span>
+            {mainDriver && (
+              <span className="rounded-full bg-[var(--primary-soft)] px-3 py-1">
+                Main driver: {mainDriver.label}
+              </span>
+            )}
+          </div>
           <div className="mt-5 grid gap-3 md:grid-cols-3">
             {inputCards.map((card) => (
               <div className="exposure-twin-input-card" key={card.label}>
@@ -3434,38 +3224,30 @@ export function ExposureTwinPanel({
         </div>
 
         <div className="exposure-twin-score">
-          <span className="exposure-twin-score-label">Estimated twin score</span>
+          <span className="exposure-twin-score-label">Twin score</span>
           <TwinScoreGauge
-            value={twinScore}
+            value={projectedTwinScore}
             size="lg"
-            tone={twinScore >= 34 ? "accent" : "secondary"}
+            tone={projectedTwinScore >= 34 ? "accent" : "secondary"}
           />
           <p className="exposure-twin-score-detail">
-            {twinLevel} personal exposure estimate
+            {exposureLabel(projectedTwinScore)} projected exposure
           </p>
-          <span className="twin-confidence-chip">
-            {dataConfidence.availableCount}/{dataConfidence.totalCount} sources
-          </span>
-          {dataConfidence.caveats.length > 0 && (
-            <p className="twin-confidence-note">{dataConfidence.caveats[0]}</p>
-          )}
         </div>
       </article>
 
-      <section className="twin-command-center">
-        <div className="twin-command-copy">
-          <p className="eyebrow-text">Digital Twin Model</p>
-          <h4 className="display-heading mt-2 text-3xl leading-tight text-[var(--foreground)] sm:text-4xl">
-            Inspect the body scan and exposure layers.
+      <section className="grid gap-5 lg:grid-cols-[0.9fr_1.1fr]">
+        <article className="rounded-[1.5rem] border border-[var(--border)] bg-white p-5 shadow-[0_12px_34px_-26px_rgba(19,41,75,0.45)]">
+          <p className="eyebrow-text">Inspect layers</p>
+          <h4 className="display-heading mt-2 text-3xl leading-tight text-[var(--foreground)]">
+            Click a layer to see what it means.
           </h4>
           <p className="mt-3 text-sm leading-6 text-[var(--foreground-muted)]">
-            This 3D scan is a visual stand-in for the current ZIP code,
-            forecast, profile, and learning loop. It is not a clinical
-            diagnostic model; it is a way to make the exposure simulation
-            easier to understand.
+            This is not a clinical body model. It is a visual way to show which
+            local signals are contributing to the exposure estimate.
           </p>
 
-          <div className="mt-5 rounded-2xl border border-[var(--border)] bg-white/80 p-4">
+          <div className="mt-5 rounded-2xl border border-[var(--border)] bg-[var(--primary-soft)]/45 p-4">
             <p className="text-xs font-bold uppercase tracking-wide text-[var(--foreground-muted)]">
               Selected layer
             </p>
@@ -3478,121 +3260,101 @@ export function ExposureTwinPanel({
           </div>
 
           <div className="mt-5 grid gap-3 sm:grid-cols-2">
-            {twin3dNodes.slice(0, 4).map((node) => (
+            {twinLayers.map((layer) => (
               <button
                 type="button"
-                key={node.id}
-                onClick={() => {
-                  if (node.id === "resp") setSelectedLayerId("respiratory");
-                  else if (node.id === "learning") setSelectedLayerId("learning");
-                  else setSelectedLayerId("environment");
-                }}
-                className="rounded-2xl border border-[var(--border)] bg-white px-3 py-3 text-left transition hover:border-[var(--primary)] hover:bg-[var(--primary-soft)]"
+                key={layer.id}
+                onClick={() => setSelectedLayerId(layer.id)}
+                className={`rounded-2xl border px-3 py-3 text-left transition ${
+                  selectedLayerId === layer.id
+                    ? "border-[var(--primary)] bg-[var(--primary)] text-white"
+                    : "border-[var(--border)] bg-white text-[var(--primary-ink)] hover:border-[var(--primary)] hover:bg-[var(--primary-soft)]"
+                }`}
               >
-                <span className="text-xs font-semibold uppercase tracking-wide text-[var(--muted-foreground)]">
-                  {node.label}
+                <span className="text-xs font-semibold uppercase tracking-wide opacity-75">
+                  {layer.label}
                 </span>
-                <strong className="mt-1 block text-lg text-[var(--primary-ink)]">
-                  {node.value}/100
-                </strong>
+                <strong className="mt-1 block text-lg">{layer.value}</strong>
               </button>
             ))}
           </div>
-        </div>
+        </article>
 
         <Twin3D
-          className="min-h-[34rem]"
+          className="min-h-[32rem]"
           nodes={twin3dNodes}
           scanLabel={`SCAN · ${projectedTwinScore} / 100`}
         />
       </section>
 
-      <TwinTrendChart
-        hours={forecastData?.hours ?? []}
-        modifier={modifier}
-        scenario={scenario}
-        onOpenForecast={onOpenForecast}
-      />
-
-      <section className="twin-scenario-lab">
-        <div>
-          <p className="eyebrow-text">Counterfactual Simulator</p>
-          <h4 className="display-heading mt-2 text-3xl leading-tight text-[var(--foreground)]">
-            Test one small change.
-          </h4>
-          <p className="mt-3 text-sm leading-6 text-[var(--foreground-muted)]">
-            This is a lightweight ML-style counterfactual: it keeps the same
-            local conditions, then estimates how the Twin score might move if
-            the routine changes.
-          </p>
-        </div>
-
-        <div className="twin-scenario-options">
-          {(["current", "shift", "reduce", "protect"] as TwinScenario[]).map(
-            (item) => (
+      <section className="grid gap-5 lg:grid-cols-[1fr_0.9fr]">
+        <article className="rounded-[1.5rem] border border-[var(--border)] bg-white p-5 shadow-[0_12px_34px_-26px_rgba(19,41,75,0.45)]">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+            <div>
+              <p className="eyebrow-text">Try a change</p>
+              <h4 className="display-heading mt-2 text-3xl text-[var(--foreground)]">
+                What lowers today&apos;s score?
+              </h4>
+            </div>
+            {onOpenForecast && (
               <button
                 type="button"
-                key={item}
-                onClick={() => setScenario(item)}
-                className={`twin-scenario-button ${
-                  scenario === item ? "is-active" : ""
-                }`}
+                onClick={onOpenForecast}
+                className="w-fit rounded-full border border-[var(--border)] px-4 py-2 text-sm font-semibold text-[var(--primary-ink)] hover:bg-[var(--primary-soft)]"
               >
-                {scenarioLabel(item)}
+                View forecast
               </button>
-            )
-          )}
-        </div>
-
-        <div className="twin-projection-card">
-          <div className="twin-projection-card-score">
-            <TwinScoreGauge
-              value={projectedTwinScore}
-              size="md"
-              tone={projectedTwinScore >= 34 ? "accent" : "secondary"}
-            />
-            <div>
-              <span>Projected Twin score</span>
-              <p>
-                {projectedChange > 0
-                  ? `${projectedChange} point reduction from the current estimate.`
-                  : "Baseline estimate with no routine change."}
-              </p>
+            )}
+          </div>
+          <div className="mt-5 flex flex-wrap gap-2">
+            {(["current", "shift", "reduce", "protect"] as TwinScenario[]).map(
+              (item) => (
+                <button
+                  type="button"
+                  key={item}
+                  onClick={() => setScenario(item)}
+                  className={`twin-scenario-button ${
+                    scenario === item ? "is-active" : ""
+                  }`}
+                >
+                  {scenarioLabel(item)}
+                </button>
+              )
+            )}
+          </div>
+          <div className="mt-5 rounded-2xl border border-[var(--border)] bg-[var(--primary-soft)]/45 p-4">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
+              <TwinScoreGauge
+                value={projectedTwinScore}
+                size="md"
+                tone={projectedTwinScore >= 34 ? "accent" : "secondary"}
+              />
+              <div>
+                <p className="text-sm font-semibold text-[var(--primary-ink)]">
+                  {projectedChange > 0
+                    ? `${projectedChange} point reduction`
+                    : "Current routine"}
+                </p>
+                <p className="mt-2 text-sm leading-6 text-[var(--foreground-muted)]">
+                  {scenarioDetail}
+                </p>
+              </div>
             </div>
           </div>
-          <p>{scenarioDetail}</p>
-        </div>
-      </section>
+          <p className="mt-4 text-sm leading-6 text-[var(--foreground-muted)]">
+            {recommendedAction}
+          </p>
+        </article>
 
-      <article className="exposure-twin-recommendation">
-        <div>
-          <p className="eyebrow-text">Most useful adjustment</p>
-          <h4 className="display-heading mt-1 text-2xl text-[var(--foreground)]">
-            Shift timing before changing everything else.
+        <article className="rounded-[1.5rem] border border-[var(--border)] bg-white p-5 shadow-[0_12px_34px_-26px_rgba(19,41,75,0.45)]">
+          <p className="eyebrow-text">Keep it learning</p>
+          <h4 className="display-heading mt-2 text-3xl text-[var(--foreground)]">
+            {checkinStreak.currentStreak} day
+            {checkinStreak.currentStreak === 1 ? "" : "s"}
           </h4>
-        </div>
-        <p>{recommendedAction}</p>
-      </article>
-
-      <section className="exposure-twin-streak">
-        <div className="exposure-twin-streak-main">
-          <p className="eyebrow-text">Twin Streak</p>
-          <div className="mt-3 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-            <div>
-              <h4 className="display-heading text-3xl text-[var(--foreground)] sm:text-4xl">
-                {checkinStreak.currentStreak} day
-                {checkinStreak.currentStreak === 1 ? "" : "s"}
-              </h4>
-              <p className="mt-2 max-w-2xl text-sm leading-6 text-[var(--foreground-muted)]">
-                {streakPrompt}
-              </p>
-            </div>
-            <div className="exposure-twin-streak-badge">
-              <span>Next milestone</span>
-              <strong>{checkinStreak.nextMilestone}</strong>
-            </div>
-          </div>
-
+          <p className="mt-3 text-sm leading-6 text-[var(--foreground-muted)]">
+            {streakPrompt}
+          </p>
           <div className="mt-5">
             <div className="exposure-twin-streak-track">
               <span style={{ width: `${streakProgress}%` }} />
@@ -3605,147 +3367,19 @@ export function ExposureTwinPanel({
           <button
             type="button"
             onClick={onOpenCheckin}
-            className="exposure-twin-streak-button"
+            className="exposure-twin-streak-button mt-5"
           >
             {checkinStreak.checkedInToday
               ? "Review today's check-in"
               : "Log today's check-in"}
           </button>
-        </div>
-
-        <div className="exposure-twin-week">
-          {checkinStreak.week.map((day) => (
-            <button
-              type="button"
-              className={`exposure-twin-day ${
-                day.checkedIn ? "is-complete" : ""
-              } ${day.isToday ? "is-today" : ""} ${
-                selectedStreakDay?.date === day.date ? "is-selected" : ""
-              }`}
-              key={day.date}
-              onClick={() => setSelectedStreakDate(day.date)}
-              aria-pressed={selectedStreakDay?.date === day.date}
-            >
-              <span>{day.label}</span>
-              <strong>
-                {day.checkedIn ? "Done" : day.isToday ? "Today" : "-"}
-              </strong>
-            </button>
-          ))}
-        </div>
-
-        <div className="exposure-twin-streak-note">
-          <span>
-            {selectedStreakDay?.checkedIn
-              ? "Check-in completed"
-              : selectedStreakDay?.isToday
-              ? "Today is still open"
-              : "No check-in logged"}
-          </span>
-          <p>
-            {selectedStreakDay?.checkedIn
-              ? "This day can become an outcome label for future symptom-risk training."
-              : selectedStreakDay?.isToday
-              ? "Use the Check-in tab after your day to tell the Twin what actually happened."
-              : "Missed days are okay. The model still improves when you add the next honest check-in."}
-          </p>
-        </div>
-      </section>
-
-      <section className="grid gap-5 lg:grid-cols-[0.95fr_1.05fr]">
-        <article className="quiet-surface rounded-lg p-5">
-          <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
-            <div>
-              <p className="eyebrow-text">Your simulated day</p>
-              <h4 className="display-heading mt-1 text-2xl text-[var(--foreground)]">
-                {city}, {state} · ZIP {zipCode}
-              </h4>
-            </div>
-            <RiskBadge value={twinLevel} />
-          </div>
-
-          <div className="mt-5 grid gap-3">
-            {simulatedDay.map((block) => (
-              <div className="exposure-twin-row" key={block.label}>
-                <div>
-                  <p>{block.label}</p>
-                  <span>{block.detail}</span>
-                </div>
-                <div className="exposure-twin-bar" aria-hidden="true">
-                  <span style={{ width: `${block.score}%` }} />
-                </div>
-                <strong>{block.score}/100</strong>
-              </div>
-            ))}
-          </div>
-        </article>
-
-        <article className="quiet-surface rounded-lg p-5">
-          <p className="eyebrow-text">Why it matters</p>
-          <h4 className="display-heading mt-1 text-2xl text-[var(--foreground)]">
-            The risk is personalized by context
-          </h4>
-          <div className="mt-5 grid gap-3">
-            <div className="rounded-lg border border-[var(--rule)] bg-[var(--surface-muted)] p-4">
-              <p className="text-xs font-semibold uppercase tracking-wide text-[var(--foreground-faint)]">
-                Profile signal
-              </p>
-              <p className="mt-2 text-sm leading-6 text-[var(--foreground)]">
-                {profile
-                  ? `${profile.outdoor_exposure} outdoor exposure, ${profile.commute_exposure} traffic exposure, and ${profile.respiratory_sensitivity} breathing sensitivity add ${modifier} points of personal context.`
-                  : "No account profile is loaded yet, so this twin is using location and forecast context only."}
-              </p>
-            </div>
-            <div className="rounded-lg border border-[var(--rule)] bg-[var(--surface-muted)] p-4">
-              <p className="text-xs font-semibold uppercase tracking-wide text-[var(--foreground-faint)]">
-                Main drivers
-              </p>
-              <p className="mt-2 text-sm leading-6 text-[var(--foreground)]">
-                {primaryDriver
-                  ? `${primaryDriver.label} is the strongest driver. ${
-                      secondaryDriver
-                        ? `${secondaryDriver.label} is the next signal to watch.`
-                        : ""
-                    }`
-                  : `The current overall risk is ${healthRisk}, with respiratory risk marked ${respiratoryRisk}.`}
-              </p>
-            </div>
-            <div className="rounded-lg border border-[var(--rule)] bg-[var(--surface-muted)] p-4">
-              <div className="flex items-center justify-between gap-3">
-                <p className="text-xs font-semibold uppercase tracking-wide text-[var(--foreground-faint)]">
-                  Confidence
-                </p>
-                <RiskBadge value={dataConfidence.label} />
-              </div>
-              <p className="mt-2 text-sm leading-6 text-[var(--foreground)]">
-                {dataConfidence.availableCount} of{" "}
-                {dataConfidence.totalCount} source groups are loaded for this
-                estimate.
-              </p>
-            </div>
-          </div>
         </article>
       </section>
 
-      <section className="grid gap-4 md:grid-cols-3">
-        {differentiators.map((item, index) => (
-          <article
-            className="rounded-lg border border-[var(--secondary)]/20 bg-[var(--secondary)]/10 p-4"
-            key={item}
-          >
-            <p className="text-xs font-bold uppercase tracking-wide text-[var(--foreground-muted)]">
-              Twin layer {index + 1}
-            </p>
-            <p className="mt-3 text-sm leading-6 text-[var(--foreground)]">{item}</p>
-          </article>
-        ))}
-      </section>
-
-      <div className="rounded-lg border border-[var(--rule)] bg-[var(--surface-muted)] p-4 text-sm leading-6 text-[var(--foreground-muted)]">
-        This is informational only and not medical advice. The value of the
-        twin improves when users add a profile, plan activities, and submit
-        optional symptom check-ins over time.
-      </div>
+      <p className="rounded-2xl border border-[var(--border)] bg-white p-4 text-xs leading-5 text-[var(--foreground-muted)]">
+        Informational only. The Twin estimates self-reported exposure context,
+        not diagnosis or treatment.
+      </p>
     </section>
   );
 }
@@ -3762,17 +3396,6 @@ export function ForecastPanel({
   state: string;
 }) {
   const [selectedHourIndex, setSelectedHourIndex] = useState(0);
-  const [showHourlyDetails, setShowHourlyDetails] = useState(false);
-  const formatTrendValue = (
-    value: number | null,
-    unit: string,
-    digits = 0
-  ) => {
-    if (value === null) return "n/a";
-    if (unit === "/100") return `${value.toFixed(0)}${unit}`;
-    if (unit === "F") return `${value.toFixed(0)}°F`;
-    return `${value.toFixed(digits)} ${unit}`;
-  };
   const selectedHour = forecastData?.hours[selectedHourIndex] ?? null;
   const selectedExplanation = selectedHour
     ? buildForecastHourExplanation(selectedHour)
@@ -3785,156 +3408,88 @@ export function ForecastPanel({
     forecastData && selectedHourIndex >= forecastData.hours.length
       ? 0
       : selectedHourIndex;
+  const displayHours = forecastData?.hours.slice(0, 24) ?? [];
 
   return (
-    <section className="space-y-6">
-      <div className="overflow-hidden rounded-[1.75rem] border border-[var(--border)] bg-white shadow-[0_18px_55px_-38px_rgba(19,41,75,0.5)]">
-        <div className="grid gap-0 lg:grid-cols-[1.05fr_0.95fr]">
-          <div className="relative p-6 sm:p-8">
-            <div className="hero-grid-bg absolute inset-0 opacity-60" />
-            <div className="relative">
-              <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[var(--primary)]">
-                Health Risk Forecast
-              </p>
-              <h3 className="mt-3 font-heading text-4xl font-semibold leading-[1.03] tracking-tight text-[var(--primary-ink)] sm:text-5xl">
-                Find the safest window before you step outside.
-              </h3>
-              <p className="mt-4 max-w-2xl text-sm leading-6 text-[var(--muted-foreground)] sm:text-base">
-                A 24-hour local forecast for {city}, {state}, built from air
-                quality, PM2.5, ozone, heat, UV, pollen, and alert signals.
-              </p>
-
-              {forecastData && (
-                <div className="mt-7 grid gap-3 sm:grid-cols-3">
-                  <ForecastInsightCard
-                    label="Average"
-                    value={`${forecastData.averageScore}/100`}
-                    detail="Expected risk across the next 24 hours"
-                    tone={exposureLabel(forecastData.averageScore)}
-                  />
-                  <ForecastInsightCard
-                    label="Best window"
-                    value={forecastData.bestWindow?.displayTime ?? "Unavailable"}
-                    detail={
-                      forecastData.bestWindow
-                        ? `Risk ${forecastData.bestWindow.score}/100`
-                        : "Not enough hourly data"
-                    }
-                    tone={forecastData.bestWindow?.risk ?? "Low"}
-                  />
-                  <ForecastInsightCard
-                    label="Peak"
-                    value={`${forecastData.peakScore}/100`}
-                    detail={forecastData.worstWindow?.displayTime ?? "Unavailable"}
-                    tone={exposureLabel(forecastData.peakScore)}
-                  />
-                </div>
-              )}
-            </div>
+    <section className="grid gap-5">
+      <article className="rounded-[1.75rem] border border-[var(--border)] bg-white p-6 shadow-[0_18px_55px_-38px_rgba(19,41,75,0.5)] sm:p-8">
+        <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[var(--primary)]">
+              Health Risk Forecast
+            </p>
+            <h3 className="mt-3 font-heading text-4xl font-semibold leading-[1.03] tracking-tight text-[var(--primary-ink)] sm:text-5xl">
+              Pick the best time to be outside.
+            </h3>
+            <p className="mt-4 max-w-2xl text-sm leading-6 text-[var(--muted-foreground)] sm:text-base">
+              A simple 24-hour risk pulse for {city}, {state}. Click any hour
+              to see why the score changes.
+            </p>
           </div>
-
-          <div className="border-t border-[var(--border)] bg-[var(--primary-soft)]/55 p-6 sm:p-8 lg:border-l lg:border-t-0">
-            {forecastData ? (
-              <div className="flex h-full flex-col justify-between">
-                <div>
-                  <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[var(--primary)]">
-                    Right now to next day
-                  </p>
-                  <p className="mt-3 text-lg font-semibold leading-7 text-[var(--primary-ink)]">
-                    {forecastData.summary}
-                  </p>
-                </div>
-
-                <div className="mt-8 rounded-2xl border border-[var(--border)] bg-white p-4">
-                  <div className="flex items-start justify-between gap-4">
-                    <div>
-                      <p className="text-xs font-semibold uppercase tracking-wide text-[var(--muted-foreground)]">
-                        Selected hour
-                      </p>
-                      <h4 className="mt-1 font-heading text-2xl font-semibold text-[var(--primary-ink)]">
-                        {selectedHour?.displayTime ?? "Unavailable"}
-                      </h4>
-                    </div>
-                    <RiskBadge value={selectedHour?.risk ?? "Unknown"} />
-                  </div>
-                  <div className="mt-4 grid grid-cols-2 gap-3 text-sm">
-                    <ForecastMetric label="Risk" value={selectedHour ? `${selectedHour.score}/100` : "n/a"} />
-                    <ForecastMetric label="AQI" value={selectedHour?.usAqi?.toString() ?? "n/a"} />
-                    <ForecastMetric label="Feels like" value={selectedHour?.apparentTemperature === null || selectedHour?.apparentTemperature === undefined ? "n/a" : `${selectedHour.apparentTemperature.toFixed(0)}°F`} />
-                    <ForecastMetric label="Pollen" value={selectedHour?.pollenRisk ?? "Unknown"} />
-                  </div>
-                  <p className="mt-4 text-sm leading-6 text-[var(--muted-foreground)]">
-                    {selectedExplanation?.drivers ?? "Choose an hour to inspect the active drivers."}
-                  </p>
-                </div>
-              </div>
-            ) : (
-              <div className="grid h-full place-items-center rounded-2xl border border-dashed border-[var(--border)] bg-white p-8 text-center">
-                <div>
-                  <p className="font-heading text-2xl font-semibold text-[var(--primary-ink)]">
-                    Waiting for forecast data
-                  </p>
-                  <p className="mt-2 text-sm leading-6 text-[var(--muted-foreground)]">
-                    Search a ZIP code to load the forecast curve.
-                  </p>
-                </div>
-              </div>
-            )}
-          </div>
+          {forecastData && (
+            <RiskBadge value={exposureLabel(forecastData.averageScore)} />
+          )}
         </div>
-      </div>
 
-      {forecastError && (
-        <p className="rounded-2xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-700">
-          {forecastError}
-        </p>
-      )}
+        {forecastError && (
+          <p className="mt-5 rounded-2xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-700">
+            {forecastError}
+          </p>
+        )}
 
-      {!forecastData && !forecastError && (
-        <p className="rounded-2xl border border-[var(--border)] bg-white p-4 text-sm leading-6 text-[var(--muted-foreground)]">
-          Forecast data will appear here after a ZIP code search.
-        </p>
-      )}
+        {!forecastData && !forecastError && (
+          <p className="mt-5 rounded-2xl border border-[var(--border)] bg-slate-50 p-4 text-sm leading-6 text-[var(--muted-foreground)]">
+            Forecast data will appear here after a ZIP code search.
+          </p>
+        )}
 
-      {forecastData && (
-        <>
-          <div className="rounded-[1.5rem] border border-[var(--border)] bg-white p-5 shadow-[0_12px_34px_-26px_rgba(19,41,75,0.45)] sm:p-6">
-            <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--primary)]">
-                  24-hour forecast curve
-                </p>
-                <p className="mt-1 text-sm text-[var(--muted-foreground)]">
-                  Click any hour to see why the score changes.
-                </p>
-              </div>
-              <div className="flex flex-wrap gap-2 text-xs font-medium text-[var(--muted-foreground)]">
-                <span className="rounded-full bg-[var(--primary-soft)] px-3 py-1">Low</span>
-                <span className="rounded-full bg-amber-100 px-3 py-1 text-amber-800">Moderate</span>
-                <span className="rounded-full bg-rose-100 px-3 py-1 text-rose-700">High</span>
-              </div>
+        {forecastData && (
+          <>
+            <div className="mt-7 grid gap-3 md:grid-cols-3">
+              <ForecastInsightCard
+                label="Average"
+                value={`${forecastData.averageScore}/100`}
+                detail="Expected risk across the next 24 hours"
+                tone={exposureLabel(forecastData.averageScore)}
+              />
+              <ForecastInsightCard
+                label="Best window"
+                value={forecastData.bestWindow?.displayTime ?? "Unavailable"}
+                detail={
+                  forecastData.bestWindow
+                    ? `Risk ${forecastData.bestWindow.score}/100`
+                    : "Not enough hourly data"
+                }
+                tone={forecastData.bestWindow?.risk ?? "Low"}
+              />
+              <ForecastInsightCard
+                label="Peak"
+                value={`${forecastData.peakScore}/100`}
+                detail={forecastData.worstWindow?.displayTime ?? "Unavailable"}
+                tone={exposureLabel(forecastData.peakScore)}
+              />
             </div>
-            <div className="-mx-2 overflow-x-auto px-2 pb-2">
-              <div className="mt-6 grid min-w-[58rem] gap-2 [grid-template-columns:repeat(24,minmax(0,1fr))] xl:min-w-0">
-                {forecastData.hours.map((hour, index) => {
-                  const explanation = buildForecastHourExplanation(hour);
+
+            <div className="-mx-2 mt-8 overflow-x-auto px-2 pb-2">
+              <div className="grid min-w-[48rem] gap-2 [grid-template-columns:repeat(24,minmax(0,1fr))] xl:min-w-0">
+                {displayHours.map((hour, index) => {
                   const isSelected = index === normalizedSelectedIndex;
 
                   return (
                     <button
                       aria-label={`Inspect ${hour.displayTime}`}
-                      className={`group relative flex min-h-40 flex-col justify-end gap-2 rounded-xl border p-1.5 text-left outline-none transition ${
+                      className={`group relative flex min-h-36 flex-col justify-end gap-2 rounded-xl border p-1.5 text-left outline-none transition ${
                         isSelected
-                          ? "border-[var(--primary)] bg-[var(--primary-soft)] shadow-[0_12px_24px_-18px_rgba(46,111,181,0.6)]"
+                          ? "border-[var(--primary)] bg-[var(--primary-soft)]"
                           : "border-transparent hover:border-[var(--border)] hover:bg-[var(--primary-soft)]/45 focus:border-[var(--primary)]"
                       }`}
                       key={hour.time}
                       onClick={() => setSelectedHourIndex(index)}
                       type="button"
                     >
-                      <div className="flex h-28 items-end rounded-lg bg-slate-100 p-1 transition">
+                      <div className="flex h-24 items-end rounded-lg bg-slate-100 p-1">
                         <div
-                          className={`forecast-pulse-bar w-full rounded-md ${
+                          className={`w-full rounded-md ${
                             hour.score >= 67
                               ? "bg-rose-500"
                               : hour.score >= 34
@@ -3944,18 +3499,7 @@ export function ForecastPanel({
                           style={{ height: `${Math.max(8, hour.score)}%` }}
                         />
                       </div>
-                      <div className="pointer-events-none absolute bottom-full left-1/2 z-20 mb-3 hidden w-72 -translate-x-1/2 rounded-lg border border-[var(--rule)] bg-[var(--foreground)] p-3 text-left text-xs shadow-lg group-hover:block group-focus:block">
-                        <p className="font-semibold text-white">
-                          {hour.displayTime} · {hour.score}/100
-                        </p>
-                        <p className="mt-1 leading-5 text-[var(--foreground-muted)]">
-                          {explanation.drivers}
-                        </p>
-                        <p className="mt-2 leading-5 text-[var(--foreground-faint)]">
-                          {explanation.metrics}
-                        </p>
-                      </div>
-                      <p className="truncate text-[10px] leading-4 text-[var(--foreground-faint)] group-hover:text-[var(--foreground)] group-focus:text-[var(--foreground)]">
+                      <p className="truncate text-[10px] leading-4 text-[var(--foreground-faint)]">
                         {hour.displayTime.replace(/^[A-Za-z]+,?\s?/, "")}
                       </p>
                     </button>
@@ -3963,167 +3507,60 @@ export function ForecastPanel({
                 })}
               </div>
             </div>
-          </div>
+          </>
+        )}
+      </article>
 
-          <div className="grid gap-6 lg:grid-cols-[0.9fr_1.1fr]">
-            <article className="rounded-[1.5rem] border border-[var(--border)] bg-white p-5 shadow-[0_12px_34px_-26px_rgba(19,41,75,0.45)] sm:p-6">
-              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--primary)]">
-                What is driving it
-              </p>
-              <h4 className="mt-2 font-heading text-2xl font-semibold text-[var(--primary-ink)]">
-                {selectedHour
-                  ? `${selectedHour.displayTime}: ${selectedHour.score}/100`
-                  : "Hourly drivers"}
+      {forecastData && (
+        <article className="grid gap-5 rounded-[1.5rem] border border-[var(--border)] bg-white p-5 shadow-[0_12px_34px_-26px_rgba(19,41,75,0.45)] lg:grid-cols-[0.9fr_1.1fr]">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--primary)]">
+              Selected hour
+            </p>
+            <div className="mt-2 flex flex-wrap items-center gap-3">
+              <h4 className="font-heading text-3xl font-semibold text-[var(--primary-ink)]">
+                {selectedHour?.displayTime ?? "Unavailable"}
               </h4>
-              <p className="mt-3 text-sm leading-6 text-[var(--muted-foreground)]">
-                {selectedExplanation?.metrics ??
-                  "Select an hour on the chart to inspect the environmental values."}
-              </p>
-              <div className="mt-5 space-y-3">
-                {(leadingDrivers.length > 0
-                  ? leadingDrivers
-                  : ["No major elevated driver detected for the selected hour."]
-                ).map((driver) => (
-                  <div
-                    className="flex items-start gap-3 rounded-2xl border border-[var(--border)] bg-[var(--primary-soft)]/45 p-3"
-                    key={driver}
-                  >
-                    <span className="mt-1 h-2 w-2 rounded-full bg-[var(--primary)]" />
-                    <p className="text-sm leading-6 text-[var(--primary-ink)]">
-                      {driver}
-                    </p>
-                  </div>
-                ))}
-              </div>
-              <div className="mt-5 rounded-2xl border border-[var(--border)] bg-slate-50 p-4">
-                <p className="text-xs font-semibold uppercase tracking-wide text-[var(--muted-foreground)]">
-                  Allergy peak
-                </p>
-                <p className="mt-2 text-lg font-semibold text-[var(--primary-ink)]">
-                  {forecastData.allergyPeakWindow?.displayTime ?? "Unavailable"}
-                </p>
-                <p className="mt-1 text-sm leading-6 text-[var(--muted-foreground)]">
-                  {forecastData.allergyPeakScore !== null
-                    ? `${forecastData.allergyPeakScore} grains/m3`
-                    : "Pollen forecast unavailable"}{" "}
-                  · {forecastData.allergyPeakWindow?.pollenRisk ?? "Unknown"}
-                </p>
-              </div>
-            </article>
-
-            <div className="grid gap-3 md:grid-cols-2">
-              {forecastData.trends.slice(0, 6).map((trend) => {
-                const range =
-                  trend.max !== null && trend.min !== null
-                    ? trend.max - trend.min
-                    : 0;
-
-                return (
-                  <article
-                    className="rounded-2xl border border-[var(--border)] bg-white p-4 shadow-[0_10px_26px_-24px_rgba(19,41,75,0.45)]"
-                    key={trend.label}
-                  >
-                    <div className="flex items-start justify-between gap-3">
-                      <div>
-                        <p className="text-sm font-semibold text-[var(--primary-ink)]">
-                          {trend.label}
-                        </p>
-                        <p className="mt-1 text-xs leading-5 text-[var(--muted-foreground)]">
-                          {trend.direction} · peak {trend.peakTime}
-                        </p>
-                      </div>
-                      <span className="rounded-full border border-[var(--border)] bg-[var(--primary-soft)] px-2 py-1 text-xs font-semibold text-[var(--primary)]">
-                        {formatTrendValue(trend.max, trend.unit, 1)}
-                      </span>
-                    </div>
-                    <div className="mt-4 flex h-14 items-end gap-1">
-                      {trend.values.slice(0, 24).map((value, index) => {
-                        const normalized =
-                          value === null || trend.min === null || range === 0
-                            ? 20
-                            : 16 + ((value - trend.min) / range) * 84;
-
-                        return (
-                          <div
-                            className="flex flex-1 items-end rounded bg-slate-100"
-                            key={`${trend.label}-${index}`}
-                            title={
-                              value === null
-                                ? "No value"
-                                : formatTrendValue(value, trend.unit, 1)
-                            }
-                          >
-                            <div
-                              className="w-full rounded bg-[var(--primary)]/75"
-                              style={{ height: `${normalized}%` }}
-                            />
-                          </div>
-                        );
-                      })}
-                    </div>
-                    <p className="mt-3 text-xs leading-5 text-[var(--muted-foreground)]">
-                      Range: {formatTrendValue(trend.min, trend.unit, 1)} to{" "}
-                      {formatTrendValue(trend.max, trend.unit, 1)}
-                    </p>
-                  </article>
-                );
-              })}
+              <RiskBadge value={selectedHour?.risk ?? "Unknown"} />
+            </div>
+            <p className="mt-3 text-sm leading-6 text-[var(--muted-foreground)]">
+              {selectedExplanation?.drivers ??
+                "Choose an hour to inspect the active drivers."}
+            </p>
+            <div className="mt-4 grid grid-cols-2 gap-3 text-sm">
+              <ForecastMetric label="Risk" value={selectedHour ? `${selectedHour.score}/100` : "n/a"} />
+              <ForecastMetric label="AQI" value={selectedHour?.usAqi?.toString() ?? "n/a"} />
+              <ForecastMetric label="Feels like" value={selectedHour?.apparentTemperature == null ? "n/a" : `${selectedHour.apparentTemperature.toFixed(0)}°F`} />
+              <ForecastMetric label="Pollen" value={selectedHour?.pollenRisk ?? "Unknown"} />
             </div>
           </div>
 
-          <div className="rounded-[1.5rem] border border-[var(--border)] bg-white p-5 shadow-[0_12px_34px_-26px_rgba(19,41,75,0.45)]">
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--primary)]">
-                  Hourly details
-                </p>
-                <p className="mt-1 text-sm leading-6 text-[var(--muted-foreground)]">
-                  Inspect the underlying values used by the forecast score.
-                </p>
-              </div>
-              <button
-                type="button"
-                onClick={() => setShowHourlyDetails((current) => !current)}
-                className="h-10 rounded-full border border-[var(--border)] px-4 text-sm font-semibold text-[var(--primary-ink)] transition hover:border-[var(--primary)] hover:bg-[var(--primary-soft)]"
-              >
-                {showHourlyDetails ? "Hide details" : "Show details"}
-              </button>
+          <div className="rounded-2xl border border-[var(--border)] bg-[var(--primary-soft)]/45 p-4">
+            <p className="text-xs font-semibold uppercase tracking-wide text-[var(--muted-foreground)]">
+              Why this hour scores this way
+            </p>
+            <p className="mt-2 text-sm leading-6 text-[var(--primary-ink)]">
+              {selectedExplanation?.metrics ??
+                "Select an hour to inspect the underlying environmental values."}
+            </p>
+            <div className="mt-4 grid gap-2">
+              {(leadingDrivers.length > 0
+                ? leadingDrivers.slice(0, 3)
+                : ["No major elevated driver detected for the selected hour."]
+              ).map((driver) => (
+                <div
+                  className="flex items-start gap-3 rounded-xl bg-white px-3 py-2"
+                  key={driver}
+                >
+                  <span className="mt-2 h-2 w-2 rounded-full bg-[var(--primary)]" />
+                  <p className="text-sm leading-6 text-[var(--primary-ink)]">
+                    {driver}
+                  </p>
+                </div>
+              ))}
             </div>
-
-            {showHourlyDetails && (
-              <div className="mt-4 grid gap-3 md:grid-cols-2">
-                {forecastData.hours.slice(0, 12).map((hour) => (
-                  <article
-                    className="rounded-2xl border border-[var(--border)] bg-slate-50 p-3"
-                    key={hour.time}
-                  >
-                    <div className="flex items-start justify-between gap-3">
-                      <div>
-                        <p className="text-sm font-semibold text-[var(--primary-ink)]">
-                          {hour.displayTime}
-                        </p>
-                        <p className="mt-1 text-xs leading-5 text-[var(--muted-foreground)]">
-                          AQI {hour.usAqi ?? "n/a"} · PM2.5{" "}
-                          {hour.pm25?.toFixed(1) ?? "n/a"} · Ozone{" "}
-                          {hour.ozone?.toFixed(1) ?? "n/a"} · Feels{" "}
-                          {hour.apparentTemperature?.toFixed(0) ?? "n/a"}°F ·
-                          UV {hour.uvIndex?.toFixed(1) ?? "n/a"} · Pollen{" "}
-                          {hour.pollenIndex ?? "n/a"} ({hour.pollenRisk})
-                        </p>
-                      </div>
-                      <RiskBadge value={hour.risk} />
-                    </div>
-                    <p className="mt-2 text-xs leading-5 text-[var(--muted-foreground)]">
-                      {hour.drivers.length > 0
-                        ? hour.drivers.join(", ")
-                        : "No major forecast driver."}
-                    </p>
-                  </article>
-                ))}
-              </div>
-            )}
           </div>
-        </>
+        </article>
       )}
     </section>
   );

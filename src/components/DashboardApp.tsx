@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { FormEvent, useEffect, useMemo, useState } from "react";
@@ -136,9 +137,19 @@ function Icon({ name, className = "" }: { name: IconName; className?: string }) 
 function BrandMark({ small = false }: { small?: boolean }) {
   return (
     <span
-      className={`${small ? "h-7 w-7" : "h-9 w-9"} relative grid place-items-center rounded-xl bg-gradient-to-br from-[var(--accent)] to-[var(--primary)] text-white shadow-[0_10px_24px_-16px_rgba(46,111,181,0.8)]`}
+      className={`${
+        small ? "h-8 w-8" : "h-10 w-10"
+      } relative grid shrink-0 place-items-center`}
+      aria-hidden="true"
     >
-      <Icon name="heart" className={small ? "h-3.5 w-3.5" : "h-4.5 w-4.5"} />
+      <Image
+        src="/mylocalhealth-icon-white.png"
+        alt=""
+        width={154}
+        height={123}
+        priority={!small}
+        className="h-full w-full object-contain invert"
+      />
     </span>
   );
 }
@@ -211,7 +222,6 @@ const visibleDashboardViews: DashboardView[] = [
   "signals",
   "equity",
   "checkin",
-  "news",
 ];
 
 function LandingHero({
@@ -1353,6 +1363,27 @@ export default function Home() {
         </header>
 
         <main className="flex-1 space-y-6 px-6 py-6 lg:px-10">
+          <div className="flex gap-2 overflow-x-auto pb-1 lg:hidden">
+            {visibleDashboardViews.map((viewId) => {
+              const view = getDashboardView(viewId);
+              const active = dashboardView === viewId;
+              return (
+                <button
+                  className={`shrink-0 rounded-full border px-3 py-2 text-xs font-semibold ${
+                    active
+                      ? "border-[var(--primary)] bg-[var(--primary)] text-white"
+                      : "border-[var(--border)] bg-white text-[var(--primary-ink)]"
+                  }`}
+                  key={view.id}
+                  onClick={() => navigateDashboardView(view.id)}
+                  type="button"
+                >
+                  {view.label}
+                </button>
+              );
+            })}
+          </div>
+
           {dashboardView === "overview" && (
             <>
               <SummaryRow
