@@ -17,6 +17,8 @@
 # generated local ML artifacts
 /data
 /ml/models
+__pycache__/
+*.py[cod]
 
 # next.js
 /.next/

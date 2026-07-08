@@ -1532,15 +1532,15 @@ function DeterminantRadarChart({
     <div className="mt-5 grid gap-4 rounded-lg border border-[var(--rule)] bg-[var(--surface)] p-4 lg:grid-cols-[minmax(18rem,0.9fr)_1.1fr] lg:items-center">
       <div>
         <p className="text-xs font-semibold uppercase tracking-wide text-[var(--foreground-faint)]">
-          Sick-risk probability map
+          Relative symptom-signal map
         </p>
         <h4 className="mt-1 text-lg font-semibold text-[var(--foreground)]">
           Determinants behind today&apos;s score
         </h4>
         <p className="mt-2 text-sm leading-6 text-[var(--foreground-muted)]">
           Hover or tap a spoke to see how each determinant contributes to the
-          current risk estimate. This is a relative model signal, not a medical
-          prediction.
+          current risk estimate. This is a relative model signal, not a
+          validated probability of illness or a medical prediction.
         </p>
 
         {activeItem && (
@@ -1689,7 +1689,7 @@ function DeterminantRadarChart({
                     className="cursor-pointer outline-none transition"
                     role="button"
                     tabIndex={0}
-                    aria-label={`${item.label}: ${item.probability}% relative sick-risk signal`}
+                    aria-label={`${item.label}: ${item.probability}% relative symptom signal`}
                     onMouseEnter={() => setActiveIndex(index)}
                     onFocus={() => setActiveIndex(index)}
                     onClick={() => setActiveIndex(index)}
@@ -2050,7 +2050,7 @@ export function SymptomProbabilityPanel({
         <div className="flex items-start justify-between gap-4">
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--primary)]">
-              Symptom probability
+              Symptom signal
             </p>
             <h4 className="mt-2 font-heading text-2xl font-semibold text-[var(--primary-ink)]">
               {prediction.overallProbability}%
@@ -2060,7 +2060,7 @@ export function SymptomProbabilityPanel({
         </div>
         {primaryTarget && (
           <p className="mt-3 text-sm leading-6 text-[var(--muted-foreground)]">
-            Highest signal: {primaryTarget.label.toLowerCase()} at{" "}
+            Strongest signal: {primaryTarget.label.toLowerCase()} at{" "}
             {primaryTarget.probability}%.
           </p>
         )}
@@ -2073,20 +2073,20 @@ export function SymptomProbabilityPanel({
       <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
         <div>
           <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[var(--primary)]">
-            Symptom Probability Engine
+            Symptom Signal Engine
           </p>
           <h3 className="display-heading mt-2 max-w-3xl text-3xl leading-tight text-[var(--foreground)] sm:text-5xl">
-            Experimental probabilities, not just a score.
+            Experimental symptom signals, not diagnosis.
           </h3>
           <p className="mt-3 max-w-2xl text-sm leading-6 text-[var(--foreground-muted)]">
-            This tabular model layer estimates which self-reported symptoms are
-            most likely to rise from today&apos;s air, heat, pollen, illness,
-            equity, chronic-burden, and profile context.
+            This transparent tabular layer estimates which self-reported
+            symptom categories are most elevated relative to today&apos;s air,
+            heat, pollen, illness, equity, chronic-burden, and profile context.
           </p>
         </div>
         <div className="rounded-2xl border border-[var(--primary)]/25 bg-[var(--primary-soft)] p-5 text-right">
           <p className="text-xs font-bold uppercase tracking-wide text-[var(--foreground-muted)]">
-            Overall estimate
+            Overall signal
           </p>
           <p className="mt-1 text-5xl font-black text-[var(--primary-ink)]">
             {prediction.overallProbability}%

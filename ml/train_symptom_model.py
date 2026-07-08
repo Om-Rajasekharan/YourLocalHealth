@@ -454,8 +454,27 @@ def train_target(
         }
 
     features = target_data[numeric_features + categorical_features]
+
+    x_train, x_test, y_train, y_test = train_test_split(
+        features,
+        labels,
+        test_size=test_size,
+        random_state=random_state,
+        stratify=labels,
+    )
+
+    train_class_counts = y_train.value_counts()
+    if train_class_counts.min() < 2:
+        return {
+            "target": target,
+            "status": "skipped",
+            "reason": "training split needs at least 2 examples in each class",
+            "rows": int(len(labels)),
+            "positive_rows": int(labels.sum()),
+        }
+
     model_scores = []
-    n_splits = min(5, int(class_counts.min()))
+    n_splits = min(5, int(train_class_counts.min()))
 
     for model_name, classifier in candidate_models(random_state).items():
         model = build_pipeline(classifier, numeric_features, categorical_features)
@@ -464,12 +483,15 @@ def train_target(
         )
         probabilities = cross_val_predict(
             model,
-            features,
-            labels,
+            x_train,
+            y_train,
             cv=cv,
             method="predict_proba",
         )[:, 1]
-        metrics = metric_summary(labels, pd.Series(probabilities, index=labels.index))
+        metrics = metric_summary(
+            y_train,
+            pd.Series(probabilities, index=y_train.index),
+        )
         metrics["model_name"] = model_name
         model_scores.append(metrics)
 
@@ -483,14 +505,6 @@ def train_target(
         reverse=True,
     )
     best_model_name = ranked_models[0]["model_name"]
-
-    x_train, x_test, y_train, y_test = train_test_split(
-        features,
-        labels,
-        test_size=test_size,
-        random_state=random_state,
-        stratify=labels,
-    )
 
     final_model = build_pipeline(
         candidate_models(random_state)[best_model_name],
@@ -531,6 +545,9 @@ def train_target(
         "positive_rate": round(float(labels.mean()), 4),
         "numeric_features": numeric_features,
         "categorical_features": categorical_features,
+        "train_rows": int(len(y_train)),
+        "holdout_rows": int(len(y_test)),
+        "model_selection": "Candidate models are selected by stratified cross-validation on the training split only; holdout metrics are computed once on an untouched test split.",
         "cross_validation": ranked_models,
         "holdout_metrics": holdout_metrics,
         "holdout_classification_report": holdout_report,

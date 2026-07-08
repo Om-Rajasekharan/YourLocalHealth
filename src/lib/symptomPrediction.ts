@@ -5,7 +5,7 @@ import type { EnvironmentData } from "../services/environment";
 import type { UserProfile } from "../services/userProfile";
 
 export const SYMPTOM_MODEL_VERSION =
-  "MyLocalHealth Symptom Probability Engine v0.1";
+  "MyLocalHealth Experimental Symptom Signal Engine v0.1";
 
 export type SymptomPredictionTarget =
   | "respiratory"
@@ -131,7 +131,7 @@ function rankDrivers(
 
 function targetCopy(label: string, probability: number) {
   const level = probabilityLevel(probability).toLowerCase();
-  return `${level} estimated chance of ${label.toLowerCase()} based on today's local signals.`;
+  return `${level} relative signal for self-reported ${label.toLowerCase()} based on today's local context.`;
 }
 
 export function estimateSymptomPrediction(
@@ -279,8 +279,8 @@ export function estimateSymptomPrediction(
     targets,
     topDrivers,
     caveats: [
-      "Experimental estimate from a transparent tabular model baseline.",
-      "Not a diagnosis or clinical prediction.",
+      "Experimental estimate from a transparent tabular scoring baseline.",
+      "Not a diagnosis, clinical prediction, or validated probability of illness.",
       "Future versions can swap this engine for trained scikit-learn artifacts from user check-ins.",
     ],
   };

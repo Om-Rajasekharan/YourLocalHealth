@@ -133,6 +133,13 @@ The report summarizes trained targets, holdout metrics, top predictors, and
 guardrails. It is useful for demos and project review, but it is not clinical
 validation.
 
+For a concise review of the current statistical status, outcome-label design,
+and next validation steps, see:
+
+```bash
+docs/statistical_validation_notes.md
+```
+
 ## Native Risk Kernel
 
 The repo also includes a small C++17 scoring kernel in `native/`. It mirrors the
