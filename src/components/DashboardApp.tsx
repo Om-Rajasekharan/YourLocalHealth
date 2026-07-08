@@ -238,11 +238,19 @@ function LandingHero({
   user: ReturnType<typeof useDashboardData>["user"];
 }) {
   const [zip, setZip] = useState("");
+  const [zipError, setZipError] = useState("");
   const valid = /^\d{5}$/.test(zip.trim());
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    onSubmit(valid ? zip.trim() : "27514");
+
+    if (!valid) {
+      setZipError("Enter a valid 5-digit ZIP code to open the dashboard.");
+      return;
+    }
+
+    setZipError("");
+    onSubmit(zip.trim());
   };
 
   return (
@@ -264,13 +272,12 @@ function LandingHero({
           </nav>
           <div className="flex items-center gap-2">
             <AccountActions user={user} />
-            <button
+            <a
               className="hidden items-center gap-1.5 rounded-full bg-[var(--primary)] px-4 py-2 text-sm font-medium text-white hover:bg-[var(--primary-ink)] lg:inline-flex"
-              onClick={() => onSubmit("27514")}
-              type="button"
+              href="#zip-search"
             >
-              Open dashboard <span aria-hidden>→</span>
-            </button>
+              Search a ZIP <span aria-hidden>→</span>
+            </a>
           </div>
         </div>
       </header>
@@ -302,6 +309,7 @@ function LandingHero({
               </p>
 
               <form
+                id="zip-search"
                 className="mt-8 flex max-w-lg items-center gap-2 rounded-full border border-[var(--border)] bg-white p-2 shadow-[0_10px_40px_-12px_rgba(19,41,75,0.18)]"
                 onSubmit={handleSubmit}
               >
@@ -311,7 +319,10 @@ function LandingHero({
                     aria-label="ZIP code"
                     className="w-full bg-transparent py-2 text-base text-[var(--primary-ink)] placeholder:text-[var(--muted-foreground)]/70 focus:outline-none"
                     inputMode="numeric"
-                    onChange={(event) => setZip(event.target.value.replace(/[^0-9]/g, "").slice(0, 5))}
+                    onChange={(event) => {
+                      setZip(event.target.value.replace(/[^0-9]/g, "").slice(0, 5));
+                      setZipError("");
+                    }}
                     placeholder="Enter your ZIP code"
                     value={zip}
                   />
@@ -349,13 +360,17 @@ function LandingHero({
                   <button
                     className="rounded-full border border-[var(--border)] bg-white px-2.5 py-1 font-medium text-[var(--primary)] hover:border-[var(--primary)]"
                     key={sample}
-                    onClick={() => setZip(sample)}
+                    onClick={() => {
+                      setZip(sample);
+                      setZipError("");
+                    }}
                     type="button"
                   >
                     {sample}
                   </button>
                 ))}
               </div>
+              {zipError && <p className="mt-4 text-sm font-medium text-[var(--danger)]">{zipError}</p>}
               {error && <p className="mt-4 text-sm font-medium text-[var(--danger)]">{error}</p>}
             </div>
 
@@ -392,6 +407,27 @@ function LandingHero({
         </div>
       </section>
 
+      <section className="mx-auto grid max-w-7xl gap-5 px-6 pb-24 md:grid-cols-3" aria-label="Feature details">
+        <FeatureDetail
+          id="learn-forecast"
+          title="Forecast"
+          copy="The forecast combines current air quality, heat, UV, pollutant pressure, respiratory illness activity, and weather alerts into a plain-language risk window for the next few days."
+          stat="24-hour windows"
+        />
+        <FeatureDetail
+          id="learn-twin"
+          title="Exposure Twin"
+          copy="The Twin adjusts the local forecast with profile and routine context, like time outside, traffic exposure, activity level, and symptom check-ins when a user chooses to add them."
+          stat="Personal context"
+        />
+        <FeatureDetail
+          id="learn-model"
+          title="Model & Data"
+          copy="The model view shows what contributed to a score, how fresh the data is, and where each signal came from so the dashboard stays explainable instead of mysterious."
+          stat="Transparent inputs"
+        />
+      </section>
+
       <section className="mx-auto max-w-7xl px-6 pb-24" id="about">
         <div className="relative overflow-hidden rounded-3xl bg-[var(--primary-ink)] px-10 py-16 text-white">
           <div className="absolute -right-24 -top-24 h-96 w-96 rounded-full bg-[var(--accent)]/25 blur-3xl" />
@@ -405,13 +441,12 @@ function LandingHero({
               </p>
             </div>
             <div className="flex flex-wrap gap-3 md:justify-end">
-              <button
+              <a
                 className="inline-flex items-center gap-2 rounded-full bg-white px-5 py-3 text-sm font-medium text-[var(--primary-ink)] hover:bg-[var(--primary-soft)]"
-                onClick={() => onSubmit("27514")}
-                type="button"
+                href="#zip-search"
               >
-                Open dashboard <span aria-hidden>→</span>
-              </button>
+                Search a ZIP <span aria-hidden>→</span>
+              </a>
               <a className="inline-flex items-center gap-2 rounded-full border border-white/25 px-5 py-3 text-sm font-medium text-white hover:bg-white/10" href="#model">
                 How the model works
               </a>
@@ -516,6 +551,7 @@ function LandingFeature({
       : id === "twin"
       ? "A private exposure model that turns routine, location, and check-ins into a score you recognize."
       : "Every prediction shows the source, freshness, confidence, and contributors behind it.";
+  const learnHref = `#learn-${id}`;
 
   return (
     <div className="soft-shadow group relative flex flex-col overflow-hidden rounded-3xl border border-[var(--border)] bg-white transition hover:-translate-y-1 hover:lifted-shadow" id={id}>
@@ -529,11 +565,38 @@ function LandingFeature({
         </div>
         <h3 className="mt-4 font-heading text-xl font-semibold text-[var(--primary-ink)]">{title}</h3>
         <p className="mt-2 text-sm leading-relaxed text-[var(--muted-foreground)]">{copy}</p>
-        <div className="mt-6 inline-flex items-center gap-1 text-sm font-medium text-[var(--primary)]">
+        <a className="mt-6 inline-flex items-center gap-1 text-sm font-medium text-[var(--primary)] hover:text-[var(--primary-ink)]" href={learnHref}>
           Learn more <span aria-hidden>→</span>
-        </div>
+        </a>
       </div>
     </div>
+  );
+}
+
+function FeatureDetail({
+  id,
+  title,
+  copy,
+  stat,
+}: {
+  id: string;
+  title: string;
+  copy: string;
+  stat: string;
+}) {
+  return (
+    <article
+      className="rounded-3xl border border-[var(--border)] bg-white p-6 shadow-sm scroll-mt-24"
+      id={id}
+    >
+      <div className="text-xs font-semibold uppercase tracking-[0.2em] text-[var(--primary)]">
+        {stat}
+      </div>
+      <h3 className="mt-3 font-heading text-2xl font-semibold text-[var(--primary-ink)]">
+        {title}
+      </h3>
+      <p className="mt-3 text-sm leading-6 text-[var(--muted-foreground)]">{copy}</p>
+    </article>
   );
 }
 
@@ -594,12 +657,12 @@ export function DashboardSidebar({
 }) {
   return (
     <aside className="hidden w-64 shrink-0 border-r border-[var(--border)] bg-white lg:flex lg:flex-col">
-      <div className="flex h-16 items-center gap-2 border-b border-[var(--border)] px-6">
+      <Link className="flex h-16 items-center gap-2 border-b border-[var(--border)] px-6" href="/">
         <BrandMark />
-        <button className="font-heading text-lg font-semibold text-[var(--primary-ink)]" onClick={() => onChange("overview")} type="button">
+        <span className="font-heading text-lg font-semibold text-[var(--primary-ink)]">
           MyLocalHealth
-        </button>
-      </div>
+        </span>
+      </Link>
       <div className="flex-1 space-y-1 p-4">
         <p className="px-3 pb-2 text-[10px] font-semibold uppercase tracking-widest text-[var(--muted-foreground)]">
           Health tools
@@ -671,7 +734,7 @@ export function DashboardPageShell({
         <header className="sticky top-0 z-20 flex min-h-16 items-center gap-4 border-b border-[var(--border)] bg-white/85 px-6 py-3 backdrop-blur lg:px-10">
           <Link
             className="flex shrink-0 items-center gap-2 lg:hidden"
-            href={dashboardHref}
+            href="/"
           >
             <BrandMark small />
             <span className="font-heading text-base font-semibold text-[var(--primary-ink)]">
@@ -1328,7 +1391,7 @@ export default function Home() {
         <header className="sticky top-0 z-20 flex min-h-16 items-center gap-4 border-b border-[var(--border)] bg-white/85 px-6 py-3 backdrop-blur lg:px-10">
           <Link
             className="flex shrink-0 items-center gap-2 lg:hidden"
-            href={getDashboardUrl(zipCode, "overview")}
+            href="/"
           >
             <BrandMark small />
             <span className="font-heading text-base font-semibold text-[var(--primary-ink)]">
