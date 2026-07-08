@@ -606,7 +606,7 @@ export default function AccountPage() {
                 href="/"
                 className="w-fit rounded-full border border-[var(--rule)] bg-white px-4 py-2 text-sm font-semibold text-[var(--foreground)] transition hover:border-[var(--accent)]/50 hover:bg-[var(--surface-muted)]"
               >
-                Dashboard
+                Home
               </Link>
               {!user && (
                 <Link

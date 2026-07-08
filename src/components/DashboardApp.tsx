@@ -209,6 +209,16 @@ function percentFromRisk(value: string, fallback = 48) {
   return fallback;
 }
 
+function labelFromScore(score: number) {
+  if (score >= 67) return "High";
+  if (score >= 34) return "Moderate";
+  return "Low";
+}
+
+function clampPercent(score: number) {
+  return Math.max(0, Math.min(100, Math.round(score)));
+}
+
 const featureLinks: { label: string; href: string; hash?: string }[] = [
   { label: "Forecast", href: "#forecast", hash: "forecast" },
   { label: "Exposure Twin", href: "#twin", hash: "twin" },
@@ -645,24 +655,30 @@ function ModelMini() {
 export function DashboardSidebar({
   activeView,
   onChange,
+  onHome,
   city,
   state,
   zipCode,
 }: {
   activeView: DashboardView;
   onChange: (view: DashboardView) => void;
+  onHome?: () => void;
   city: string;
   state: string;
   zipCode: string;
 }) {
   return (
     <aside className="hidden w-64 shrink-0 border-r border-[var(--border)] bg-white lg:flex lg:flex-col">
-      <Link className="flex h-16 items-center gap-2 border-b border-[var(--border)] px-6" href="/">
+      <button
+        className="flex h-16 items-center gap-2 border-b border-[var(--border)] px-6 text-left"
+        onClick={onHome}
+        type="button"
+      >
         <BrandMark />
         <span className="font-heading text-lg font-semibold text-[var(--primary-ink)]">
           MyLocalHealth
         </span>
-      </Link>
+      </button>
       <div className="flex-1 space-y-1 p-4">
         <p className="px-3 pb-2 text-[10px] font-semibold uppercase tracking-widest text-[var(--muted-foreground)]">
           Health tools
@@ -718,29 +734,36 @@ export function DashboardPageShell({
   title: string;
   zipCode: string;
 }) {
-  const { user } = useDashboardData();
+  const router = useRouter();
+  const { user, resetSearch } = useDashboardData();
   const dashboardHref = getDashboardUrl(zipCode, "overview");
+  const goHome = () => {
+    resetSearch();
+    router.push("/");
+  };
 
   return (
     <div className="flex min-h-screen bg-[var(--primary-soft)]/30">
       <DashboardSidebar
         activeView={activeView}
         city={city}
+        onHome={goHome}
         onChange={onNavigate}
         state={state}
         zipCode={zipCode}
       />
       <div className="flex min-w-0 flex-1 flex-col">
         <header className="sticky top-0 z-20 flex min-h-16 items-center gap-4 border-b border-[var(--border)] bg-white/85 px-6 py-3 backdrop-blur lg:px-10">
-          <Link
+          <button
             className="flex shrink-0 items-center gap-2 lg:hidden"
-            href="/"
+            onClick={goHome}
+            type="button"
           >
             <BrandMark small />
             <span className="font-heading text-base font-semibold text-[var(--primary-ink)]">
               MyLocalHealth
             </span>
-          </Link>
+          </button>
           <div className="min-w-0">
             <div className="text-[11px] font-semibold uppercase tracking-widest text-[var(--muted-foreground)]">
               {eyebrow}
@@ -755,12 +778,13 @@ export function DashboardPageShell({
           >
             Dashboard
           </Link>
-          <Link
+          <button
             className="hidden rounded-full bg-[var(--primary-ink)] px-4 py-2 text-sm font-medium text-white hover:bg-[var(--primary)] sm:inline-flex"
-            href="/"
+            onClick={goHome}
+            type="button"
           >
             New search
-          </Link>
+          </button>
           <AccountActions user={user} />
         </header>
         <main className="lovable-dashboard-shell flex-1 px-6 py-6 lg:px-10">
@@ -820,12 +844,14 @@ function iconForView(view: DashboardView): IconName {
 }
 
 function SummaryRow({
+  zipCode,
   healthRisk,
   aqi,
   airQualityLabel,
   heatRisk,
   covidActivity,
 }: {
+  zipCode: string;
   healthRisk: string;
   aqi: number | null;
   airQualityLabel: string;
@@ -839,6 +865,7 @@ function SummaryRow({
       sub: "Composite local snapshot",
       tone: healthRisk,
       value: healthRisk,
+      href: getDashboardUrl(zipCode, "model"),
     },
     {
       icon: "wind" as IconName,
@@ -846,6 +873,7 @@ function SummaryRow({
       sub: airQualityLabel,
       tone: airQualityLabel,
       value: aqi != null ? `${aqi}` : "—",
+      href: `/details/air-quality?zipCode=${zipCode}`,
     },
     {
       icon: "thermo" as IconName,
@@ -853,6 +881,7 @@ function SummaryRow({
       sub: "Outdoor exposure pressure",
       tone: heatRisk,
       value: heatRisk,
+      href: `/details/heat-risk?zipCode=${zipCode}`,
     },
     {
       icon: "droplet" as IconName,
@@ -860,13 +889,18 @@ function SummaryRow({
       sub: "CDC NWSS signal",
       tone: covidActivity,
       value: covidActivity,
+      href: `/details/covid-wastewater?zipCode=${zipCode}`,
     },
   ];
 
   return (
     <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
       {stats.map((stat) => (
-        <div className="soft-shadow rounded-2xl border border-[var(--border)] bg-white p-5" key={stat.label}>
+        <Link
+          className="soft-shadow group rounded-2xl border border-[var(--border)] bg-white p-5 transition hover:-translate-y-0.5 hover:border-[var(--primary)]/35 hover:shadow-[0_20px_46px_-34px_rgba(19,41,75,0.65)]"
+          href={stat.href}
+          key={stat.label}
+        >
           <div className="flex items-start justify-between">
             <div>
               <div className="text-xs font-medium uppercase tracking-wider text-[var(--muted-foreground)]">{stat.label}</div>
@@ -876,8 +910,13 @@ function SummaryRow({
               <Icon name={stat.icon} className="h-5 w-5" />
             </div>
           </div>
-          <div className="mt-4 text-xs text-[var(--muted-foreground)]">{stat.sub}</div>
-        </div>
+          <div className="mt-4 flex items-center justify-between gap-2 text-xs text-[var(--muted-foreground)]">
+            <span>{stat.sub}</span>
+            <span className="font-semibold text-[var(--primary)] opacity-0 transition group-hover:opacity-100">
+              Open →
+            </span>
+          </div>
+        </Link>
       ))}
     </div>
   );
@@ -894,15 +933,33 @@ function DashboardForecastPanel({
   heatRisk: string;
   airQualityLabel: string;
 }) {
+  const [selectedIndex, setSelectedIndex] = useState(0);
   const bars =
     healthForecastData?.hours.slice(0, 7).map((hour) => ({
       label: hour.displayTime.replace(/^[A-Za-z]+,?\s?/, ""),
       risk: hour.score,
+      riskLabel: hour.risk,
+      drivers: hour.drivers,
+      aqi: hour.usAqi,
+      temp: hour.apparentTemperature,
+      uv: hour.uvIndex,
+      pollen: hour.pollenRisk,
     })) ??
     ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].map((label, index) => ({
       label,
       risk: [38, 42, 55, 68, 74, 61, 48][index],
+      riskLabel: labelFromScore([38, 42, 55, 68, 74, 61, 48][index]),
+      drivers: ["Estimated from the current local risk profile."],
+      aqi: null,
+      temp: null,
+      uv: null,
+      pollen: "Unknown",
     }));
+  const selectedBar = bars[Math.min(selectedIndex, bars.length - 1)];
+  const selectedDrivers =
+    selectedBar?.drivers && selectedBar.drivers.length > 0
+      ? selectedBar.drivers.slice(0, 3)
+      : ["No dominant driver is available for this time window yet."];
 
   return (
     <section className="soft-shadow rounded-3xl border border-[var(--border)] bg-white p-6" id="forecast">
@@ -919,21 +976,65 @@ function DashboardForecastPanel({
         </Link>
       </div>
       <div className="mt-6 flex h-[280px] items-end gap-3 border-b border-l border-[var(--border)] px-3 pb-4">
-        {bars.map((bar) => (
-          <div className="group flex min-w-0 flex-1 flex-col items-center gap-2" key={bar.label}>
+        {bars.map((bar, index) => {
+          const selected = selectedIndex === index;
+          return (
+          <button
+            aria-pressed={selected}
+            className="group flex min-w-0 flex-1 flex-col items-center gap-2 focus:outline-none"
+            key={`${bar.label}-${index}`}
+            onClick={() => setSelectedIndex(index)}
+            type="button"
+          >
             <div className="relative w-full">
               <div
-                className="mx-auto w-full rounded-t-xl bg-gradient-to-t from-[var(--primary)] to-[var(--accent)] transition group-hover:opacity-80"
+                className={`mx-auto w-full rounded-t-xl bg-gradient-to-t from-[var(--primary)] to-[var(--accent)] transition group-hover:opacity-80 ${
+                  selected ? "ring-4 ring-[var(--primary)]/20" : ""
+                }`}
                 style={{ height: `${Math.max(26, bar.risk * 2.4)}px` }}
               />
-              <span className="absolute -top-7 left-1/2 hidden -translate-x-1/2 rounded-full bg-[var(--primary-ink)] px-2 py-1 text-[10px] text-white group-hover:block">
+              <span className={`absolute -top-7 left-1/2 -translate-x-1/2 rounded-full bg-[var(--primary-ink)] px-2 py-1 text-[10px] text-white ${
+                selected ? "block" : "hidden group-hover:block"
+              }`}>
                 {bar.risk}
               </span>
             </div>
-            <span className="truncate text-[11px] font-medium text-[var(--muted-foreground)]">{bar.label}</span>
-          </div>
-        ))}
+            <span className={`truncate text-[11px] font-medium ${selected ? "text-[var(--primary)]" : "text-[var(--muted-foreground)]"}`}>{bar.label}</span>
+          </button>
+          );
+        })}
       </div>
+      {selectedBar && (
+        <div className="mt-4 grid gap-3 rounded-2xl border border-[var(--border)] bg-[var(--primary-soft)]/35 p-4 text-sm md:grid-cols-[1fr_1.2fr]">
+          <div>
+            <div className="text-[11px] font-semibold uppercase tracking-widest text-[var(--primary)]">
+              Selected window
+            </div>
+            <div className="mt-1 font-heading text-xl font-semibold text-[var(--primary-ink)]">
+              {selectedBar.label} · {selectedBar.riskLabel} risk
+            </div>
+            <div className="mt-2 flex flex-wrap gap-2 text-xs text-[var(--muted-foreground)]">
+              <span>AQI {selectedBar.aqi ?? "—"}</span>
+              <span>Feels like {selectedBar.temp != null ? `${Math.round(selectedBar.temp)}°F` : "—"}</span>
+              <span>UV {selectedBar.uv != null ? selectedBar.uv.toFixed(1) : "—"}</span>
+              <span>Pollen {selectedBar.pollen}</span>
+            </div>
+          </div>
+          <div>
+            <div className="text-[11px] font-semibold uppercase tracking-widest text-[var(--muted-foreground)]">
+              Why this score
+            </div>
+            <ul className="mt-2 space-y-1.5 text-[var(--primary-ink)]">
+              {selectedDrivers.map((driver) => (
+                <li className="flex gap-2" key={driver}>
+                  <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-[var(--primary)]" />
+                  <span>{driver}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </div>
+      )}
       <div className="mt-4 flex flex-wrap gap-4 border-t border-[var(--border)] pt-4 text-xs text-[var(--muted-foreground)]">
         <Legend color="var(--primary)" label="Composite risk" />
         <Legend color="var(--accent)" label="Environmental pressure" />
@@ -965,7 +1066,29 @@ function DashboardTwinPanel({
   respiratoryRisk: string;
   userProfile: ReturnType<typeof useDashboardData>["userProfile"];
 }) {
-  const circle = Math.max(0, Math.min(100, score));
+  const [outsideMinutes, setOutsideMinutes] = useState(userProfile?.outdoor_exposure === "High" ? 120 : userProfile?.outdoor_exposure === "Low" ? 20 : 60);
+  const [activityLevel, setActivityLevel] = useState(userProfile?.activity_level === "High" ? 75 : userProfile?.activity_level === "Low" ? 20 : 45);
+  const [trafficMinutes, setTrafficMinutes] = useState(userProfile?.commute_exposure === "High" ? 80 : userProfile?.commute_exposure === "Low" ? 10 : 35);
+  const [indoorBuffer, setIndoorBuffer] = useState(25);
+
+  useEffect(() => {
+    setOutsideMinutes(userProfile?.outdoor_exposure === "High" ? 120 : userProfile?.outdoor_exposure === "Low" ? 20 : 60);
+    setActivityLevel(userProfile?.activity_level === "High" ? 75 : userProfile?.activity_level === "Low" ? 20 : 45);
+    setTrafficMinutes(userProfile?.commute_exposure === "High" ? 80 : userProfile?.commute_exposure === "Low" ? 10 : 35);
+  }, [userProfile]);
+
+  const adjustment =
+    outsideMinutes * 0.08 +
+    activityLevel * 0.09 +
+    trafficMinutes * 0.06 -
+    indoorBuffer * 0.12 -
+    13;
+  const simulatedScore = clampPercent(score + adjustment);
+  const simulatedLevel = labelFromScore(simulatedScore);
+  const circle = Math.max(0, Math.min(100, simulatedScore));
+  const profileSignal = userProfile ? Math.min(92, 28 + activityLevel * 0.38 + outsideMinutes * 0.12) : Math.min(72, 18 + activityLevel * 0.3);
+  const outdoorDelta = simulatedScore - score;
+
   return (
     <section className="soft-shadow flex flex-col rounded-3xl border border-[var(--border)] bg-white p-6" id="twin">
       <div className="flex items-start justify-between">
@@ -973,7 +1096,7 @@ function DashboardTwinPanel({
           <div className="text-xs font-semibold uppercase tracking-widest text-[var(--primary)]">Exposure Twin</div>
           <h2 className="mt-1 font-heading text-2xl font-semibold text-[var(--primary-ink)]">Your day, modeled</h2>
         </div>
-        <div className={`rounded-full px-2.5 py-1 text-[11px] font-semibold ${toneClass(level)}`}>{level}</div>
+        <div className={`rounded-full px-2.5 py-1 text-[11px] font-semibold ${toneClass(simulatedLevel)}`}>{simulatedLevel}</div>
       </div>
       <div className="mt-6 flex items-center gap-6">
         <div className="relative grid h-32 w-32 place-items-center">
@@ -992,14 +1115,64 @@ function DashboardTwinPanel({
             />
           </svg>
           <div className="text-center">
-            <div className="font-heading text-3xl font-semibold text-[var(--primary-ink)]">{Math.round(score)}</div>
+            <div className="font-heading text-3xl font-semibold text-[var(--primary-ink)]">{Math.round(simulatedScore)}</div>
             <div className="text-[10px] font-semibold uppercase tracking-widest text-[var(--muted-foreground)]">/ 100</div>
           </div>
         </div>
         <div className="flex-1 space-y-2 text-sm">
           <TwinLine label="Environment" value={percentFromRisk(level, score)} color="primary" />
           <TwinLine label="Respiratory" value={percentFromRisk(respiratoryRisk, 44)} color="warning" />
-          <TwinLine label="Profile" value={userProfile ? 64 : 28} color="success" />
+          <TwinLine label="Profile" value={profileSignal} color="success" />
+        </div>
+      </div>
+      <div className="mt-5 rounded-2xl border border-[var(--border)] bg-white p-4">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <div>
+            <div className="text-[11px] font-semibold uppercase tracking-widest text-[var(--primary)]">
+              What-if simulator
+            </div>
+            <p className="mt-1 text-xs text-[var(--muted-foreground)]">
+              Adjust the day plan to see how the Twin score changes.
+            </p>
+          </div>
+          <span className={`rounded-full px-3 py-1 text-xs font-semibold ${outdoorDelta > 5 ? toneClass("High") : outdoorDelta < -5 ? toneClass("Low") : toneClass("Moderate")}`}>
+            {outdoorDelta >= 0 ? "+" : ""}
+            {outdoorDelta} vs current
+          </span>
+        </div>
+        <div className="mt-4 grid gap-4">
+          <TwinSlider
+            label="Time outside"
+            max={180}
+            min={0}
+            onChange={setOutsideMinutes}
+            suffix=" min"
+            value={outsideMinutes}
+          />
+          <TwinSlider
+            label="Activity intensity"
+            max={100}
+            min={0}
+            onChange={setActivityLevel}
+            suffix="%"
+            value={activityLevel}
+          />
+          <TwinSlider
+            label="Traffic exposure"
+            max={120}
+            min={0}
+            onChange={setTrafficMinutes}
+            suffix=" min"
+            value={trafficMinutes}
+          />
+          <TwinSlider
+            label="Indoor/protection buffer"
+            max={100}
+            min={0}
+            onChange={setIndoorBuffer}
+            suffix="%"
+            value={indoorBuffer}
+          />
         </div>
       </div>
       <div className="mt-6 rounded-2xl border border-[var(--border)] bg-[var(--primary-soft)]/40 p-4">
@@ -1013,6 +1186,42 @@ function DashboardTwinPanel({
         </div>
       </div>
     </section>
+  );
+}
+
+function TwinSlider({
+  label,
+  max,
+  min,
+  onChange,
+  suffix,
+  value,
+}: {
+  label: string;
+  max: number;
+  min: number;
+  onChange: (value: number) => void;
+  suffix: string;
+  value: number;
+}) {
+  return (
+    <label className="block">
+      <div className="flex items-center justify-between gap-3 text-xs">
+        <span className="font-medium text-[var(--primary-ink)]">{label}</span>
+        <span className="rounded-full bg-[var(--primary-soft)] px-2 py-0.5 font-semibold text-[var(--primary)]">
+          {Math.round(value)}
+          {suffix}
+        </span>
+      </div>
+      <input
+        className="mt-2 w-full accent-[var(--primary)]"
+        max={max}
+        min={min}
+        onChange={(event) => onChange(Number(event.target.value))}
+        type="range"
+        value={value}
+      />
+    </label>
   );
 }
 
@@ -1051,76 +1260,290 @@ function ContributorsPanel({
   zipCode: string;
   scoreBreakdown: ReturnType<typeof useDashboardData>["scoreBreakdown"];
 }) {
+  const [selectedIndex, setSelectedIndex] = useState(0);
   const rows = scoreBreakdown.categoryScores.slice(0, 6).map((item, index) => ({
     factor: item.label,
     value: Math.max(10, Math.min(100, Math.round(item.score))),
     baseline: [32, 40, 36, 28, 30, 34][index] ?? 30,
+    detail: item.detail,
+    advice: adviceForContributor(item.label),
   }));
-  const polygon = rows
-    .map((row, index) => {
-      const angle = (Math.PI * 2 * index) / Math.max(1, rows.length) - Math.PI / 2;
-      const radius = 28 + row.value * 0.42;
-      return `${100 + Math.cos(angle) * radius},${100 + Math.sin(angle) * radius}`;
-    })
-    .join(" ");
+  const selected = rows[Math.min(selectedIndex, Math.max(0, rows.length - 1))];
+  const currentPolygon = makeRadarPolygon(rows.map((row) => row.value));
+  const baselinePolygon = makeRadarPolygon(rows.map((row) => row.baseline));
+  const selectedDelta = selected ? selected.value - selected.baseline : 0;
+  const selectedInterpretation =
+    selectedDelta > 12
+      ? "This contributor is meaningfully above its baseline and is likely pushing the overall score upward."
+      : selectedDelta < -12
+      ? "This contributor is below baseline for this ZIP snapshot and is likely reducing the overall score."
+      : "This contributor is close to baseline, so it is not strongly moving the score either way.";
 
   return (
     <section className="soft-shadow rounded-3xl border border-[var(--border)] bg-white p-6" id="model">
       <div className="flex items-start justify-between">
         <div>
           <div className="text-xs font-semibold uppercase tracking-widest text-[var(--primary)]">Model & Data</div>
-          <h2 className="mt-1 font-heading text-2xl font-semibold text-[var(--primary-ink)]">Risk contributors</h2>
-          <p className="mt-1 text-sm text-[var(--muted-foreground)]">Current ZIP snapshot compared with baseline.</p>
+          <h2 className="mt-1 font-heading text-2xl font-semibold text-[var(--primary-ink)]">Interactive risk explorer</h2>
+          <p className="mt-1 text-sm text-[var(--muted-foreground)]">Tap a driver to see what it means, how it compares with baseline, and what to do next.</p>
         </div>
         <Link className="inline-flex items-center gap-1 rounded-full border border-[var(--border)] px-3 py-1.5 text-xs font-medium text-[var(--primary-ink)] hover:bg-[var(--primary-soft)]" href={getDashboardUrl(zipCode, "model")}>
           Methodology
         </Link>
       </div>
-      <div className="mt-4 grid gap-6 lg:grid-cols-[1.1fr_1fr] lg:items-center">
-        <div className="grid min-h-[300px] place-items-center">
-          <svg className="h-[280px] w-full max-w-[360px]" viewBox="0 0 200 200">
-            {[35, 60, 85].map((radius) => (
-              <circle cx="100" cy="100" fill="none" key={radius} r={radius} stroke="var(--border)" />
-            ))}
-            {rows.map((row, index) => {
-              const angle = (Math.PI * 2 * index) / Math.max(1, rows.length) - Math.PI / 2;
-              return (
-                <g key={row.factor}>
-                  <line stroke="var(--border)" x1="100" x2={100 + Math.cos(angle) * 88} y1="100" y2={100 + Math.sin(angle) * 88} />
-                  <text fill="var(--muted-foreground)" fontSize="8" textAnchor="middle" x={100 + Math.cos(angle) * 98} y={104 + Math.sin(angle) * 98}>
-                    {row.factor.slice(0, 8)}
-                  </text>
-                </g>
-              );
-            })}
-            <polygon fill="rgba(75,156,211,.22)" points={polygon} stroke="var(--primary)" strokeWidth="3" />
-          </svg>
+
+      <div className="mt-5 flex gap-2 overflow-x-auto pb-2">
+        {rows.map((row, index) => {
+          const active = selectedIndex === index;
+          return (
+            <button
+              className={`shrink-0 rounded-full border px-4 py-2 text-sm font-semibold transition ${
+                active
+                  ? "border-[var(--primary)] bg-[var(--primary)] text-white shadow-sm"
+                  : "border-[var(--border)] bg-white text-[var(--primary-ink)] hover:border-[var(--primary)]/40 hover:bg-[var(--primary-soft)]"
+              }`}
+              key={row.factor}
+              onClick={() => setSelectedIndex(index)}
+              type="button"
+            >
+              {row.factor}
+            </button>
+          );
+        })}
+      </div>
+
+      {selected && (
+        <div className="mt-3 rounded-2xl border border-[var(--primary)]/25 bg-gradient-to-br from-[var(--primary)]/12 via-white to-[var(--primary-soft)] p-5">
+          <div className="flex flex-col gap-4 xl:flex-row xl:items-stretch xl:justify-between">
+            <div>
+              <div className="text-[11px] font-semibold uppercase tracking-widest text-[var(--primary)]">
+                Plain-English readout
+              </div>
+              <h3 className="mt-1 font-heading text-2xl font-semibold text-[var(--primary-ink)]">
+                {selected.factor}
+              </h3>
+              <p className="mt-1 max-w-3xl text-sm leading-6 text-[var(--muted-foreground)]">
+                {selected.detail}
+              </p>
+              <p className="mt-2 text-sm font-medium text-[var(--primary-ink)]">
+                {selectedInterpretation}
+              </p>
+              <p className="mt-3 rounded-xl border border-[var(--border)] bg-white/80 p-3 text-sm leading-6 text-[var(--primary-ink)]">
+                <span className="font-semibold text-[var(--primary)]">What to do:</span>{" "}
+                {selected.advice}
+              </p>
+            </div>
+            <div className="grid min-w-[17rem] grid-cols-3 gap-2 text-center">
+              <MetricPill label="Current" value={`${selected.value}`} />
+              <MetricPill label="Baseline" value={`${selected.baseline}`} />
+              <MetricPill label="Change" value={`${selectedDelta >= 0 ? "+" : ""}${selectedDelta}`} />
+            </div>
+          </div>
         </div>
-        <ul className="space-y-2 text-sm">
+      )}
+
+      <div className="mt-5 grid gap-6 xl:grid-cols-[0.85fr_1fr] xl:items-start">
+        <div className="rounded-2xl border border-[var(--border)] bg-white p-4 shadow-sm">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <div className="text-[11px] font-semibold uppercase tracking-widest text-[var(--primary)]">
+                Driver map
+              </div>
+              <p className="mt-1 text-xs text-[var(--muted-foreground)]">
+                Current conditions are blue; baseline is the dashed amber outline.
+              </p>
+            </div>
+            <div className="flex gap-3 text-[11px] text-[var(--muted-foreground)]">
+              <Legend color="var(--primary)" label="Current" />
+              <Legend color="var(--warning)" label="Baseline" />
+            </div>
+          </div>
+
+          <div className="mt-4 grid place-items-center">
+            <div className="grid min-h-[260px] w-full place-items-center">
+              <svg className="h-[260px] w-full max-w-[430px] overflow-visible" viewBox="0 0 260 260">
+                <defs>
+                  <filter id="radarGlow" x="-30%" y="-30%" width="160%" height="160%">
+                    <feGaussianBlur stdDeviation="2.5" result="blur" />
+                    <feMerge>
+                      <feMergeNode in="blur" />
+                      <feMergeNode in="SourceGraphic" />
+                    </feMerge>
+                  </filter>
+                </defs>
+                {[28, 52, 76, 100].map((radius) => (
+                  <circle cx="130" cy="130" fill="none" key={radius} r={radius} stroke="var(--border)" />
+                ))}
+                {rows.map((row, index) => {
+                  const total = Math.max(1, rows.length);
+                  const angle = (Math.PI * 2 * index) / total - Math.PI / 2;
+                  const axisX = 130 + Math.cos(angle) * 100;
+                  const axisY = 130 + Math.sin(angle) * 100;
+                  const pointX = 130 + Math.cos(angle) * (22 + row.value * 0.7);
+                  const pointY = 130 + Math.sin(angle) * (22 + row.value * 0.7);
+                  const label = radarLabelPosition(angle);
+                  const isSelected = selectedIndex === index;
+
+                  return (
+                    <g key={row.factor}>
+                      <line stroke="var(--border)" x1="130" x2={axisX} y1="130" y2={axisY} />
+                      <text
+                        fill={isSelected ? "var(--primary)" : "var(--muted-foreground)"}
+                        fontSize="8.5"
+                        fontWeight={isSelected ? 700 : 500}
+                        textAnchor={label.anchor}
+                        x={label.x}
+                        y={label.y}
+                      >
+                        {splitFactorLabel(row.factor).map((part, partIndex) => (
+                          <tspan
+                            dy={partIndex === 0 ? 0 : 10}
+                            key={part}
+                            x={label.x}
+                          >
+                            {part}
+                          </tspan>
+                        ))}
+                      </text>
+                      <circle
+                        className="cursor-pointer transition"
+                        cx={pointX}
+                        cy={pointY}
+                        fill={isSelected ? "var(--primary-ink)" : "var(--primary)"}
+                        filter={isSelected ? "url(#radarGlow)" : undefined}
+                        onClick={() => setSelectedIndex(index)}
+                        onFocus={() => setSelectedIndex(index)}
+                        onMouseEnter={() => setSelectedIndex(index)}
+                        r={isSelected ? 7 : 5}
+                        tabIndex={0}
+                        role="button"
+                      />
+                    </g>
+                  );
+                })}
+                <polygon fill="rgba(245,158,11,.08)" points={baselinePolygon} stroke="var(--warning)" strokeDasharray="5 5" strokeWidth="2" />
+                <polygon fill="rgba(75,156,211,.22)" points={currentPolygon} stroke="var(--primary)" strokeWidth="3" />
+              </svg>
+            </div>
+          </div>
+        </div>
+
+        <div className="space-y-3 text-sm">
+          <div className="rounded-2xl border border-[var(--border)] bg-[var(--primary-soft)]/40 p-4">
+            <div className="text-[11px] font-semibold uppercase tracking-widest text-[var(--primary)]">
+              Tap to inspect
+            </div>
+            <p className="mt-1 text-xs leading-5 text-[var(--muted-foreground)]">
+              The longest bars are not always bad. Compare the current score with baseline to see what is unusual today.
+            </p>
+          </div>
+          <ul className="space-y-3">
           {rows.map((row) => (
-            <li className="flex items-center justify-between rounded-xl border border-[var(--border)] bg-[var(--primary-soft)]/30 px-4 py-2.5" key={row.factor}>
-              <div>
-                <div className="font-medium text-[var(--primary-ink)]">{row.factor}</div>
-                <div className="text-xs text-[var(--muted-foreground)]">Baseline {row.baseline}</div>
-              </div>
-              <div className={row.value > row.baseline ? "text-sm font-semibold text-[var(--danger)]" : "text-sm font-semibold text-[var(--success)]"}>
-                {row.value > row.baseline ? "+" : ""}
-                {row.value - row.baseline}
-              </div>
+            <li key={row.factor}>
+              <button
+                className={`w-full rounded-2xl border px-4 py-3 text-left transition ${
+                  selected?.factor === row.factor
+                    ? "border-[var(--primary)] bg-[var(--primary)]/10 shadow-sm"
+                    : "border-[var(--border)] bg-[var(--primary-soft)]/30 hover:border-[var(--primary)]/40 hover:bg-white"
+                }`}
+                onClick={() => setSelectedIndex(rows.findIndex((item) => item.factor === row.factor))}
+                type="button"
+              >
+                <div className="flex items-center justify-between gap-4">
+                  <div>
+                    <div className="font-semibold text-[var(--primary-ink)]">{row.factor}</div>
+                    <div className="text-xs text-[var(--muted-foreground)]">Baseline {row.baseline} · Current {row.value}</div>
+                  </div>
+                  <div className={row.value > row.baseline ? "text-sm font-semibold text-[var(--danger)]" : "text-sm font-semibold text-[var(--success)]"}>
+                    {row.value > row.baseline ? "+" : ""}
+                    {row.value - row.baseline}
+                  </div>
+                </div>
+                <div className="mt-3 grid grid-cols-[1fr_auto] items-center gap-3">
+                  <div className="h-2 overflow-hidden rounded-full bg-white">
+                    <div className="h-full rounded-full bg-[var(--primary)]" style={{ width: `${row.value}%` }} />
+                  </div>
+                  <span className="text-[11px] font-medium text-[var(--muted-foreground)]">
+                    Inspect →
+                  </span>
+                </div>
+              </button>
             </li>
           ))}
-        </ul>
+          </ul>
+        </div>
       </div>
     </section>
   );
 }
 
+function makeRadarPolygon(values: number[]) {
+  return values
+    .map((value, index) => {
+      const total = Math.max(1, values.length);
+      const angle = (Math.PI * 2 * index) / total - Math.PI / 2;
+      const radius = 22 + Math.max(0, Math.min(100, value)) * 0.7;
+      return `${130 + Math.cos(angle) * radius},${130 + Math.sin(angle) * radius}`;
+    })
+    .join(" ");
+}
+
+function radarLabelPosition(angle: number) {
+  const rawX = 130 + Math.cos(angle) * 116;
+  const rawY = 134 + Math.sin(angle) * 116;
+  const x = Math.max(26, Math.min(234, rawX));
+  const y = Math.max(18, Math.min(238, rawY));
+  const cosine = Math.cos(angle);
+  const anchor: "start" | "middle" | "end" =
+    cosine > 0.35 ? "end" : cosine < -0.35 ? "start" : "middle";
+
+  return { x, y, anchor };
+}
+
+function splitFactorLabel(label: string) {
+  if (label === "Infectious disease") return ["Infectious", "disease"];
+  if (label === "Outdoor environment") return ["Outdoor", "environment"];
+  if (label === "Personal modifier") return ["Personal", "modifier"];
+  return [label];
+}
+
+function adviceForContributor(label: string) {
+  if (label === "Respiratory") {
+    return "If you are sensitive to breathing symptoms, check the air and illness signals before intense outdoor activity.";
+  }
+  if (label === "Infectious disease") {
+    return "Use this as a community signal: consider crowded indoor exposure, recent symptoms, and basic precautions when activity is elevated.";
+  }
+  if (label === "Outdoor environment") {
+    return "Shift harder outdoor activity toward lower-risk windows and watch heat, UV, pollen, and air quality together.";
+  }
+  if (label === "Personal modifier") {
+    return "Sign in and keep your profile/check-ins current so the model can better reflect your routine and sensitivities.";
+  }
+  return "Open the methodology view to see the source and weight for this contributor.";
+}
+
+function MetricPill({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-xl border border-[var(--border)] bg-[var(--primary-soft)]/40 p-3">
+      <div className="text-[10px] font-semibold uppercase tracking-widest text-[var(--muted-foreground)]">
+        {label}
+      </div>
+      <div className="mt-1 font-heading text-lg font-semibold text-[var(--primary-ink)]">
+        {value}
+      </div>
+    </div>
+  );
+}
+
 function SecondaryPanels({
+  zipCode,
   fluActivity,
   localNews,
   healthEquityLevel,
   alertRisk,
 }: {
+  zipCode: string;
   fluActivity: string;
   localNews: ReturnType<typeof useDashboardData>["localNews"];
   healthEquityLevel: string;
@@ -1128,27 +1551,43 @@ function SecondaryPanels({
 }) {
   return (
     <div className="grid gap-4 sm:grid-cols-2">
-      <SmallPanel icon="wind" label="Flu activity" title={fluActivity} />
-      <SmallPanel icon="users" label="Health equity" title={healthEquityLevel} />
-      <SmallPanel icon="alert" label="Weather alerts" title={alertRisk} />
-      <SmallPanel icon="bell" label="Local news" title={`${localNews.length} articles`} />
+      <SmallPanel description="CDC respiratory illness signal" href={`/details/flu-activity?zipCode=${zipCode}`} icon="wind" label="Flu activity" title={fluActivity} />
+      <SmallPanel description="Community vulnerability context" href={`/details/health-equity?zipCode=${zipCode}`} icon="users" label="Health equity" title={healthEquityLevel} />
+      <SmallPanel description="Official severe-weather context" href={`/details/weather-alerts?zipCode=${zipCode}`} icon="alert" label="Weather alerts" title={alertRisk} />
+      <SmallPanel description="Recent local health articles" href={getDashboardUrl(zipCode, "news")} icon="bell" label="Local news" title={`${localNews.length} articles`} />
     </div>
   );
 }
 
-function SmallPanel({ icon, label, title }: { icon: IconName; label: string; title: string }) {
+function SmallPanel({
+  description,
+  href,
+  icon,
+  label,
+  title,
+}: {
+  description: string;
+  href: string;
+  icon: IconName;
+  label: string;
+  title: string;
+}) {
   return (
-    <div className="soft-shadow rounded-2xl border border-[var(--border)] bg-white p-5">
+    <Link className="soft-shadow group rounded-2xl border border-[var(--border)] bg-white p-4 transition hover:-translate-y-0.5 hover:border-[var(--primary)]/35" href={href}>
       <div className="flex items-start justify-between">
         <div>
           <div className="text-xs font-medium uppercase tracking-wider text-[var(--muted-foreground)]">{label}</div>
           <div className="mt-2 font-heading text-xl font-semibold text-[var(--primary-ink)]">{title}</div>
+          <p className="mt-1 text-xs leading-5 text-[var(--muted-foreground)]">{description}</p>
+          <div className="mt-2 text-xs font-semibold text-[var(--primary)] opacity-0 transition group-hover:opacity-100">
+            Open details →
+          </div>
         </div>
         <div className={`grid h-10 w-10 place-items-center rounded-xl ${toneClass(title)}`}>
           <Icon name={icon} className="h-5 w-5" />
         </div>
       </div>
-    </div>
+    </Link>
   );
 }
 
@@ -1337,6 +1776,10 @@ export default function Home() {
     setDashboardView(view);
     router.push(getDashboardUrl(zipCode, view));
   };
+  const goHome = () => {
+    resetSearch();
+    router.push("/");
+  };
 
   useEffect(() => {
     const syncViewFromUrl = () => {
@@ -1383,21 +1826,23 @@ export default function Home() {
       <DashboardSidebar
         activeView={dashboardView}
         city={city}
+        onHome={goHome}
         onChange={navigateDashboardView}
         state={state}
         zipCode={zipCode}
       />
       <div className="flex min-w-0 flex-1 flex-col">
         <header className="sticky top-0 z-20 flex min-h-16 items-center gap-4 border-b border-[var(--border)] bg-white/85 px-6 py-3 backdrop-blur lg:px-10">
-          <Link
+          <button
             className="flex shrink-0 items-center gap-2 lg:hidden"
-            href="/"
+            onClick={goHome}
+            type="button"
           >
             <BrandMark small />
             <span className="font-heading text-base font-semibold text-[var(--primary-ink)]">
               MyLocalHealth
             </span>
-          </Link>
+          </button>
           <div>
             <div className="text-[11px] font-semibold uppercase tracking-widest text-[var(--muted-foreground)]">
               Local health · live snapshot
@@ -1422,7 +1867,7 @@ export default function Home() {
               value={zipCode}
             />
           </form>
-          <button className="rounded-full bg-[var(--primary-ink)] px-4 py-2 text-sm font-medium text-white hover:bg-[var(--primary)]" onClick={resetSearch} type="button">
+          <button className="rounded-full bg-[var(--primary-ink)] px-4 py-2 text-sm font-medium text-white hover:bg-[var(--primary)]" onClick={goHome} type="button">
             New search
           </button>
           <AccountActions user={user} />
@@ -1458,6 +1903,7 @@ export default function Home() {
                 covidActivity={covidActivity}
                 healthRisk={healthRisk}
                 heatRisk={heatRisk}
+                zipCode={zipCode}
               />
               <div className="grid gap-6 xl:grid-cols-[1.7fr_1fr]">
                 <DashboardForecastPanel
@@ -1473,9 +1919,9 @@ export default function Home() {
                   userProfile={userProfile}
                 />
               </div>
-              <div className="grid gap-6 xl:grid-cols-[1.2fr_1fr]">
+              <div className="grid items-start gap-6 xl:grid-cols-[1.2fr_1fr]">
                 <ContributorsPanel scoreBreakdown={scoreBreakdown} zipCode={zipCode} />
-                <div className="grid gap-6">
+                <div className="grid content-start gap-4 self-start">
                   <SymptomProbabilityPanel
                     compact
                     prediction={symptomPrediction}
@@ -1485,6 +1931,7 @@ export default function Home() {
                     fluActivity={fluActivity}
                     healthEquityLevel={healthEquityData?.equityLevel ?? "Unknown"}
                     localNews={localNews}
+                    zipCode={zipCode}
                   />
                 </div>
               </div>

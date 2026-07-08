@@ -1788,6 +1788,22 @@ export function RiskTransparencyPanel({
   methodology: string[];
 }) {
   const [showWeights, setShowWeights] = useState(false);
+  const [activeCategoryIndex, setActiveCategoryIndex] = useState(0);
+  const activeCategory =
+    categoryScores[Math.min(activeCategoryIndex, Math.max(0, categoryScores.length - 1))];
+  const activeCategoryBaseline = [32, 40, 36, 28, 30, 34][activeCategoryIndex] ?? 30;
+  const activeCategoryDelta = activeCategory
+    ? Math.round(activeCategory.score) - activeCategoryBaseline
+    : 0;
+  const activeCategoryMeaning =
+    activeCategoryDelta > 12
+      ? "This category is above its baseline and is pushing the score upward."
+      : activeCategoryDelta < -12
+      ? "This category is below baseline and is helping keep the score lower."
+      : "This category is close to baseline, so it is not strongly moving the score.";
+  const activeCategoryAdvice = activeCategory
+    ? panelAdviceForContributor(activeCategory.label)
+    : "Select a category to see what it means and what action may help.";
 
   return (
     <section className="grid gap-5">
@@ -1816,6 +1832,75 @@ export function RiskTransparencyPanel({
             <p className="text-sm font-semibold text-[var(--foreground-muted)]">
               out of 100
             </p>
+          </div>
+        </div>
+
+        <div className="mt-6 rounded-2xl border border-[var(--primary)]/25 bg-gradient-to-br from-[var(--primary)]/12 via-white to-[var(--primary-soft)] p-5">
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--primary)]">
+                Plain-English model explorer
+              </p>
+              <h4 className="mt-1 font-heading text-2xl font-semibold text-[var(--primary-ink)]">
+                {activeCategory?.label ?? "Risk category"}
+              </h4>
+              <p className="mt-2 max-w-3xl text-sm leading-6 text-[var(--muted-foreground)]">
+                {activeCategory?.detail ?? "Select a category to inspect how the model is reading this ZIP code."}
+              </p>
+              <p className="mt-3 rounded-xl border border-[var(--border)] bg-white/80 p-3 text-sm leading-6 text-[var(--primary-ink)]">
+                <span className="font-semibold text-[var(--primary)]">What to do:</span>{" "}
+                {activeCategoryAdvice}
+              </p>
+            </div>
+            <div className="grid grid-cols-3 gap-2 text-center">
+              <div className="rounded-xl border border-[var(--border)] bg-white p-3">
+                <p className="text-[10px] font-semibold uppercase tracking-widest text-[var(--muted-foreground)]">
+                  Current
+                </p>
+                <p className="mt-1 font-heading text-xl font-semibold text-[var(--primary-ink)]">
+                  {activeCategory?.score ?? 0}
+                </p>
+              </div>
+              <div className="rounded-xl border border-[var(--border)] bg-white p-3">
+                <p className="text-[10px] font-semibold uppercase tracking-widest text-[var(--muted-foreground)]">
+                  Baseline
+                </p>
+                <p className="mt-1 font-heading text-xl font-semibold text-[var(--primary-ink)]">
+                  {activeCategoryBaseline}
+                </p>
+              </div>
+              <div className="rounded-xl border border-[var(--border)] bg-white p-3">
+                <p className="text-[10px] font-semibold uppercase tracking-widest text-[var(--muted-foreground)]">
+                  Change
+                </p>
+                <p className={`mt-1 font-heading text-xl font-semibold ${activeCategoryDelta >= 0 ? "text-[var(--danger)]" : "text-[var(--success)]"}`}>
+                  {activeCategoryDelta >= 0 ? "+" : ""}
+                  {activeCategoryDelta}
+                </p>
+              </div>
+            </div>
+          </div>
+          <p className="mt-3 rounded-xl bg-white/70 p-3 text-sm leading-6 text-[var(--muted-foreground)]">
+            {activeCategoryMeaning}
+          </p>
+          <div className="mt-4 flex gap-2 overflow-x-auto pb-1">
+            {categoryScores.map((category, index) => {
+              const active = activeCategoryIndex === index;
+              return (
+                <button
+                  className={`shrink-0 rounded-full border px-4 py-2 text-sm font-semibold transition ${
+                    active
+                      ? "border-[var(--primary)] bg-[var(--primary)] text-white"
+                      : "border-[var(--border)] bg-white text-[var(--primary-ink)] hover:border-[var(--primary)]/40"
+                  }`}
+                  key={category.label}
+                  onClick={() => setActiveCategoryIndex(index)}
+                  type="button"
+                >
+                  {category.label}
+                </button>
+              );
+            })}
           </div>
         </div>
 
@@ -1871,10 +1956,16 @@ export function RiskTransparencyPanel({
         </div>
 
         <div className="mt-5 grid gap-3 md:grid-cols-4">
-          {categoryScores.map((category) => (
-            <div
-              className="rounded-2xl border border-[var(--border)] bg-slate-50 p-4"
+          {categoryScores.map((category, index) => (
+            <button
+              className={`rounded-2xl border p-4 text-left transition ${
+                activeCategoryIndex === index
+                  ? "border-[var(--primary)] bg-[var(--primary)]/10"
+                  : "border-[var(--border)] bg-slate-50 hover:border-[var(--primary)]/40 hover:bg-white"
+              }`}
               key={category.label}
+              onClick={() => setActiveCategoryIndex(index)}
+              type="button"
             >
               <div className="flex items-center justify-between gap-3">
                 <p className="text-sm font-semibold text-[var(--primary-ink)]">
@@ -1890,7 +1981,10 @@ export function RiskTransparencyPanel({
                   style={{ width: `${category.score}%` }}
                 />
               </div>
-            </div>
+              <p className="mt-2 text-[11px] font-semibold text-[var(--primary)]">
+                Inspect →
+              </p>
+            </button>
           ))}
         </div>
 
@@ -4428,6 +4522,22 @@ function AiHealthPlanPanel({
       )}
     </section>
   );
+}
+
+function panelAdviceForContributor(label: string) {
+  if (label === "Respiratory") {
+    return "Check air quality and illness activity before intense outdoor plans, especially if you are sensitive to breathing symptoms.";
+  }
+  if (label === "Infectious disease") {
+    return "Treat this as a community-level signal. If activity is elevated, be more thoughtful about crowded indoor settings and recent symptoms.";
+  }
+  if (label === "Outdoor environment") {
+    return "Move harder outdoor activity into lower-risk windows and consider heat, UV, pollen, and air quality together.";
+  }
+  if (label === "Personal modifier") {
+    return "Keep your profile and symptom check-ins updated so the model can better reflect your own routine.";
+  }
+  return "Review the methodology and data source panels to see why this factor is included.";
 }
 
 export function SymptomCheckinPanel({
