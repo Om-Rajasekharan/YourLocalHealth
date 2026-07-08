@@ -75,6 +75,15 @@ type OpenAIResponse = {
   }[];
 };
 
+type HealthPlan = {
+  headline: string;
+  summary: string;
+  priority: string;
+  actions: string[];
+  watch: string[];
+  uncertainty: string;
+};
+
 function getResponseText(data: OpenAIResponse) {
   if (data.output_text) {
     return data.output_text;
@@ -209,7 +218,7 @@ function parsePlan(rawText: string) {
     return {
       headline: "AI health plan generated",
       summary: cleaned,
-      priority: "Review today&apos;s local signals before outdoor activity.",
+      priority: "Review today's local signals before outdoor activity.",
       actions: [],
       watch: [],
       uncertainty: "The response could not be structured automatically.",
@@ -217,20 +226,76 @@ function parsePlan(rawText: string) {
   }
 }
 
+function buildFallbackPlan(body: HealthPlanRequest): HealthPlan {
+  const context = body.context;
+  const forecast = body.forecast;
+  const drivers = body.model?.topDrivers ?? [];
+  const location =
+    context?.city && context.state
+      ? `${context.city}, ${context.state}`
+      : context?.zipCode
+      ? `ZIP ${context.zipCode}`
+      : "this location";
+  const topDriver = drivers[0];
+  const bestWindow = forecast?.bestWindow;
+  const worstWindow = forecast?.worstWindow;
+  const riskText =
+    context?.healthRisk && context.respiratoryRisk
+      ? `${context.healthRisk.toLowerCase()} overall and ${context.respiratoryRisk.toLowerCase()} respiratory risk`
+      : "limited local risk context";
+
+  return {
+    headline: `Today's local health brief for ${location}`,
+    summary: `Current signals suggest ${riskText}. ${
+      topDriver
+        ? `${topDriver.label} is the strongest contributor in the transparent model.`
+        : "No single model driver is dominating the snapshot."
+    }`,
+    priority: worstWindow
+      ? `Pay closest attention around ${worstWindow}, when the forecast layer is highest.`
+      : "Check the forecast and current air/heat signals before extended outdoor activity.",
+    actions: [
+      bestWindow
+        ? `If your schedule is flexible, place outdoor activity near ${bestWindow}.`
+        : "Use the lower-risk parts of the day for longer outdoor activity.",
+      context?.airQuality
+        ? `Use the air-quality reading (${context.airQuality}) as the first breathing-safety check.`
+        : "Recheck air quality if conditions seem hazy, smoky, or irritating.",
+      context?.heatRisk && context.heatRisk !== "Low"
+        ? "Build in shade, hydration, and indoor breaks during hotter windows."
+        : "Stay hydrated and adjust if heat, sun, or symptoms change.",
+      "For serious or worsening symptoms, seek medical care rather than relying on this informational tool.",
+    ],
+    watch: [
+      context?.dominantPollutant
+        ? `Dominant pollutant: ${context.dominantPollutant}`
+        : "Dominant pollutant data",
+      context?.fluActivity
+        ? `Flu activity: ${context.fluActivity}`
+        : "Respiratory illness activity",
+      context?.covidActivity
+        ? `COVID wastewater: ${context.covidActivity}`
+        : "COVID wastewater signal",
+      forecast?.pollenRisk ? `Pollen risk: ${forecast.pollenRisk}` : "Pollen forecast",
+    ],
+    uncertainty:
+      "Generated from available dashboard data when the AI plan service is unavailable; this is informational only and not medical advice.",
+  };
+}
+
 export async function POST(request: Request) {
+  const body = (await request.json()) as HealthPlanRequest;
   const apiKey = process.env.OPENAI_API_KEY;
 
   if (!apiKey) {
     return NextResponse.json(
       {
-        error:
-          "The AI plan is not configured yet. Add OPENAI_API_KEY to .env.local, then restart the dev server.",
-      },
-      { status: 503 }
+        plan: buildFallbackPlan(body),
+        fallback: true,
+      }
     );
   }
 
-  const body = (await request.json()) as HealthPlanRequest;
   const prompt = `
 You are generating a concise, practical public-health planning brief for MyLocalHealth.
 
@@ -272,19 +337,22 @@ ${formatPlanContext(body)}
     if (!response.ok) {
       return NextResponse.json(
         {
+          plan: buildFallbackPlan(body),
+          fallback: true,
           error:
-            data.error?.message ??
-            "The AI health plan is temporarily unavailable.",
-        },
-        { status: response.status }
+            data.error?.message ?? "The AI health plan is temporarily unavailable.",
+        }
       );
     }
 
     return NextResponse.json({ plan: parsePlan(getResponseText(data)) });
   } catch {
     return NextResponse.json(
-      { error: "The AI health plan is temporarily unavailable." },
-      { status: 503 }
+      {
+        plan: buildFallbackPlan(body),
+        fallback: true,
+        error: "The AI health plan is temporarily unavailable.",
+      }
     );
   }
 }

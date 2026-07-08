@@ -7,6 +7,7 @@ import { FormEvent, useEffect, useMemo, useState } from "react";
 import { useDashboardData } from "../contexts/DashboardDataContext";
 import {
   HealthEquityPanel,
+  SymptomProbabilityPanel,
   SymptomCheckinPanel,
   getDashboardUrl,
   getDashboardView,
@@ -30,6 +31,7 @@ export {
   HealthEquityPanel,
   ModelDataSourcesPanel,
   RiskTransparencyPanel,
+  SymptomProbabilityPanel,
   SymptomCheckinPanel,
 } from "./DashboardApp.panels";
 
@@ -1255,6 +1257,7 @@ export default function Home() {
     equityError,
     healthForecastData,
     scoreBreakdown,
+    symptomPrediction,
     userProfile,
     user,
     latestSnapshot,
@@ -1409,12 +1412,18 @@ export default function Home() {
               </div>
               <div className="grid gap-6 xl:grid-cols-[1.2fr_1fr]">
                 <ContributorsPanel scoreBreakdown={scoreBreakdown} zipCode={zipCode} />
-                <SecondaryPanels
-                  alertRisk={alertRisk}
-                  fluActivity={fluActivity}
-                  healthEquityLevel={healthEquityData?.equityLevel ?? "Unknown"}
-                  localNews={localNews}
-                />
+                <div className="grid gap-6">
+                  <SymptomProbabilityPanel
+                    compact
+                    prediction={symptomPrediction}
+                  />
+                  <SecondaryPanels
+                    alertRisk={alertRisk}
+                    fluActivity={fluActivity}
+                    healthEquityLevel={healthEquityData?.equityLevel ?? "Unknown"}
+                    localNews={localNews}
+                  />
+                </div>
               </div>
               <NewsPanel localNews={localNews} />
             </>

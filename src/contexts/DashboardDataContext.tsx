@@ -19,6 +19,10 @@ import {
   type DataStatus,
   type RiskModelConfidence,
 } from "../lib/riskModel";
+import {
+  estimateSymptomPrediction,
+  type SymptomPrediction,
+} from "../lib/symptomPrediction";
 import { getLocation } from "../services/location";
 import { getAirQuality, type AirQualityData } from "../services/airsQuality";
 import { getFluData } from "../services/flu";
@@ -151,6 +155,7 @@ type DashboardDataContextValue = {
   methodology: string[];
   scoreBreakdown: ReturnType<typeof evaluateRiskModel>["scoreBreakdown"];
   dataConfidence: RiskModelConfidence;
+  symptomPrediction: SymptomPrediction;
   mainTwinScore: number;
   mainTwinLevel: string;
 
@@ -255,6 +260,20 @@ export function DashboardDataProvider({ children }: { children: ReactNode }) {
   const personalizationSummary = riskModel.personalizationSummary;
   const scoreBreakdown = riskModel.scoreBreakdown;
   const dataConfidence = riskModel.dataConfidence;
+  const symptomPrediction = estimateSymptomPrediction({
+    aqi,
+    heatRisk,
+    uvRisk,
+    pollutantRisk,
+    fluActivity,
+    covidActivity,
+    scoreBreakdown,
+    forecastData: healthForecastData,
+    environmentData,
+    equityData: healthEquityData,
+    profile: userProfile,
+    dataConfidence,
+  });
   const mainTwinScore = clampScore(
     scoreBreakdown.score * 0.68 +
       (healthForecastData?.peakScore ?? scoreBreakdown.score) * 0.22 +
@@ -680,6 +699,7 @@ export function DashboardDataProvider({ children }: { children: ReactNode }) {
     methodology: riskModel.methodology,
     scoreBreakdown,
     dataConfidence,
+    symptomPrediction,
     mainTwinScore,
     mainTwinLevel,
     searchZipCode,

@@ -23,6 +23,7 @@ export default function TwinPage() {
     userProfile,
     healthForecastData,
     dataConfidence,
+    symptomPrediction,
     checkinStreak,
   } = useDashboardData();
 
@@ -58,6 +59,7 @@ export default function TwinPage() {
         forecastData={healthForecastData}
         topDrivers={scoreBreakdown.topDrivers}
         dataConfidence={dataConfidence}
+        symptomPrediction={symptomPrediction}
         checkinStreak={checkinStreak}
         onOpenCheckin={() => router.push(getDashboardUrl(zipCode, "checkin"))}
         onOpenForecast={() => router.push(getDashboardUrl(zipCode, "forecast"))}

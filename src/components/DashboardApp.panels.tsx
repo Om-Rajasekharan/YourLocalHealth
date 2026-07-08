@@ -1,5 +1,6 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
@@ -24,6 +25,7 @@ import {
   type RiskModelConfidence,
   type RiskModelItem,
 } from "../lib/riskModel";
+import type { SymptomPrediction } from "../lib/symptomPrediction";
 import { getLocation } from "../services/location";
 import { getAirQuality } from "../services/airsQuality";
 import { getFluData } from "../services/flu";
@@ -46,7 +48,19 @@ import {
   type CheckinStreak,
   type SavedHealthSnapshot,
 } from "../services/mlTrainingData";
-import { Twin3D, type TwinNode3D } from "./Twin3D";
+import type { TwinNode3D } from "./Twin3D";
+
+const Twin3D = dynamic(
+  () => import("./Twin3D").then((module) => module.Twin3D),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="grid min-h-[32rem] place-items-center rounded-[1.5rem] border border-[var(--border)] bg-white p-6 text-sm text-[var(--muted-foreground)] shadow-[0_12px_34px_-26px_rgba(19,41,75,0.45)]">
+        Loading exposure twin...
+      </div>
+    ),
+  }
+);
 
 type ChatMessage = {
   role: "user" | "assistant";
@@ -1922,6 +1936,150 @@ export function RiskTransparencyPanel({
   );
 }
 
+export function SymptomProbabilityPanel({
+  prediction,
+  compact = false,
+}: {
+  prediction: SymptomPrediction;
+  compact?: boolean;
+}) {
+  const primaryTarget =
+    prediction.targets.reduce(
+      (highest, target) =>
+        target.probability > highest.probability ? target : highest,
+      prediction.targets[0]
+    ) ?? null;
+
+  if (compact) {
+    return (
+      <article className="rounded-[1.5rem] border border-[var(--border)] bg-white p-5 shadow-[0_12px_34px_-26px_rgba(19,41,75,0.45)]">
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--primary)]">
+              Symptom probability
+            </p>
+            <h4 className="mt-2 font-heading text-2xl font-semibold text-[var(--primary-ink)]">
+              {prediction.overallProbability}%
+            </h4>
+          </div>
+          <RiskBadge value={prediction.confidenceLabel} />
+        </div>
+        {primaryTarget && (
+          <p className="mt-3 text-sm leading-6 text-[var(--muted-foreground)]">
+            Highest signal: {primaryTarget.label.toLowerCase()} at{" "}
+            {primaryTarget.probability}%.
+          </p>
+        )}
+      </article>
+    );
+  }
+
+  return (
+    <section className="rounded-[1.75rem] border border-[var(--border)] bg-white p-6 shadow-[0_18px_55px_-38px_rgba(19,41,75,0.5)]">
+      <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[var(--primary)]">
+            Symptom Probability Engine
+          </p>
+          <h3 className="display-heading mt-2 max-w-3xl text-3xl leading-tight text-[var(--foreground)] sm:text-5xl">
+            Experimental probabilities, not just a score.
+          </h3>
+          <p className="mt-3 max-w-2xl text-sm leading-6 text-[var(--foreground-muted)]">
+            This tabular model layer estimates which self-reported symptoms are
+            most likely to rise from today&apos;s air, heat, pollen, illness,
+            equity, chronic-burden, and profile context.
+          </p>
+        </div>
+        <div className="rounded-2xl border border-[var(--primary)]/25 bg-[var(--primary-soft)] p-5 text-right">
+          <p className="text-xs font-bold uppercase tracking-wide text-[var(--foreground-muted)]">
+            Overall estimate
+          </p>
+          <p className="mt-1 text-5xl font-black text-[var(--primary-ink)]">
+            {prediction.overallProbability}%
+          </p>
+          <p className="text-sm font-semibold text-[var(--foreground-muted)]">
+            confidence: {prediction.confidenceLabel}
+          </p>
+        </div>
+      </div>
+
+      <div className="mt-6 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+        {prediction.targets.map((target) => (
+          <article
+            className="rounded-2xl border border-[var(--border)] bg-slate-50 p-4"
+            key={target.id}
+          >
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <p className="text-sm font-semibold text-[var(--primary-ink)]">
+                  {target.label}
+                </p>
+                <p className="mt-1 text-xs leading-5 text-[var(--muted-foreground)]">
+                  {target.plainLanguage}
+                </p>
+              </div>
+              <RiskBadge value={target.level} />
+            </div>
+            <div className="mt-4 flex items-end gap-3">
+              <span className="font-heading text-4xl font-semibold text-[var(--primary-ink)]">
+                {target.probability}%
+              </span>
+            </div>
+            <div className="mt-3 h-2 overflow-hidden rounded-full bg-white">
+              <div
+                className="h-full rounded-full bg-[var(--primary)]"
+                style={{ width: `${target.probability}%` }}
+              />
+            </div>
+          </article>
+        ))}
+      </div>
+
+      <div className="mt-6 grid gap-5 lg:grid-cols-[1fr_0.8fr]">
+        <div className="rounded-2xl border border-[var(--border)] bg-slate-50 p-4">
+          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--primary)]">
+            Strongest model drivers
+          </p>
+          <div className="mt-3 grid gap-2">
+            {prediction.topDrivers.map((driver) => (
+              <div
+                className="grid gap-2 rounded-xl bg-white p-3 sm:grid-cols-[1fr_auto] sm:items-center"
+                key={`${driver.label}-${driver.detail}`}
+              >
+                <div>
+                  <p className="text-sm font-semibold text-[var(--primary-ink)]">
+                    {driver.label}
+                  </p>
+                  <p className="mt-1 text-xs leading-5 text-[var(--muted-foreground)]">
+                    {driver.detail}
+                  </p>
+                </div>
+                <span className="text-sm font-semibold text-[var(--primary)]">
+                  {driver.impact}/100
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className="rounded-2xl border border-[var(--border)] bg-slate-50 p-4">
+          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--primary)]">
+            Model status
+          </p>
+          <p className="mt-3 text-sm font-semibold text-[var(--primary-ink)]">
+            {prediction.modelVersion}
+          </p>
+          <ul className="mt-3 grid gap-2 text-xs leading-5 text-[var(--muted-foreground)]">
+            {prediction.caveats.map((caveat) => (
+              <li key={caveat}>{caveat}</li>
+            ))}
+          </ul>
+        </div>
+      </div>
+    </section>
+  );
+}
+
 export function DataConfidencePanel({
   confidence,
 }: {
@@ -2997,6 +3155,7 @@ export function ExposureTwinPanel({
   forecastData,
   topDrivers,
   dataConfidence,
+  symptomPrediction,
   checkinStreak,
   onOpenCheckin,
   onOpenForecast,
@@ -3012,6 +3171,7 @@ export function ExposureTwinPanel({
   forecastData: HealthForecastData | null;
   topDrivers: RiskModelItem[];
   dataConfidence: RiskModelConfidence;
+  symptomPrediction: SymptomPrediction;
   checkinStreak: CheckinStreak;
   onOpenCheckin: () => void;
   onOpenForecast?: () => void;
@@ -3346,34 +3506,37 @@ export function ExposureTwinPanel({
           </p>
         </article>
 
-        <article className="rounded-[1.5rem] border border-[var(--border)] bg-white p-5 shadow-[0_12px_34px_-26px_rgba(19,41,75,0.45)]">
-          <p className="eyebrow-text">Keep it learning</p>
-          <h4 className="display-heading mt-2 text-3xl text-[var(--foreground)]">
-            {checkinStreak.currentStreak} day
-            {checkinStreak.currentStreak === 1 ? "" : "s"}
-          </h4>
-          <p className="mt-3 text-sm leading-6 text-[var(--foreground-muted)]">
-            {streakPrompt}
-          </p>
-          <div className="mt-5">
-            <div className="exposure-twin-streak-track">
-              <span style={{ width: `${streakProgress}%` }} />
+        <div className="grid gap-5">
+          <SymptomProbabilityPanel compact prediction={symptomPrediction} />
+          <article className="rounded-[1.5rem] border border-[var(--border)] bg-white p-5 shadow-[0_12px_34px_-26px_rgba(19,41,75,0.45)]">
+            <p className="eyebrow-text">Keep it learning</p>
+            <h4 className="display-heading mt-2 text-3xl text-[var(--foreground)]">
+              {checkinStreak.currentStreak} day
+              {checkinStreak.currentStreak === 1 ? "" : "s"}
+            </h4>
+            <p className="mt-3 text-sm leading-6 text-[var(--foreground-muted)]">
+              {streakPrompt}
+            </p>
+            <div className="mt-5">
+              <div className="exposure-twin-streak-track">
+                <span style={{ width: `${streakProgress}%` }} />
+              </div>
+              <div className="mt-2 flex justify-between text-xs font-semibold uppercase tracking-wide text-[var(--foreground-faint)]">
+                <span>Current</span>
+                <span>Best: {checkinStreak.bestStreak} days</span>
+              </div>
             </div>
-            <div className="mt-2 flex justify-between text-xs font-semibold uppercase tracking-wide text-[var(--foreground-faint)]">
-              <span>Current</span>
-              <span>Best: {checkinStreak.bestStreak} days</span>
-            </div>
-          </div>
-          <button
-            type="button"
-            onClick={onOpenCheckin}
-            className="exposure-twin-streak-button mt-5"
-          >
-            {checkinStreak.checkedInToday
-              ? "Review today's check-in"
-              : "Log today's check-in"}
-          </button>
-        </article>
+            <button
+              type="button"
+              onClick={onOpenCheckin}
+              className="exposure-twin-streak-button mt-5"
+            >
+              {checkinStreak.checkedInToday
+                ? "Review today's check-in"
+                : "Log today's check-in"}
+            </button>
+          </article>
+        </div>
       </section>
 
       <p className="rounded-2xl border border-[var(--border)] bg-white p-4 text-xs leading-5 text-[var(--foreground-muted)]">

@@ -68,7 +68,7 @@ export default function SignUpPage() {
     }
 
     if (!supabase) {
-      setMessage("Supabase is not configured yet.");
+      setMessage("Sign-up is not available yet. Please try again later.");
       return;
     }
 
@@ -89,7 +89,7 @@ export default function SignUpPage() {
 
     if (!user) {
       setMessage(
-        "Account created. Check your email to confirm it, then sign in to finish your profile."
+        "Account created. If email confirmation is turned on, check your inbox, then come back here to sign in."
       );
       setLoading(false);
       return;
@@ -206,7 +206,7 @@ export default function SignUpPage() {
               </div>
               {!isSupabaseConfigured && (
                 <p className="mt-4 rounded-lg border border-amber-200 bg-amber-50 p-3 text-xs leading-5 text-amber-900">
-                  Supabase is not configured yet.
+                  Sign-up is not available yet. Please try again later.
                 </p>
               )}
             </section>

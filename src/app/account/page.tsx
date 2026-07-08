@@ -67,7 +67,7 @@ function AuthPanel({
     }
 
     if (!supabase) {
-      setAuthMessage("Add Supabase environment variables to enable sign in.");
+      setAuthMessage("Sign in is not available yet. Please try again later.");
       return;
     }
 
@@ -137,7 +137,7 @@ function AuthPanel({
       </p>
       {!isSupabaseConfigured && (
         <p className="mt-3 rounded-lg border border-amber-200 bg-amber-50 p-3 text-xs leading-5 text-amber-900">
-          Supabase is not configured yet.
+          Sign in is not available yet. Please try again later.
         </p>
       )}
       <div className="mt-4 grid gap-3">

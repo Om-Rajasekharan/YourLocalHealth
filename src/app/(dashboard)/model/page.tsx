@@ -7,6 +7,7 @@ import {
   EmptyDashboardState,
   ModelDataSourcesPanel,
   RiskTransparencyPanel,
+  SymptomProbabilityPanel,
   getDashboardUrl,
 } from "../../../components/DashboardApp";
 import { useDashboardData } from "../../../contexts/DashboardDataContext";
@@ -21,6 +22,7 @@ export default function ModelPage() {
     scoreBreakdown,
     dataConfidence,
     methodology,
+    symptomPrediction,
     healthForecastData,
     healthEquityData,
   } = useDashboardData();
@@ -52,6 +54,7 @@ export default function ModelPage() {
         categoryScores={scoreBreakdown.categoryScores}
         methodology={methodology}
       />
+      <SymptomProbabilityPanel prediction={symptomPrediction} />
       <DataConfidencePanel confidence={dataConfidence} />
       <ModelDataSourcesPanel
         forecastData={healthForecastData}
