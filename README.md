@@ -140,6 +140,33 @@ and next validation steps, see:
 docs/statistical_validation_notes.md
 ```
 
+### Serving Predictions in Production
+
+Trained models are served by a small FastAPI microservice
+(`ml/serve_models.py`) rather than baked into the Next.js app. It loads every
+`ml/models/*.joblib` pipeline at startup and exposes a `/predict` endpoint
+that returns, per symptom target, a probability and its top contributing
+features (via `shap.TreeExplainer`) so a prediction is explainable, not a
+black box.
+
+```bash
+.venv/bin/pip install -r ml/requirements.txt
+.venv/bin/uvicorn ml.serve_models:app --host 127.0.0.1 --port 8000
+```
+
+The Next.js app calls this service from `/api/risk` through
+`src/lib/mlModelClient.ts`, with a short timeout and a hard fallback: if the
+service is slow, down, or returns something unexpected, `mlPredictions` in the
+API response is simply `null` and the rest of the response is unaffected. This
+path is gated behind the `ENABLE_ML_MODEL_SERVING` feature flag, which
+defaults to `false` since it depends on an external process -- set it to
+`true` and point `ML_SERVICE_URL` at the running service to enable it.
+
+CI (`.github/workflows/ci.yml`, `verify-ml` job) regenerates synthetic data,
+retrains all 9 targets, boots this service, and asserts every target returns
+both a probability and a SHAP explanation on every push, so a broken model or
+a silently-dropped explanation can't ship unnoticed.
+
 ## Native Risk Kernel
 
 The repo also includes a small C++17 scoring kernel in `native/`. It mirrors the

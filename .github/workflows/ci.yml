@@ -49,8 +49,14 @@ jobs:
       - name: Install ML dependencies
         run: pip install -r ml/requirements.txt
 
+      - name: Generate synthetic training data
+        run: python3 ml/generate_synthetic_checkins.py --rows 1500 --output data/synthetic_checkins.csv
+
       - name: Validate training data
         run: python ml/validate_training_data.py data/synthetic_checkins.csv
+
+      - name: Train all symptom models
+        run: python3 ml/train_symptom_model.py data/synthetic_checkins.csv --all-targets
 
       - name: Start model serving microservice
         run: |
