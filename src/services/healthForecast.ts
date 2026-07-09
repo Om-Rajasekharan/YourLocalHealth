@@ -1,3 +1,5 @@
+import { cachedJson } from "../lib/apiCache";
+
 export type ForecastHour = {
   time: string;
   displayTime: string;
@@ -408,19 +410,29 @@ export async function getHealthForecast(
     forecast_days: "2",
   });
 
-  const [weatherResponse, airResponse] = await Promise.all([
-    fetch(`https://api.open-meteo.com/v1/forecast?${weatherParams}`),
-    fetch(`https://air-quality-api.open-meteo.com/v1/air-quality?${airParams}`),
-  ]);
+  let weatherData: WeatherForecastResponse;
+  let airData: AirQualityForecastResponse;
 
-  if (!weatherResponse.ok || !airResponse.ok) {
+  try {
+    [weatherData, airData] = await Promise.all([
+      cachedJson<WeatherForecastResponse>(
+        `https://api.open-meteo.com/v1/forecast?${weatherParams}`,
+        {
+          cacheKey: `forecast-weather:${latitude}:${longitude}`,
+          ttlMs: 15 * 60 * 1000,
+        }
+      ),
+      cachedJson<AirQualityForecastResponse>(
+        `https://air-quality-api.open-meteo.com/v1/air-quality?${airParams}`,
+        {
+          cacheKey: `forecast-air:${latitude}:${longitude}`,
+          ttlMs: 15 * 60 * 1000,
+        }
+      ),
+    ]);
+  } catch {
     throw new Error("Unable to retrieve forecast data.");
   }
-
-  const weatherData =
-    (await weatherResponse.json()) as WeatherForecastResponse;
-  const airData =
-    (await airResponse.json()) as AirQualityForecastResponse;
   const weatherTimes = weatherData.hourly?.time ?? [];
   const airTimes = airData.hourly?.time ?? [];
   const airIndexByTime = new Map(

@@ -27,6 +27,7 @@ export type { DashboardView } from "./DashboardApp.panels";
 export {
   DataConfidencePanel,
   ExposureTwinPanel,
+  FeatureSnapshotPanel,
   ForecastPanel,
   HealthEquityPanel,
   ModelDataSourcesPanel,

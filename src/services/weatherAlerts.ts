@@ -1,3 +1,5 @@
+import { cachedJson } from "../lib/apiCache";
+
 export type WeatherAlert = {
   id: string;
   event: string;
@@ -44,20 +46,22 @@ export async function getWeatherAlerts(
     point: `${latitude},${longitude}`,
   });
 
-  const response = await fetch(
-    `https://api.weather.gov/alerts/active?${params.toString()}`,
-    {
-      headers: {
-        Accept: "application/geo+json",
-      },
-    }
-  );
+  let data: NwsAlertsResponse;
 
-  if (!response.ok) {
+  try {
+    data = await cachedJson<NwsAlertsResponse>(
+      `https://api.weather.gov/alerts/active?${params.toString()}`,
+      {
+        cacheKey: `weather-alerts:${latitude}:${longitude}`,
+        headers: {
+          Accept: "application/geo+json",
+        },
+        ttlMs: 5 * 60 * 1000,
+      }
+    );
+  } catch {
     throw new Error("Unable to retrieve weather alerts.");
   }
-
-  const data = (await response.json()) as NwsAlertsResponse;
 
   return (data.features ?? []).map((feature, index) => {
     const properties = feature.properties ?? {};

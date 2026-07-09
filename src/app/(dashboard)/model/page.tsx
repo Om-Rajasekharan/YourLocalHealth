@@ -5,6 +5,7 @@ import {
   DataConfidencePanel,
   DashboardPageShell,
   EmptyDashboardState,
+  FeatureSnapshotPanel,
   ModelDataSourcesPanel,
   RiskTransparencyPanel,
   SymptomProbabilityPanel,
@@ -25,6 +26,8 @@ export default function ModelPage() {
     symptomPrediction,
     healthForecastData,
     healthEquityData,
+    featureSnapshot,
+    featureSnapshotStatus,
   } = useDashboardData();
 
   if (!zipCode || !searched) {
@@ -56,6 +59,10 @@ export default function ModelPage() {
       />
       <SymptomProbabilityPanel prediction={symptomPrediction} />
       <DataConfidencePanel confidence={dataConfidence} />
+      <FeatureSnapshotPanel
+        snapshot={featureSnapshot}
+        status={featureSnapshotStatus}
+      />
       <ModelDataSourcesPanel
         forecastData={healthForecastData}
         equityData={healthEquityData}

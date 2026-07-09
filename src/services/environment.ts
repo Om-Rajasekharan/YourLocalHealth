@@ -1,3 +1,5 @@
+import { cachedJson } from "../lib/apiCache";
+
 export type EnvironmentData = {
   temperature: number | null;
   apparentTemperature: number | null;
@@ -59,15 +61,13 @@ export async function getEnvironmentData(
   });
 
   try {
-    const response = await fetch(
-      `https://api.open-meteo.com/v1/forecast?${params.toString()}`
+    const data = await cachedJson<OpenMeteoResponse>(
+      `https://api.open-meteo.com/v1/forecast?${params.toString()}`,
+      {
+        cacheKey: `environment:${latitude}:${longitude}`,
+        ttlMs: 15 * 60 * 1000,
+      }
     );
-
-    if (!response.ok) {
-      return unavailableEnvironmentData;
-    }
-
-    const data = (await response.json()) as OpenMeteoResponse;
 
     return {
       temperature: data.current?.temperature_2m ?? null,

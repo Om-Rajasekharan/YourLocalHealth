@@ -1,4 +1,5 @@
 import { stateMap } from "../lib/states";
+import { cachedJson } from "../lib/apiCache";
 
 const COVID_WASTEWATER_URL =
   "https://www.cdc.gov/wcms/vizdata/NCEZID_DIDRI/NWSS_WVAL_metric/NWSSWVALStateMap.json";
@@ -34,13 +35,16 @@ export async function getCovidData(
     throw new Error("Unable to match that ZIP code to a state.");
   }
 
-  const response = await fetch(COVID_WASTEWATER_URL);
+  let data: CovidWastewaterRecord[];
 
-  if (!response.ok) {
+  try {
+    data = await cachedJson<CovidWastewaterRecord[]>(COVID_WASTEWATER_URL, {
+      cacheKey: "cdc-covid-wastewater-state-map",
+      ttlMs: 60 * 60 * 1000,
+    });
+  } catch {
     throw new Error("Unable to retrieve CDC COVID wastewater data.");
   }
-
-  const data = (await response.json()) as CovidWastewaterRecord[];
 
   const record = data.find(
     (item) =>

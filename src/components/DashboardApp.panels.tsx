@@ -43,6 +43,7 @@ import {
 import { type UserProfile } from "../services/userProfile";
 import { type HealthEquityData } from "../services/healthEquity";
 import { type HealthForecastData } from "../services/healthForecast";
+import type { FeatureSnapshot } from "../services/featureSnapshot";
 import {
   saveSymptomCheckin,
   type CheckinStreak,
@@ -2210,6 +2211,111 @@ export function DataConfidencePanel({
         <p className="mt-4 rounded-2xl border border-amber-200 bg-amber-50 p-3 text-sm leading-6 text-amber-900">
           {confidence.caveats[0]}
         </p>
+      )}
+    </section>
+  );
+}
+
+export function FeatureSnapshotPanel({
+  snapshot,
+  status,
+}: {
+  snapshot: FeatureSnapshot | null;
+  status: string;
+}) {
+  const inputs = snapshot
+    ? [
+        ["AQI", snapshot.modelInputs.aqi ?? "n/a"],
+        ["PM2.5", snapshot.modelInputs.pm25 ?? "n/a"],
+        ["Ozone", snapshot.modelInputs.ozone ?? "n/a"],
+        ["Heat", snapshot.modelInputs.heatRisk],
+        ["UV", snapshot.modelInputs.uvRisk],
+        ["Flu", snapshot.modelInputs.fluActivity],
+        ["COVID", snapshot.modelInputs.covidActivity],
+        ["Equity", snapshot.modelInputs.equityScore ?? "n/a"],
+      ]
+    : [];
+
+  return (
+    <section className="mt-5 rounded-[1.5rem] border border-[var(--border)] bg-white p-5 shadow-[0_12px_34px_-26px_rgba(19,41,75,0.45)]">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--primary)]">
+            Feature Store
+          </p>
+          <h3 className="mt-1 font-heading text-2xl font-semibold text-[var(--primary-ink)]">
+            ML-ready search record
+          </h3>
+          <p className="mt-2 max-w-2xl text-sm leading-6 text-[var(--muted-foreground)]">
+            {status}
+          </p>
+        </div>
+        {snapshot && (
+          <RiskBadge value={snapshot.mlReadiness} />
+        )}
+      </div>
+
+      {snapshot && (
+        <>
+          <div className="mt-5 grid gap-3 md:grid-cols-3">
+            <div className="rounded-2xl border border-[var(--border)] bg-slate-50 p-4">
+              <p className="text-xs font-semibold uppercase tracking-wide text-[var(--muted-foreground)]">
+                Source coverage
+              </p>
+              <p className="mt-2 font-heading text-3xl font-semibold text-[var(--primary-ink)]">
+                {snapshot.sourceCoverage.percent}%
+              </p>
+              <p className="text-sm text-[var(--muted-foreground)]">
+                {snapshot.sourceCoverage.loaded}/{snapshot.sourceCoverage.total} groups loaded
+              </p>
+            </div>
+            <div className="rounded-2xl border border-[var(--border)] bg-slate-50 p-4">
+              <p className="text-xs font-semibold uppercase tracking-wide text-[var(--muted-foreground)]">
+                Location key
+              </p>
+              <p className="mt-2 font-heading text-2xl font-semibold text-[var(--primary-ink)]">
+                {snapshot.zipCode}
+              </p>
+              <p className="text-sm text-[var(--muted-foreground)]">
+                {snapshot.location.city}, {snapshot.location.state}
+              </p>
+            </div>
+            <div className="rounded-2xl border border-[var(--border)] bg-slate-50 p-4">
+              <p className="text-xs font-semibold uppercase tracking-wide text-[var(--muted-foreground)]">
+                Personal modifier
+              </p>
+              <p className="mt-2 font-heading text-3xl font-semibold text-[var(--primary-ink)]">
+                +{snapshot.modelInputs.profileModifier}
+              </p>
+              <p className="text-sm text-[var(--muted-foreground)]">
+                Profile exposure adjustment
+              </p>
+            </div>
+          </div>
+
+          <div className="mt-5 grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
+            {inputs.map(([label, value]) => (
+              <div
+                className="rounded-2xl border border-[var(--border)] bg-white p-3"
+                key={label}
+              >
+                <p className="text-[11px] font-semibold uppercase tracking-wide text-[var(--muted-foreground)]">
+                  {label}
+                </p>
+                <p className="mt-1 text-sm font-semibold text-[var(--primary-ink)]">
+                  {value}
+                </p>
+              </div>
+            ))}
+          </div>
+
+          {snapshot.missingSources.length > 0 && (
+            <p className="mt-4 rounded-2xl border border-amber-200 bg-amber-50 p-3 text-sm leading-6 text-amber-900">
+              Missing from this feature record:{" "}
+              {snapshot.missingSources.join(", ")}.
+            </p>
+          )}
+        </>
       )}
     </section>
   );

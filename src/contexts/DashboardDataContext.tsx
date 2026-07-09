@@ -43,6 +43,11 @@ import { getUserProfile, type UserProfile } from "../services/userProfile";
 import { getHealthEquityData, type HealthEquityData } from "../services/healthEquity";
 import { getHealthForecast, type HealthForecastData } from "../services/healthForecast";
 import {
+  buildFeatureSnapshot,
+  featureSnapshotSummary,
+  type FeatureSnapshot,
+} from "../services/featureSnapshot";
+import {
   emptyCheckinStreak,
   getSymptomCheckinStreak,
   saveHealthSnapshot,
@@ -135,6 +140,8 @@ type DashboardDataContextValue = {
   forecastError: string;
   latestSnapshot: SavedHealthSnapshot | null;
   snapshotStatus: string;
+  featureSnapshot: FeatureSnapshot | null;
+  featureSnapshotStatus: string;
 
   // derived
   covidActivity: string;
@@ -280,6 +287,29 @@ export function DashboardDataProvider({ children }: { children: ReactNode }) {
       profileModifier(userProfile)
   );
   const mainTwinLevel = exposureLabel(mainTwinScore);
+  const featureSnapshot = searched
+    ? buildFeatureSnapshot({
+        zipCode,
+        city,
+        state,
+        latitude,
+        longitude,
+        aqi,
+        airComponents,
+        heatRisk,
+        uvRisk,
+        alertRisk,
+        fluActivity,
+        covidData,
+        forecastData: healthForecastData,
+        equityData: healthEquityData,
+        profileModifier: profileModifier(userProfile),
+        dataStatus,
+      })
+    : null;
+  const featureSnapshotStatus = featureSnapshot
+    ? featureSnapshotSummary(featureSnapshot)
+    : "Search a ZIP code to generate an ML-ready feature snapshot.";
 
   const searchZipCode = async (
     zipToSearch: string,
@@ -681,6 +711,8 @@ export function DashboardDataProvider({ children }: { children: ReactNode }) {
     forecastError,
     latestSnapshot,
     snapshotStatus,
+    featureSnapshot,
+    featureSnapshotStatus,
     covidActivity,
     heatRisk,
     uvRisk,

@@ -104,3 +104,52 @@ create policy "Users can insert their own symptom checkins"
 on public.symptom_checkins
 for insert
 with check (auth.uid() = user_id);
+
+create or replace view public.ml_feature_snapshots
+with (security_invoker = true) as
+select
+  hs.id as snapshot_id,
+  hs.user_id,
+  hs.zip_code,
+  hs.city,
+  hs.state,
+  hs.created_at,
+  hs.model_version,
+  hs.model_score,
+  hs.health_risk,
+  hs.respiratory_risk,
+  hs.aqi,
+  hs.air_quality,
+  hs.dominant_pollutant,
+  hs.pollutant_risk,
+  hs.heat_risk,
+  hs.uv_risk,
+  hs.alert_risk,
+  hs.flu_activity,
+  hs.covid_activity,
+  hs.covid_coverage,
+  hs.forecast_average_score,
+  hs.forecast_peak_score,
+  hs.forecast_allergy_peak_score,
+  hs.forecast_pollen_risk,
+  hs.equity_score,
+  hs.equity_level,
+  hs.places_chronic_burden_score,
+  hs.places_asthma,
+  hs.places_copd,
+  hs.places_smoking,
+  hs.places_obesity,
+  hs.places_diabetes,
+  sc.felt_impact,
+  sc.respiratory_symptoms,
+  sc.allergy_symptoms,
+  sc.heat_symptoms,
+  sc.headache_or_fatigue,
+  sc.avoided_outdoor_activity,
+  sc.used_rescue_medication,
+  sc.missed_work_school_activity,
+  sc.symptom_severity,
+  sc.created_at as checkin_created_at
+from public.health_snapshots hs
+left join public.symptom_checkins sc
+  on sc.snapshot_id = hs.id;
