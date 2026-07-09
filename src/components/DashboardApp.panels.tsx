@@ -3819,8 +3819,130 @@ export function ForecastPanel({
           </div>
         </article>
       )}
+
+      {forecastData && (
+        <article className="rounded-[1.5rem] border border-[var(--border)] bg-white p-5 shadow-[0_12px_34px_-26px_rgba(19,41,75,0.45)]">
+          <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--primary)]">
+                Statistical read
+              </p>
+              <h4 className="mt-2 font-heading text-2xl font-semibold text-[var(--primary-ink)]">
+                How stable is this forecast?
+              </h4>
+              <p className="mt-2 max-w-3xl text-sm leading-6 text-[var(--muted-foreground)]">
+                The app computes a distribution of the next 24 hourly risk
+                scores, then summarizes spread, peak intensity, data
+                completeness, and which raw signals move most with the score.
+              </p>
+            </div>
+            <div className="rounded-2xl border border-[var(--border)] bg-[var(--primary-soft)]/45 px-4 py-3 text-sm text-[var(--primary-ink)]">
+              <span className="font-semibold">
+                {forecastData.statistics.signalCompleteness}%
+              </span>{" "}
+              hourly signal completeness
+            </div>
+          </div>
+
+          <div className="mt-5 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+            <ForecastMetric
+              label="Mean / median"
+              value={`${forecastData.statistics.mean} / ${forecastData.statistics.median}`}
+            />
+            <ForecastMetric
+              label="Std. deviation"
+              value={`${forecastData.statistics.standardDeviation} points`}
+            />
+            <ForecastMetric
+              label="Typical band"
+              value={`${forecastData.statistics.variabilityBand.low}-${forecastData.statistics.variabilityBand.high}`}
+            />
+            <ForecastMetric
+              label="Peak z-score"
+              value={
+                forecastData.statistics.peakZScore === null
+                  ? "Stable"
+                  : `${forecastData.statistics.peakZScore} SD`
+              }
+            />
+          </div>
+
+          <div className="mt-5 grid gap-5 lg:grid-cols-[0.85fr_1.15fr]">
+            <div className="rounded-2xl border border-[var(--border)] bg-slate-50 p-4">
+              <p className="text-xs font-semibold uppercase tracking-wide text-[var(--muted-foreground)]">
+                Distribution
+              </p>
+              <p className="mt-2 text-sm leading-6 text-[var(--primary-ink)]">
+                Scores range from {forecastData.statistics.scoreRange.min} to{" "}
+                {forecastData.statistics.scoreRange.max}.{" "}
+                {forecastData.statistics.highRiskHours} high-risk hour(s) and{" "}
+                {forecastData.statistics.moderateRiskHours} moderate-risk
+                hour(s) appear in the next day.
+              </p>
+              <p className="mt-2 text-xs leading-5 text-[var(--muted-foreground)]">
+                Coefficient of variation:{" "}
+                {forecastData.statistics.coefficientOfVariation === null
+                  ? "n/a"
+                  : `${forecastData.statistics.coefficientOfVariation}%`}
+                . Lower values mean the forecast is steadier; higher values
+                mean time-of-day choice matters more.
+              </p>
+            </div>
+
+            <div className="rounded-2xl border border-[var(--border)] bg-slate-50 p-4">
+              <p className="text-xs font-semibold uppercase tracking-wide text-[var(--muted-foreground)]">
+                Signal correlations
+              </p>
+              <div className="mt-3 grid gap-2">
+                {forecastData.statistics.driverCorrelations
+                  .slice()
+                  .sort(
+                    (left, right) =>
+                      Math.abs(right.coefficient ?? 0) -
+                      Math.abs(left.coefficient ?? 0)
+                  )
+                  .slice(0, 4)
+                  .map((driver) => (
+                    <div
+                      className="grid gap-2 rounded-xl bg-white p-3 sm:grid-cols-[10rem_1fr_auto] sm:items-center"
+                      key={driver.label}
+                    >
+                      <p className="text-sm font-semibold text-[var(--primary-ink)]">
+                        {driver.label}
+                      </p>
+                      <div className="h-2 overflow-hidden rounded-full bg-[var(--primary-soft)]">
+                        <div
+                          className="h-full rounded-full bg-[var(--primary)]"
+                          style={{
+                            width: `${Math.max(
+                              6,
+                              Math.abs(driver.coefficient ?? 0) * 100
+                            )}%`,
+                          }}
+                        />
+                      </div>
+                      <p className="text-xs font-semibold text-[var(--muted-foreground)]">
+                        {formatCorrelation(driver.coefficient)}
+                      </p>
+                    </div>
+                  ))}
+              </div>
+              <p className="mt-3 text-xs leading-5 text-[var(--muted-foreground)]">
+                Correlations are descriptive within the 24-hour forecast window;
+                they show co-movement, not causation.
+              </p>
+            </div>
+          </div>
+        </article>
+      )}
     </section>
   );
+}
+
+function formatCorrelation(coefficient: number | null) {
+  if (coefficient === null) return "n/a";
+  if (Math.abs(coefficient) < 0.15) return `${coefficient.toFixed(2)} weak`;
+  return `${coefficient.toFixed(2)} ${coefficient > 0 ? "positive" : "negative"}`;
 }
 
 function ForecastInsightCard({

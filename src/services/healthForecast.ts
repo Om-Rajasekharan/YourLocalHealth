@@ -18,6 +18,33 @@ export type ForecastHour = {
   drivers: string[];
 };
 
+export type ForecastDriverCorrelation = {
+  label: string;
+  coefficient: number | null;
+  n: number;
+  direction: "Positive" | "Negative" | "None" | "Insufficient data";
+};
+
+export type ForecastStatistics = {
+  mean: number;
+  median: number;
+  standardDeviation: number;
+  coefficientOfVariation: number | null;
+  scoreRange: {
+    min: number;
+    max: number;
+  };
+  variabilityBand: {
+    low: number;
+    high: number;
+  };
+  peakZScore: number | null;
+  highRiskHours: number;
+  moderateRiskHours: number;
+  signalCompleteness: number;
+  driverCorrelations: ForecastDriverCorrelation[];
+};
+
 export type HealthForecastData = {
   hours: ForecastHour[];
   averageScore: number;
@@ -27,6 +54,7 @@ export type HealthForecastData = {
   allergyPeakWindow: ForecastHour | null;
   allergyPeakScore: number | null;
   trends: ForecastTrend[];
+  statistics: ForecastStatistics;
   summary: string;
 };
 
@@ -202,6 +230,163 @@ function buildTrend(
   };
 }
 
+function roundStat(value: number, digits = 1) {
+  const multiplier = 10 ** digits;
+  return Math.round(value * multiplier) / multiplier;
+}
+
+function mean(values: number[]) {
+  if (values.length === 0) return 0;
+  return values.reduce((total, value) => total + value, 0) / values.length;
+}
+
+function median(values: number[]) {
+  if (values.length === 0) return 0;
+
+  const sorted = [...values].sort((a, b) => a - b);
+  const middle = Math.floor(sorted.length / 2);
+
+  if (sorted.length % 2 === 0) {
+    return (sorted[middle - 1] + sorted[middle]) / 2;
+  }
+
+  return sorted[middle];
+}
+
+function standardDeviation(values: number[]) {
+  if (values.length < 2) return 0;
+
+  const valueMean = mean(values);
+  const variance =
+    values.reduce((total, value) => total + (value - valueMean) ** 2, 0) /
+    (values.length - 1);
+
+  return Math.sqrt(variance);
+}
+
+function pearsonCorrelation(
+  hours: ForecastHour[],
+  getValue: (hour: ForecastHour) => number | null
+) {
+  const pairs = hours
+    .map((hour) => ({ score: hour.score, value: getValue(hour) }))
+    .filter(
+      (pair): pair is { score: number; value: number } => pair.value !== null
+    );
+
+  if (pairs.length < 3) {
+    return { coefficient: null, n: pairs.length };
+  }
+
+  const scores = pairs.map((pair) => pair.score);
+  const values = pairs.map((pair) => pair.value);
+  const scoreMean = mean(scores);
+  const valueMean = mean(values);
+  const numerator = pairs.reduce(
+    (total, pair) =>
+      total + (pair.score - scoreMean) * (pair.value - valueMean),
+    0
+  );
+  const scoreSums = scores.reduce(
+    (total, score) => total + (score - scoreMean) ** 2,
+    0
+  );
+  const valueSums = values.reduce(
+    (total, value) => total + (value - valueMean) ** 2,
+    0
+  );
+  const denominator = Math.sqrt(scoreSums * valueSums);
+
+  if (denominator === 0) {
+    return { coefficient: null, n: pairs.length };
+  }
+
+  return {
+    coefficient: roundStat(numerator / denominator, 2),
+    n: pairs.length,
+  };
+}
+
+function correlationDirection(
+  coefficient: number | null
+): ForecastDriverCorrelation["direction"] {
+  if (coefficient === null) return "Insufficient data";
+  if (coefficient >= 0.15) return "Positive";
+  if (coefficient <= -0.15) return "Negative";
+  return "None";
+}
+
+export function buildForecastStatistics(hours: ForecastHour[]): ForecastStatistics {
+  const scores = hours.map((hour) => hour.score);
+  const scoreMean = mean(scores);
+  const scoreMedian = median(scores);
+  const scoreStandardDeviation = standardDeviation(scores);
+  const scoreMin = scores.length > 0 ? Math.min(...scores) : 0;
+  const scoreMax = scores.length > 0 ? Math.max(...scores) : 0;
+  const observedSignals = hours.reduce((total, hour) => {
+    return (
+      total +
+      [
+        hour.usAqi,
+        hour.pm25,
+        hour.ozone,
+        hour.apparentTemperature,
+        hour.uvIndex,
+        hour.pollenIndex,
+      ].filter((value) => value !== null).length
+    );
+  }, 0);
+  const totalSignals = Math.max(1, hours.length * 6);
+  const driverInputs: {
+    label: string;
+    getValue: (hour: ForecastHour) => number | null;
+  }[] = [
+    { label: "AQI", getValue: (hour) => hour.usAqi },
+    { label: "PM2.5", getValue: (hour) => hour.pm25 },
+    { label: "Ozone", getValue: (hour) => hour.ozone },
+    { label: "Feels-like temperature", getValue: (hour) => hour.apparentTemperature },
+    { label: "UV index", getValue: (hour) => hour.uvIndex },
+    { label: "Pollen index", getValue: (hour) => hour.pollenIndex },
+  ];
+
+  return {
+    mean: roundStat(scoreMean, 1),
+    median: roundStat(scoreMedian, 1),
+    standardDeviation: roundStat(scoreStandardDeviation, 1),
+    coefficientOfVariation:
+      scoreMean === 0
+        ? null
+        : roundStat((scoreStandardDeviation / scoreMean) * 100, 1),
+    scoreRange: {
+      min: Math.round(scoreMin),
+      max: Math.round(scoreMax),
+    },
+    variabilityBand: {
+      low: Math.max(0, Math.round(scoreMean - scoreStandardDeviation)),
+      high: Math.min(100, Math.round(scoreMean + scoreStandardDeviation)),
+    },
+    peakZScore:
+      scoreStandardDeviation === 0
+        ? null
+        : roundStat((scoreMax - scoreMean) / scoreStandardDeviation, 2),
+    highRiskHours: hours.filter((hour) => hour.score >= 67).length,
+    moderateRiskHours: hours.filter(
+      (hour) => hour.score >= 34 && hour.score < 67
+    ).length,
+    signalCompleteness: Math.round((observedSignals / totalSignals) * 100),
+    driverCorrelations: driverInputs.map((input) => {
+      const { coefficient, n } = pearsonCorrelation(hours, input.getValue);
+
+      return {
+        label: input.label,
+        coefficient,
+        n,
+        direction: correlationDirection(coefficient),
+      };
+    }),
+  };
+}
+
 export async function getHealthForecast(
   latitude: string,
   longitude: string
@@ -353,6 +538,7 @@ export async function getHealthForecast(
     buildTrend("UV index", "UV", hours, (hour) => hour.uvIndex),
     buildTrend("Pollen index", "grains/m3", hours, (hour) => hour.pollenIndex),
   ];
+  const statistics = buildForecastStatistics(hours);
 
   return {
     hours,
@@ -363,6 +549,7 @@ export async function getHealthForecast(
     allergyPeakWindow,
     allergyPeakScore,
     trends,
+    statistics,
     summary: summarizeForecast(bestWindow, worstWindow, peakScore),
   };
 }

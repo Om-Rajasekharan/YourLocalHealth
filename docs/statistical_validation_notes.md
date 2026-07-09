@@ -17,6 +17,26 @@ The symptom signal layer is experimental. It estimates relative self-reported
 symptom signals from the available context. It should not be described as a
 diagnosis, disease forecast, or validated probability of becoming ill.
 
+## Forecast Statistics
+
+The 24-hour forecast now reports descriptive statistics over the hourly risk
+score distribution:
+
+- mean and median hourly score
+- sample standard deviation
+- coefficient of variation
+- min/max range
+- typical variability band, calculated as mean plus/minus one sample standard
+  deviation
+- peak-hour z-score, calculated as `(peak score - mean) / standard deviation`
+- count of high-risk and moderate-risk hours
+- hourly signal completeness
+- Pearson correlations between the hourly score and each raw forecast driver
+
+These statistics summarize the forecast window and are not causal estimates.
+The driver correlations show co-movement across the next 24 hours, not proof
+that a driver caused the score to change.
+
 ## Outcome Labels
 
 The app can save two linked records:
