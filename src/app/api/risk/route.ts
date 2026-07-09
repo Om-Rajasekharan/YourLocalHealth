@@ -8,6 +8,8 @@ import {
   riskQuerySchema,
   validationErrorMessage,
 } from "../../../lib/apiValidation";
+import { isFeatureEnabled } from "../../../lib/featureFlags";
+import { getMlPredictions } from "../../../lib/mlModelClient";
 import { evaluateRiskModel } from "../../../lib/riskModel";
 import { getRateLimitKey, rateLimit } from "../../../lib/rateLimit";
 import { getAirQuality, type AirQualityData } from "../../../services/airsQuality";
@@ -153,6 +155,50 @@ export async function GET(request: Request) {
       dataStatus,
     });
 
+    const mlPredictions = isFeatureEnabled("mlModelServing")
+      ? await getMlPredictions({
+          model_score: riskModel.scoreBreakdown.score,
+          aqi,
+          latitude: Number(location.latitude) || null,
+          longitude: Number(location.longitude) || null,
+          forecast_average_score: forecastData?.averageScore ?? null,
+          forecast_peak_score: forecastData?.peakScore ?? null,
+          forecast_allergy_peak_score: forecastData?.allergyPeakScore ?? null,
+          equity_score: equityData?.equityScore ?? null,
+          places_chronic_burden_score:
+            equityData?.cdcPlaces?.chronicBurdenScore ?? null,
+          places_asthma: equityData?.cdcPlaces?.asthma ?? null,
+          places_copd: equityData?.cdcPlaces?.copd ?? null,
+          places_smoking: equityData?.cdcPlaces?.smoking ?? null,
+          places_obesity: equityData?.cdcPlaces?.obesity ?? null,
+          places_diabetes: equityData?.cdcPlaces?.diabetes ?? null,
+          checkin_month: new Date().getMonth() + 1,
+          checkin_day_of_week: new Date().getDay(),
+          zip_prefix: Number(zipCode.slice(0, 3)) || null,
+          city: location.city,
+          state: location.state,
+          model_version: riskModel.modelVersion,
+          health_risk: riskModel.healthRisk,
+          respiratory_risk: riskModel.respiratoryRisk,
+          air_quality: airQualityLabel,
+          dominant_pollutant: dominantPollutant,
+          pollutant_risk: pollutantRisk,
+          heat_risk: heatRisk,
+          uv_risk: uvRisk,
+          alert_risk: alertRisk,
+          flu_activity: fluActivity,
+          covid_activity: covidData.activity,
+          covid_coverage: covidData.coverage,
+          forecast_best_window: forecastData?.bestWindow?.displayTime ?? null,
+          forecast_worst_window: forecastData?.worstWindow?.displayTime ?? null,
+          forecast_allergy_peak_window:
+            forecastData?.allergyPeakWindow?.displayTime ?? null,
+          forecast_pollen_risk:
+            forecastData?.allergyPeakWindow?.pollenRisk ?? null,
+          equity_level: equityData?.equityLevel ?? null,
+        })
+      : null;
+
     return NextResponse.json({
       zipCode,
       location,
@@ -194,6 +240,7 @@ export async function GET(request: Request) {
         : null,
       confidence: riskModel.dataConfidence,
       featureSnapshot,
+      mlPredictions,
       disclaimer:
         "Informational public-health snapshot only; not medical advice, diagnosis, or treatment.",
     });

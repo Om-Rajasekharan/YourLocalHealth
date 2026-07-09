@@ -2,13 +2,15 @@ export type FeatureFlag =
   | "aiAssistant"
   | "aiPlan"
   | "modelEvaluation"
-  | "experimentalSymptomSignals";
+  | "experimentalSymptomSignals"
+  | "mlModelServing";
 
 const flagEnv: Record<FeatureFlag, string> = {
   aiAssistant: "ENABLE_AI_ASSISTANT",
   aiPlan: "ENABLE_AI_PLAN",
   modelEvaluation: "ENABLE_MODEL_EVALUATION",
   experimentalSymptomSignals: "ENABLE_EXPERIMENTAL_SYMPTOM_SIGNALS",
+  mlModelServing: "ENABLE_ML_MODEL_SERVING",
 };
 
 const defaults: Record<FeatureFlag, boolean> = {
@@ -16,6 +18,7 @@ const defaults: Record<FeatureFlag, boolean> = {
   aiPlan: true,
   modelEvaluation: true,
   experimentalSymptomSignals: true,
+  mlModelServing: false,
 };
 
 function parseBoolean(value: string | undefined, fallback: boolean) {

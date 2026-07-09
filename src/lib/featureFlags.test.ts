@@ -20,6 +20,18 @@ describe("feature flags", () => {
     expect(isFeatureEnabled("aiAssistant")).toBe(false);
   });
 
+  it("defaults ml model serving to off since it depends on an external process", () => {
+    delete process.env.ENABLE_ML_MODEL_SERVING;
+
+    expect(isFeatureEnabled("mlModelServing")).toBe(false);
+  });
+
+  it("allows environment variables to enable ml model serving", () => {
+    process.env.ENABLE_ML_MODEL_SERVING = "true";
+
+    expect(isFeatureEnabled("mlModelServing")).toBe(true);
+  });
+
   it("returns a complete feature snapshot", () => {
     const snapshot = getFeatureFlagSnapshot();
 
@@ -27,6 +39,7 @@ describe("feature flags", () => {
       "aiAssistant",
       "aiPlan",
       "experimentalSymptomSignals",
+      "mlModelServing",
       "modelEvaluation",
     ]);
   });
