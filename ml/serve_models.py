@@ -20,6 +20,7 @@ from typing import Optional
 
 import joblib
 import pandas as pd
+import shap
 from fastapi import FastAPI
 from pydantic import BaseModel
 
@@ -27,10 +28,12 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from train_symptom_model import CATEGORICAL_FEATURES, NUMERIC_FEATURES, TARGETS  # noqa: E402
 
 MODELS_DIR = Path(__file__).resolve().parent / "models"
+TOP_DRIVER_COUNT = 5
 
 app = FastAPI(title="MyLocalHealth Symptom Model Service")
 
 _pipelines: dict[str, object] = {}
+_explainers: dict[str, "shap.TreeExplainer"] = {}
 _positive_rates: dict[str, Optional[float]] = {}
 
 
@@ -46,9 +49,64 @@ def _load_models() -> None:
 
     for target in TARGETS:
         model_path = MODELS_DIR / f"{target}_model.joblib"
-        if model_path.exists():
-            _pipelines[target] = joblib.load(model_path)
-            _positive_rates[target] = positive_rates.get(target)
+        if not model_path.exists():
+            continue
+
+        pipeline = joblib.load(model_path)
+        _pipelines[target] = pipeline
+        _positive_rates[target] = positive_rates.get(target)
+        try:
+            _explainers[target] = shap.TreeExplainer(pipeline.named_steps["classifier"])
+        except Exception:  # noqa: BLE001 -- explanations are a bonus, never block serving
+            pass
+
+
+def _feature_group(name: str) -> str:
+    """Maps a post-encoding column (e.g. "categorical__heat_risk_High") back
+    to the original feature name (e.g. "heat_risk") so one-hot-encoded
+    categories roll up into a single SHAP attribution per source feature."""
+    if name.startswith("numeric__"):
+        return name[len("numeric__"):]
+    if name.startswith("categorical__"):
+        remainder = name[len("categorical__"):]
+        for column in sorted(CATEGORICAL_FEATURES, key=len, reverse=True):
+            if remainder == column or remainder.startswith(f"{column}_"):
+                return column
+        return remainder
+    return name
+
+
+def _top_drivers(target: str, pipeline, frame: pd.DataFrame) -> Optional[list[dict]]:
+    explainer = _explainers.get(target)
+    if explainer is None:
+        return None
+
+    preprocessor = pipeline.named_steps["preprocessor"]
+    classifier = pipeline.named_steps["classifier"]
+    transformed = preprocessor.transform(frame)
+    feature_names = preprocessor.get_feature_names_out()
+
+    shap_values = explainer.shap_values(transformed)
+    if shap_values.ndim == 3:
+        # Multi-output-capable estimators (e.g. RandomForestClassifier) return
+        # (n_samples, n_features, n_classes); pick the positive class.
+        positive_index = list(classifier.classes_).index(True)
+        row_values = shap_values[0, :, positive_index]
+    else:
+        # Single-output binary estimators (e.g. GradientBoostingClassifier)
+        # return (n_samples, n_features) relative to the positive class.
+        row_values = shap_values[0, :]
+
+    grouped: dict[str, float] = {}
+    for name, value in zip(feature_names, row_values):
+        group = _feature_group(name)
+        grouped[group] = grouped.get(group, 0.0) + float(value)
+
+    ranked = sorted(grouped.items(), key=lambda kv: abs(kv[1]), reverse=True)
+    return [
+        {"feature": feature, "impact": round(impact, 4)}
+        for feature, impact in ranked[:TOP_DRIVER_COUNT]
+    ]
 
 
 @app.on_event("startup")
@@ -112,10 +170,15 @@ def predict(payload: FeatureSnapshotRequest):
             proba = pipeline.predict_proba(frame)[0]
             classes = list(pipeline.classes_)
             positive_index = classes.index(True) if True in classes else len(classes) - 1
-            predictions[target] = {
+            entry = {
                 "probability": round(float(proba[positive_index]), 4),
                 "trainingPositiveRate": _positive_rates.get(target),
             }
+            try:
+                entry["topDrivers"] = _top_drivers(target, pipeline, frame)
+            except Exception:  # noqa: BLE001 -- a failed explanation shouldn't drop the prediction
+                entry["topDrivers"] = None
+            predictions[target] = entry
         except Exception as exc:  # noqa: BLE001 -- one target failing shouldn't fail the batch
             predictions[target] = {"probability": None, "error": str(exc)}
 

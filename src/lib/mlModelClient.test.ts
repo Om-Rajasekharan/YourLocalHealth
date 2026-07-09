@@ -7,12 +7,16 @@ afterEach(() => {
 });
 
 describe("getMlPredictions", () => {
-  it("returns parsed predictions on a successful response", async () => {
+  it("returns parsed predictions with SHAP top drivers on a successful response", async () => {
     const fetchMock = vi.fn().mockResolvedValue({
       ok: true,
       json: async () => ({
         predictions: {
-          felt_impact: { probability: 0.82, trainingPositiveRate: 0.8 },
+          felt_impact: {
+            probability: 0.82,
+            trainingPositiveRate: 0.8,
+            topDrivers: [{ feature: "heat_risk", impact: 0.05 }],
+          },
         },
         modelsAvailable: ["felt_impact"],
       }),
@@ -22,6 +26,9 @@ describe("getMlPredictions", () => {
     const result = await getMlPredictions({ aqi: 3, city: "Los Angeles" });
 
     expect(result?.predictions.felt_impact.probability).toBe(0.82);
+    expect(result?.predictions.felt_impact.topDrivers).toEqual([
+      { feature: "heat_risk", impact: 0.05 },
+    ]);
     expect(fetchMock).toHaveBeenCalledTimes(1);
   });
 

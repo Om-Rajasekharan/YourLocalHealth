@@ -32,3 +32,57 @@ jobs:
 
       - name: Build production app
         run: npm run build
+
+  verify-ml:
+    name: Verify ML training data and model serving
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install ML dependencies
+        run: pip install -r ml/requirements.txt
+
+      - name: Validate training data
+        run: python ml/validate_training_data.py data/synthetic_checkins.csv
+
+      - name: Start model serving microservice
+        run: |
+          nohup uvicorn ml.serve_models:app --host 127.0.0.1 --port 8000 > uvicorn.log 2>&1 &
+          for i in $(seq 1 20); do
+            if curl -sf http://127.0.0.1:8000/health > /dev/null; then
+              break
+            fi
+            sleep 1
+          done
+          curl -sf http://127.0.0.1:8000/health
+
+      - name: Smoke-test predictions and SHAP explanations
+        run: |
+          curl -sf -X POST http://127.0.0.1:8000/predict \
+            -H "Content-Type: application/json" \
+            -d '{"aqi": 4, "health_risk": "Moderate", "heat_risk": "Low", "uv_risk": "High"}' \
+            -o predict_response.json
+          python3 -c "
+          import json
+
+          with open('predict_response.json') as handle:
+              payload = json.load(handle)
+
+          predictions = payload['predictions']
+          assert len(predictions) == 9, f'expected 9 targets, got {len(predictions)}'
+          for target, result in predictions.items():
+              assert result['probability'] is not None, f'{target} produced no probability'
+              assert result.get('topDrivers'), f'{target} produced no SHAP top drivers'
+          print('All 9 models produced predictions with SHAP explanations.')
+          "
+
+      - name: Print service log on failure
+        if: failure()
+        run: cat uvicorn.log
