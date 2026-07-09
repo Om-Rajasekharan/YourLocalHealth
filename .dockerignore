@@ -1,0 +1,15 @@
+.git
+.github
+.next
+.venv
+coverage
+data
+ml/models
+node_modules
+npm-debug.log*
+.env
+.env.*
+!.env.example
+Dockerfile
+README.md
+LOVABLE_HANDOFF.md

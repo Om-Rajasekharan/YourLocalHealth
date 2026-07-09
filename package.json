@@ -7,7 +7,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "test": "vitest run"
+    "test": "vitest run",
+    "validate:data": "python3 ml/validate_training_data.py data/synthetic_checkins.csv --output docs/data_validation_report.md"
   },
   "dependencies": {
     "@react-three/drei": "^10.7.7",
@@ -16,7 +17,8 @@
     "next": "15.5.19",
     "react": "19.1.0",
     "react-dom": "19.1.0",
-    "three": "^0.185.1"
+    "three": "^0.185.1",
+    "zod": "^4.4.3"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",

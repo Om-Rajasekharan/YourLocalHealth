@@ -40,3 +40,25 @@ The output is compact JSON:
 
 Scores are normalized to `0..100`. The kernel is informational only and is not
 a clinical model.
+
+## Future WebAssembly Path
+
+The kernel is written as portable C++17 so it can later be compiled to
+WebAssembly and called from the browser or an edge runtime. That would make the
+transparent score engine independent from React UI code.
+
+Possible Emscripten build direction:
+
+```bash
+emcc native/risk_kernel.cpp \
+  -std=c++17 \
+  -O3 \
+  -s WASM=1 \
+  -s MODULARIZE=1 \
+  -s EXPORT_ES6=1 \
+  -o public/risk_kernel.js
+```
+
+This is intentionally not wired into production yet. The current deployed app
+uses the TypeScript model while the native kernel remains an experiment for
+future WebAssembly or backend scoring work.

@@ -1,0 +1,358 @@
+openapi: 3.1.0
+info:
+  title: MyLocalHealth API
+  version: 0.1.0
+  summary: Local public-health context endpoints used by the MyLocalHealth app.
+  description: >
+    These endpoints support the MyLocalHealth dashboard. They aggregate public
+    health, environmental, geocoding, news, and AI-assistant context. Responses
+    are informational only and must not be interpreted as medical advice,
+    diagnosis, or treatment.
+servers:
+  - url: https://mylocalhealth.org
+    description: Production
+  - url: http://localhost:3000
+    description: Local development
+paths:
+  /api/health:
+    get:
+      summary: Return service health, configured integrations, and feature flags.
+      responses:
+        "200":
+          description: Operational health response.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    enum: [ok]
+                  timestamp:
+                    type: string
+                    format: date-time
+                  integrations:
+                    type: object
+                    additionalProperties:
+                      type: boolean
+                  featureFlags:
+                    type: object
+                    additionalProperties:
+                      type: boolean
+                  disclaimer:
+                    type: string
+  /api/risk:
+    get:
+      summary: Generate a compact risk snapshot for a ZIP code.
+      description: >
+        Validates the ZIP code, applies rate limiting, aggregates location,
+        air quality, forecast, CDC respiratory signals, weather alerts, and
+        health-equity context, then returns the transparent risk model output.
+      parameters:
+        - $ref: "#/components/parameters/ZipCode"
+      responses:
+        "200":
+          description: Local risk snapshot.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RiskSnapshot"
+        "400":
+          $ref: "#/components/responses/ApiError"
+        "429":
+          $ref: "#/components/responses/RateLimited"
+        "500":
+          $ref: "#/components/responses/ApiError"
+  /api/flu:
+    get:
+      summary: Get CDC respiratory illness activity for a state.
+      parameters:
+        - $ref: "#/components/parameters/State"
+      responses:
+        "200":
+          description: Flu or respiratory activity label.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  activity:
+                    type: string
+                    examples: ["Very Low", "Low", "Moderate", "High", "Unknown"]
+        "500":
+          $ref: "#/components/responses/ApiError"
+  /api/health-equity:
+    get:
+      summary: Get Census/CDC-style social vulnerability context for a ZIP code.
+      parameters:
+        - $ref: "#/components/parameters/ZipCode"
+        - $ref: "#/components/parameters/Latitude"
+        - $ref: "#/components/parameters/Longitude"
+      responses:
+        "200":
+          description: Health-equity overlay and chronic disease context.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  equityData:
+                    $ref: "#/components/schemas/HealthEquityData"
+        "400":
+          $ref: "#/components/responses/ApiError"
+        "500":
+          $ref: "#/components/responses/ApiError"
+  /api/local-news:
+    get:
+      summary: Get recent local health-related news for a city/state.
+      parameters:
+        - name: city
+          in: query
+          required: true
+          schema:
+            type: string
+          example: Fort Collins
+        - $ref: "#/components/parameters/State"
+      responses:
+        "200":
+          description: Recent health-related articles.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  articles:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/LocalNewsArticle"
+        "500":
+          $ref: "#/components/responses/ApiError"
+  /api/reverse-location:
+    get:
+      summary: Convert a clicked map latitude/longitude to approximate location context.
+      parameters:
+        - $ref: "#/components/parameters/Latitude"
+        - $ref: "#/components/parameters/Longitude"
+      responses:
+        "200":
+          description: Approximate location for map-click search.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  city:
+                    type: string
+                  state:
+                    type: string
+                  zipCode:
+                    type: string
+        "400":
+          $ref: "#/components/responses/ApiError"
+        "500":
+          $ref: "#/components/responses/ApiError"
+  /api/health-chat:
+    post:
+      summary: Ask the AI health assistant a question using dashboard context.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/HealthChatRequest"
+      responses:
+        "200":
+          description: AI assistant response.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  answer:
+                    type: string
+        "400":
+          $ref: "#/components/responses/ApiError"
+        "429":
+          $ref: "#/components/responses/RateLimited"
+        "500":
+          $ref: "#/components/responses/ApiError"
+  /api/health-plan:
+    post:
+      summary: Generate an informational daily health plan from dashboard context.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/HealthPlanRequest"
+      responses:
+        "200":
+          description: Daily plan response.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  plan:
+                    type: string
+        "400":
+          $ref: "#/components/responses/ApiError"
+        "429":
+          $ref: "#/components/responses/RateLimited"
+        "500":
+          $ref: "#/components/responses/ApiError"
+components:
+  parameters:
+    ZipCode:
+      name: zipCode
+      in: query
+      required: true
+      schema:
+        type: string
+        pattern: "^[0-9]{5}$"
+      example: "80528"
+    State:
+      name: state
+      in: query
+      required: true
+      schema:
+        type: string
+        minLength: 2
+        maxLength: 2
+      example: CO
+    Latitude:
+      name: latitude
+      in: query
+      required: false
+      schema:
+        type: string
+      example: "40.522"
+    Longitude:
+      name: longitude
+      in: query
+      required: false
+      schema:
+        type: string
+      example: "-105.056"
+  responses:
+    ApiError:
+      description: Request failed.
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+    RateLimited:
+      description: Request was rate limited.
+      headers:
+        Retry-After:
+          schema:
+            type: string
+          description: Seconds until the client should retry.
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+              retryAfterSeconds:
+                type: integer
+  schemas:
+    RiskSnapshot:
+      type: object
+      properties:
+        zipCode:
+          type: string
+        location:
+          type: object
+          additionalProperties: true
+        generatedAt:
+          type: string
+          format: date-time
+        risk:
+          type: object
+          properties:
+            overall:
+              type: string
+            respiratory:
+              type: string
+            score:
+              type: integer
+            modelVersion:
+              type: string
+        signals:
+          type: object
+          additionalProperties: true
+        forecast:
+          type:
+            - object
+            - "null"
+          additionalProperties: true
+        equity:
+          type:
+            - object
+            - "null"
+          additionalProperties: true
+        confidence:
+          type: object
+          additionalProperties: true
+        featureSnapshot:
+          type: object
+          additionalProperties: true
+        disclaimer:
+          type: string
+    LocalNewsArticle:
+      type: object
+      properties:
+        title:
+          type: string
+        url:
+          type: string
+          format: uri
+        source:
+          type: string
+        publishedAt:
+          type: string
+        language:
+          type: string
+    HealthEquityData:
+      type: object
+      properties:
+        zcta:
+          type: string
+        tractFips:
+          type:
+            - string
+            - "null"
+        equityScore:
+          type: integer
+          minimum: 0
+          maximum: 100
+        equityLevel:
+          type: string
+          enum: [Low, Moderate, High, Unknown]
+        summary:
+          type: string
+        caveats:
+          type: array
+          items:
+            type: string
+    HealthChatRequest:
+      type: object
+      required: [question, context]
+      properties:
+        question:
+          type: string
+        context:
+          type: object
+          additionalProperties: true
+    HealthPlanRequest:
+      type: object
+      required: [context]
+      properties:
+        context:
+          type: object
+          additionalProperties: true

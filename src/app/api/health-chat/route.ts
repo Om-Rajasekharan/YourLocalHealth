@@ -1,4 +1,16 @@
 import { NextResponse } from "next/server";
+import {
+  buildAiSafetyAudit,
+  unsafeQuestionMessage,
+  urgentCareMessage,
+} from "../../../lib/aiSafety";
+import {
+  healthChatSchema,
+  validationErrorMessage,
+} from "../../../lib/apiValidation";
+import { isFeatureEnabled } from "../../../lib/featureFlags";
+import { traceAsync } from "../../../lib/observability";
+import { getRateLimitKey, rateLimit } from "../../../lib/rateLimit";
 
 const OPENAI_RESPONSES_API_URL = "https://api.openai.com/v1/responses";
 
@@ -123,6 +135,64 @@ ${news}
 }
 
 export async function POST(request: Request) {
+  const limiter = rateLimit({
+    key: getRateLimitKey(request, "api-health-chat"),
+    limit: 10,
+    windowMs: 60 * 1000,
+  });
+
+  if (!limiter.allowed) {
+    return NextResponse.json(
+      {
+        answer: "Too many assistant requests. Please try again shortly.",
+        retryAfterSeconds: limiter.retryAfterSeconds,
+      },
+      {
+        status: 429,
+        headers: {
+          "Retry-After": limiter.retryAfterSeconds.toString(),
+        },
+      }
+    );
+  }
+
+  if (!isFeatureEnabled("aiAssistant")) {
+    return NextResponse.json(
+      {
+        answer: "The health assistant is currently disabled.",
+        audit: {
+          blocked: true,
+          urgent: false,
+          reasons: ["AI assistant feature flag is disabled."],
+          usedContext: [],
+          disclaimer:
+            "MyLocalHealth is informational only and does not provide medical advice, diagnosis, or treatment.",
+        },
+      },
+      { status: 503 }
+    );
+  }
+
+  let rawBody: unknown;
+
+  try {
+    rawBody = await request.json();
+  } catch {
+    return NextResponse.json(
+      { answer: "Please send a valid JSON request body." },
+      { status: 400 }
+    );
+  }
+
+  const parsedBody = healthChatSchema.safeParse(rawBody);
+
+  if (!parsedBody.success) {
+    return NextResponse.json(
+      { answer: validationErrorMessage(parsedBody.error) },
+      { status: 400 }
+    );
+  }
+
   const apiKey = process.env.OPENAI_API_KEY;
 
   if (!apiKey) {
@@ -135,7 +205,7 @@ export async function POST(request: Request) {
     );
   }
 
-  const body = (await request.json()) as HealthChatRequest;
+  const body = parsedBody.data as HealthChatRequest;
   const question = body.question?.trim();
 
   if (!question) {
@@ -143,6 +213,25 @@ export async function POST(request: Request) {
       { answer: "Please ask a question first." },
       { status: 400 }
     );
+  }
+
+  const audit = buildAiSafetyAudit({
+    question,
+    contextLabels: [
+      body.context?.zipCode ? "location" : "",
+      body.context?.airQuality ? "air quality" : "",
+      body.context?.fluActivity ? "flu activity" : "",
+      body.context?.covidActivity ? "COVID wastewater" : "",
+      body.context?.healthRisk ? "risk model" : "",
+      body.context?.news?.length ? "local news" : "",
+    ].filter(Boolean),
+  });
+
+  if (audit.blocked) {
+    return NextResponse.json({
+      answer: unsafeQuestionMessage(),
+      audit,
+    });
   }
 
   const priorMessages = (body.messages ?? [])
@@ -167,19 +256,30 @@ ${question}
 `.trim();
 
   try {
-    const response = await fetch(OPENAI_RESPONSES_API_URL, {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${apiKey}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model: process.env.OPENAI_MODEL ?? "gpt-4.1-mini",
-        input: prompt,
-        temperature: 0.2,
-        max_output_tokens: 500,
-      }),
-    });
+    const response = await traceAsync(
+      "api.health_chat.openai",
+      () =>
+        fetch(OPENAI_RESPONSES_API_URL, {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${apiKey}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            model: process.env.OPENAI_MODEL ?? "gpt-4.1-mini",
+            input: audit.urgent
+              ? `${urgentCareMessage()}\n\n${prompt}`
+              : prompt,
+            temperature: 0.2,
+            max_output_tokens: 500,
+          }),
+        }),
+      {
+        route: "/api/health-chat",
+        zipCode: body.context?.zipCode,
+        urgent: audit.urgent,
+      }
+    );
 
     const data = (await response.json()) as OpenAIResponse & {
       error?: { message?: string };
@@ -191,6 +291,7 @@ ${question}
           answer:
             data.error?.message ??
             "The health assistant is temporarily unavailable.",
+          audit,
         },
         { status: response.status }
       );
@@ -198,12 +299,15 @@ ${question}
 
     return NextResponse.json({
       answer:
-        getResponseText(data) ||
-        "I could not generate an answer from the current health context.",
+        `${audit.urgent ? `${urgentCareMessage()}\n\n` : ""}${
+          getResponseText(data) ||
+          "I could not generate an answer from the current health context."
+        }`,
+      audit,
     });
   } catch {
     return NextResponse.json(
-      { answer: "The health assistant is temporarily unavailable." },
+      { answer: "The health assistant is temporarily unavailable.", audit },
       { status: 503 }
     );
   }

@@ -1,4 +1,12 @@
 import { NextResponse } from "next/server";
+import { healthDisclaimer } from "../../../lib/aiSafety";
+import {
+  healthPlanSchema,
+  validationErrorMessage,
+} from "../../../lib/apiValidation";
+import { isFeatureEnabled } from "../../../lib/featureFlags";
+import { traceAsync } from "../../../lib/observability";
+import { getRateLimitKey, rateLimit } from "../../../lib/rateLimit";
 
 const OPENAI_RESPONSES_API_URL = "https://api.openai.com/v1/responses";
 
@@ -284,7 +292,78 @@ function buildFallbackPlan(body: HealthPlanRequest): HealthPlan {
 }
 
 export async function POST(request: Request) {
-  const body = (await request.json()) as HealthPlanRequest;
+  const limiter = rateLimit({
+    key: getRateLimitKey(request, "api-health-plan"),
+    limit: 8,
+    windowMs: 60 * 1000,
+  });
+
+  if (!limiter.allowed) {
+    return NextResponse.json(
+      {
+        plan: buildFallbackPlan({}),
+        fallback: true,
+        error: "Too many AI plan requests. Please try again shortly.",
+        retryAfterSeconds: limiter.retryAfterSeconds,
+      },
+      {
+        status: 429,
+        headers: {
+          "Retry-After": limiter.retryAfterSeconds.toString(),
+        },
+      }
+    );
+  }
+
+  let rawBody: unknown;
+
+  try {
+    rawBody = await request.json();
+  } catch {
+    return NextResponse.json(
+      {
+        plan: buildFallbackPlan({}),
+        fallback: true,
+        error: "Please send a valid JSON request body.",
+      },
+      { status: 400 }
+    );
+  }
+
+  const parsedBody = healthPlanSchema.safeParse(rawBody);
+
+  if (!parsedBody.success) {
+    return NextResponse.json(
+      {
+        plan: buildFallbackPlan({}),
+        fallback: true,
+        error: validationErrorMessage(parsedBody.error),
+      },
+      { status: 400 }
+    );
+  }
+
+  const body = parsedBody.data as HealthPlanRequest;
+
+  if (!isFeatureEnabled("aiPlan")) {
+    return NextResponse.json(
+      {
+        plan: {
+          ...buildFallbackPlan(body),
+          uncertainty:
+            "AI plan generation is disabled by feature flag; this fallback uses deterministic dashboard context only.",
+        },
+        fallback: true,
+        audit: {
+          blocked: true,
+          reasons: ["AI plan feature flag is disabled."],
+          disclaimer: healthDisclaimer,
+        },
+      },
+      { status: 503 }
+    );
+  }
+
   const apiKey = process.env.OPENAI_API_KEY;
 
   if (!apiKey) {
@@ -316,19 +395,28 @@ ${formatPlanContext(body)}
 `.trim();
 
   try {
-    const response = await fetch(OPENAI_RESPONSES_API_URL, {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${apiKey}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model: process.env.OPENAI_MODEL ?? "gpt-4.1-mini",
-        input: prompt,
-        temperature: 0.2,
-        max_output_tokens: 650,
-      }),
-    });
+    const response = await traceAsync(
+      "api.health_plan.openai",
+      () =>
+        fetch(OPENAI_RESPONSES_API_URL, {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${apiKey}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            model: process.env.OPENAI_MODEL ?? "gpt-4.1-mini",
+            input: prompt,
+            temperature: 0.2,
+            max_output_tokens: 650,
+          }),
+        }),
+      {
+        route: "/api/health-plan",
+        zipCode: body.context?.zipCode,
+        modelVersion: body.model?.version,
+      }
+    );
 
     const data = (await response.json()) as OpenAIResponse & {
       error?: { message?: string };
@@ -341,17 +429,38 @@ ${formatPlanContext(body)}
           fallback: true,
           error:
             data.error?.message ?? "The AI health plan is temporarily unavailable.",
+          audit: {
+            fallback: true,
+            disclaimer: healthDisclaimer,
+          },
         }
       );
     }
 
-    return NextResponse.json({ plan: parsePlan(getResponseText(data)) });
+    return NextResponse.json({
+      plan: parsePlan(getResponseText(data)),
+      audit: {
+        fallback: false,
+        usedContext: [
+          "risk model",
+          "forecast",
+          "environment",
+          "respiratory signals",
+          "local news",
+        ],
+        disclaimer: healthDisclaimer,
+      },
+    });
   } catch {
     return NextResponse.json(
       {
         plan: buildFallbackPlan(body),
         fallback: true,
         error: "The AI health plan is temporarily unavailable.",
+        audit: {
+          fallback: true,
+          disclaimer: healthDisclaimer,
+        },
       }
     );
   }

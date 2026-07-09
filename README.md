@@ -193,6 +193,99 @@ Only one is needed. If both are set, Looker Studio is used first.
 Do not embed tables containing names, emails, notes, precise medical histories,
 or account-level records. Use aggregate counts, rates, and model metrics.
 
+## Production Container
+
+The app includes a Dockerfile that builds the Next.js standalone production
+server. This is useful for reproducible deployments and professor/demo
+discussion around production readiness.
+
+Build the container:
+
+```bash
+docker build -t mylocalhealth .
+```
+
+Run it locally:
+
+```bash
+docker run --env-file .env.local -p 3000:3000 mylocalhealth
+```
+
+Open:
+
+```bash
+http://localhost:3000
+```
+
+## API Contract
+
+The internal API routes are documented in:
+
+```bash
+docs/api/openapi.yaml
+```
+
+This OpenAPI spec describes the local news, health equity, reverse geocoding,
+flu, health assistant, and daily plan endpoints. It is documentation for the app
+contract, not a clinical decision-support API.
+
+## Observability, AI Safety, and Feature Flags
+
+The app includes lightweight structured trace logging for AI API calls and a
+small feature-flag layer for experimental features.
+
+Feature flags:
+
+```bash
+ENABLE_AI_ASSISTANT=true
+ENABLE_AI_PLAN=true
+ENABLE_MODEL_EVALUATION=true
+ENABLE_EXPERIMENTAL_SYMPTOM_SIGNALS=true
+```
+
+The health assistant route also includes basic AI guardrails:
+
+- prompt-injection pattern detection
+- urgent symptom language detection
+- source/context audit metadata returned with responses
+- deterministic fallback behavior when AI features are disabled or unavailable
+
+Trace events are written as structured JSON logs with the prefix:
+
+```bash
+[mylocalhealth:trace]
+```
+
+These logs intentionally exclude API keys, tokens, and secrets.
+
+## Security Scanning
+
+GitHub Actions includes:
+
+- CI lint/test/build verification
+- CodeQL static analysis for JavaScript and TypeScript
+- Dependency review for pull requests
+
+These checks support safer iteration before deploying public-facing changes.
+
+## Data Quality Validation
+
+Before training or presenting model results, validate the exported training CSV:
+
+```bash
+npm run validate:data
+```
+
+The command writes:
+
+```bash
+docs/data_validation_report.md
+```
+
+The report checks required columns, missingness, duplicate check-ins, label
+balance, score ranges, date coverage, geographic coverage, and numeric feature
+summaries. This is data QA, not clinical validation.
+
 ### Train On Real Check-Ins Later
 
 When enough real users have submitted check-ins:
