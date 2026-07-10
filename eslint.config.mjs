@@ -20,6 +20,7 @@ const eslintConfig = [
       ".venv/**",
       "data/**",
       "ml/models/**",
+      "native/wasm/dist/**",
       "next-env.d.ts",
     ],
   },

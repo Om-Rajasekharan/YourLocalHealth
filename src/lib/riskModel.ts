@@ -58,7 +58,7 @@ export type RiskModelConfidence = {
   caveats: string[];
 };
 
-function signalSeverity(value: string) {
+export function signalSeverity(value: string) {
   if (
     value === "High" ||
     value === "Very High" ||

@@ -32,6 +32,18 @@ describe("feature flags", () => {
     expect(isFeatureEnabled("mlModelServing")).toBe(true);
   });
 
+  it("defaults the RAG knowledge base to off since it depends on a manual seeding step", () => {
+    delete process.env.ENABLE_RAG_KNOWLEDGE_BASE;
+
+    expect(isFeatureEnabled("ragKnowledgeBase")).toBe(false);
+  });
+
+  it("allows environment variables to enable the RAG knowledge base", () => {
+    process.env.ENABLE_RAG_KNOWLEDGE_BASE = "true";
+
+    expect(isFeatureEnabled("ragKnowledgeBase")).toBe(true);
+  });
+
   it("returns a complete feature snapshot", () => {
     const snapshot = getFeatureFlagSnapshot();
 
@@ -41,6 +53,7 @@ describe("feature flags", () => {
       "experimentalSymptomSignals",
       "mlModelServing",
       "modelEvaluation",
+      "ragKnowledgeBase",
     ]);
   });
 });

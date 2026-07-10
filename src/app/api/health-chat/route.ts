@@ -11,6 +11,10 @@ import {
 import { isFeatureEnabled } from "../../../lib/featureFlags";
 import { traceAsync } from "../../../lib/observability";
 import { getRateLimitKey, rateLimit } from "../../../lib/rateLimit";
+import {
+  retrieveKnowledgeSnippets,
+  type KnowledgeSnippet,
+} from "../../../services/healthKnowledgeBase";
 
 const OPENAI_RESPONSES_API_URL = "https://api.openai.com/v1/responses";
 
@@ -134,8 +138,21 @@ ${news}
 `.trim();
 }
 
+function formatKnowledgeSnippets(snippets: KnowledgeSnippet[] | null) {
+  if (!snippets || snippets.length === 0) {
+    return null;
+  }
+
+  return snippets
+    .map(
+      (snippet, index) =>
+        `${index + 1}. [${snippet.source}] ${snippet.content}`
+    )
+    .join("\n");
+}
+
 export async function POST(request: Request) {
-  const limiter = rateLimit({
+  const limiter = await rateLimit({
     key: getRateLimitKey(request, "api-health-chat"),
     limit: 10,
     windowMs: 60 * 1000,
@@ -215,6 +232,11 @@ export async function POST(request: Request) {
     );
   }
 
+  const knowledgeSnippets = isFeatureEnabled("ragKnowledgeBase")
+    ? await retrieveKnowledgeSnippets(question)
+    : null;
+  const formattedKnowledge = formatKnowledgeSnippets(knowledgeSnippets);
+
   const audit = buildAiSafetyAudit({
     question,
     contextLabels: [
@@ -224,6 +246,7 @@ export async function POST(request: Request) {
       body.context?.covidActivity ? "COVID wastewater" : "",
       body.context?.healthRisk ? "risk model" : "",
       body.context?.news?.length ? "local news" : "",
+      formattedKnowledge ? "curated public-health knowledge base" : "",
     ].filter(Boolean),
   });
 
@@ -242,12 +265,16 @@ export async function POST(request: Request) {
   const prompt = `
 You are the MyLocalHealth public health assistant.
 
-Use only the provided dashboard context, local news list, and general public-health knowledge. Be clear about uncertainty. Do not diagnose, prescribe, or replace a clinician. If symptoms sound urgent, recommend contacting emergency services or a medical professional. If the user asks about personal symptoms, give general education and practical next steps, not a diagnosis.
+Use only the provided dashboard context, local news list, reference knowledge, and general public-health knowledge. Be clear about uncertainty. Do not diagnose, prescribe, or replace a clinician. If symptoms sound urgent, recommend contacting emergency services or a medical professional. If the user asks about personal symptoms, give general education and practical next steps, not a diagnosis.
 
-Keep answers concise and useful for a nontechnical user. Mention which local signals matter most. If local news is relevant, cite the article title/source in plain language. If the provided data does not answer something, say so.
+Keep answers concise and useful for a nontechnical user. Mention which local signals matter most. If local news is relevant, cite the article title/source in plain language. If reference knowledge below is relevant, cite its source name in plain language (e.g. "According to CDC guidance on..."). If the provided data does not answer something, say so.
 
 ${formatContext(body.context)}
-
+${
+  formattedKnowledge
+    ? `\nReference knowledge (cite the source name if you use one of these):\n${formattedKnowledge}\n`
+    : ""
+}
 Recent conversation:
 ${priorMessages || "No prior messages."}
 
@@ -304,6 +331,10 @@ ${question}
           "I could not generate an answer from the current health context."
         }`,
       audit,
+      sources: knowledgeSnippets?.map((snippet) => ({
+        topic: snippet.topic,
+        source: snippet.source,
+      })) ?? [],
     });
   } catch {
     return NextResponse.json(

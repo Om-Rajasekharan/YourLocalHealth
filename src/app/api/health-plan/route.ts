@@ -292,7 +292,7 @@ function buildFallbackPlan(body: HealthPlanRequest): HealthPlan {
 }
 
 export async function POST(request: Request) {
-  const limiter = rateLimit({
+  const limiter = await rateLimit({
     key: getRateLimitKey(request, "api-health-plan"),
     limit: 8,
     windowMs: 60 * 1000,

@@ -12,6 +12,7 @@ import { isFeatureEnabled } from "../../../lib/featureFlags";
 import { getMlPredictions } from "../../../lib/mlModelClient";
 import { evaluateRiskModel } from "../../../lib/riskModel";
 import { getRateLimitKey, rateLimit } from "../../../lib/rateLimit";
+import { crossCheckRiskScore } from "../../../lib/wasmRiskKernel";
 import { getAirQuality, type AirQualityData } from "../../../services/airsQuality";
 import { getCovidData, type CovidActivityData } from "../../../services/covid";
 import {
@@ -40,7 +41,7 @@ const unknownCovidData: CovidActivityData = {
 };
 
 export async function GET(request: Request) {
-  const limiter = rateLimit({
+  const limiter = await rateLimit({
     key: getRateLimitKey(request, "api-risk"),
     limit: 30,
     windowMs: 60 * 1000,
@@ -136,6 +137,28 @@ export async function GET(request: Request) {
       dataStatus,
       profile: null,
     });
+
+    // Independent cross-check of the overall score against a C++/WASM
+    // reimplementation of the same weighted-scoring math. Purely a
+    // verification signal -- never affects the response -- so a drift
+    // between the two implementations gets caught in traces instead of
+    // silently shipping a wrong score. Awaited (not fire-and-forget) so
+    // the trace reliably fires even in serverless environments that may
+    // freeze the process right after the response is sent.
+    await crossCheckRiskScore(
+      [
+        { value: airQualityLabel, maxPoints: 18 },
+        { value: pollutantRisk, maxPoints: 16 },
+        { value: heatRisk, maxPoints: 14 },
+        { value: uvRisk, maxPoints: 8 },
+        { value: alertRisk, maxPoints: 12 },
+        { value: fluActivity, maxPoints: 14 },
+        { value: covidData.activity, maxPoints: 14 },
+        { value: "", maxPoints: 10 },
+      ],
+      riskModel.scoreBreakdown.score
+    );
+
     const featureSnapshot = buildFeatureSnapshot({
       zipCode,
       city: location.city,

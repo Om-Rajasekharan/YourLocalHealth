@@ -24,20 +24,39 @@ vulnerability.
 - Personalized account/profile fields through Supabase
 - Saved locations
 - Symptom check-ins for future model training
-- AI health assistant and AI daily health plan
-- Synthetic ML training pipeline for demo/testing
+- AI health assistant and AI daily health plan, optionally grounded in a
+  curated public-health knowledge base via RAG (retrieval-augmented
+  generation)
+- Password reset flow
+- Synthetic ML training pipeline with 9 trained, explainable, calibrated
+  symptom-risk models (scikit-learn, SHAP, Platt scaling, bootstrap
+  confidence intervals), served via a FastAPI microservice with graceful
+  fallback
 - Python model reporting for ML transparency
-- Native C++ risk scoring kernel for scoring experiments
+- Native C++ risk scoring kernel, including a WebAssembly build that
+  cross-checks the TypeScript risk model in production
+- Cross-instance rate limiting backed by Postgres
+- Real distributed tracing via OpenTelemetry
 
 ## Tech Stack
 
-- Next.js
-- TypeScript
-- Tailwind CSS
-- Supabase
-- OpenWeather / Open-Meteo / CDC public datasets
-- Python, pandas, scikit-learn, joblib for ML experiments
-- C++17 for portable risk-scoring experiments
+- **TypeScript / Next.js** -- the app itself: UI, API routes, feature flags,
+  observability, rate limiting.
+- **Python** (pandas, scikit-learn, FastAPI, SHAP) -- the ML pipeline:
+  training, calibration, explainability, and a serving microservice
+  (`ml/`). Not experiments-only -- it's wired into the live app via
+  `src/lib/mlModelClient.ts`, gated behind a feature flag.
+- **C++17 / WebAssembly** -- an independent reimplementation of the risk
+  scoring math, compiled with Emscripten and called from the risk API at
+  request time to cross-check the TypeScript implementation (`native/`).
+- **SQL (PostgreSQL / pgvector)** -- not just table definitions: atomic
+  upsert functions for cross-instance rate limiting and cosine-similarity
+  search for the RAG knowledge base (`supabase/*.sql`).
+- **Supabase** -- Postgres, pgvector, auth, row-level security.
+- **OpenTelemetry** -- real distributed tracing (not just log lines) across
+  every external call: ML serving, RAG retrieval, the WASM cross-check, and
+  rate limiting.
+- OpenWeather / Open-Meteo / CDC public datasets.
 
 ## Run Locally
 
@@ -169,33 +188,91 @@ a silently-dropped explanation can't ship unnoticed.
 
 ## Native Risk Kernel
 
-The repo also includes a small C++17 scoring kernel in `native/`. It mirrors the
-transparent risk-index idea outside the UI and can later become a backend or
-WebAssembly scoring component.
+The repo includes two C++17 implementations of the transparent risk-index
+math in `native/`: a standalone CLI tool for scoring experiments, and a
+WebAssembly module that's actually wired into the deployed app.
 
-Build it locally:
+### CLI tool (standalone, experimental)
 
 ```bash
 clang++ -std=c++17 -O2 -Wall -Wextra native/risk_kernel.cpp -o /tmp/mylocalhealth-risk
+
+/tmp/mylocalhealth-risk \
+  --aqi 72 --heat 61 --uv 55 --pollen 44 --illness 38 \
+  --equity 52 --chronic 48 --profile 12 --forecast 67
 ```
 
-Run a sample score:
+Outputs compact JSON with a score, risk level, dominant contributor, and
+data-confidence estimate.
+
+### WebAssembly cross-check (live in production)
+
+`native/wasm/risk_kernel_wasm.cpp` is a second, independent C++
+implementation of the same weighted-scoring math used in
+`src/lib/riskModel.ts`, compiled to WebAssembly with Emscripten and called
+from `/api/risk` on every request (`src/lib/wasmRiskKernel.ts`). It
+recomputes the overall score and compares it against the TypeScript result
+-- purely a verification signal, never the source of truth, and never able
+to affect the actual API response -- so if the two independently-written
+implementations of the same math ever silently drift apart, it shows up as
+a `wasm_risk_kernel.disagreement` trace event instead of shipping a wrong
+score unnoticed.
+
+Rebuilding after a change to the C++ source:
 
 ```bash
-/tmp/mylocalhealth-risk \
-  --aqi 72 \
-  --heat 61 \
-  --uv 55 \
-  --pollen 44 \
-  --illness 38 \
-  --equity 52 \
-  --chronic 48 \
-  --profile 12 \
-  --forecast 67
+brew install emscripten   # one-time; the compiled output is committed
+./native/wasm/build.sh
 ```
 
-The output is compact JSON with a score, risk level, dominant contributor, and
-data-confidence estimate.
+The compiled `native/wasm/dist/risk_kernel_wasm.mjs` is committed like any
+other build artifact -- the deployed app doesn't have `emcc` available, so
+this isn't run as part of `npm run build`.
+
+## Distributed Tracing (OpenTelemetry)
+
+`src/instrumentation.ts` registers a real OpenTelemetry `NodeTracerProvider`
+at server startup (`src/lib/otel.ts`). `traceAsync()`
+(`src/lib/observability.ts`) -- already used for every external call: ML
+serving, RAG retrieval, the WASM cross-check, rate limiting -- wraps each
+one in a proper OTel span (trace ID, span ID, parent/child correlation,
+status, exceptions) in addition to its existing structured console log, so
+every one of those call sites got real distributed tracing for free without
+any of them needing to change.
+
+With no backend configured, spans export to stdout via `ConsoleSpanExporter`
+-- genuine OpenTelemetry output, just without a hosted collector. Point
+`OTEL_EXPORTER_OTLP_ENDPOINT` at a real backend (Honeycomb, Grafana Cloud,
+etc. -- both have free tiers) to switch with zero code changes.
+
+## Load Testing
+
+`scripts/load-test.mjs` benchmarks two routes against a local production
+build, deliberately not combined into one number since they measure
+different things: the home page (static, no rate limit, no external calls)
+reflects the Next.js server's own raw serving capacity, while `/api/risk`
+(rate-limited to 30/min by design, ~7 parallel external API calls, risk-model
+computation, ML feature snapshot, WASM cross-check) is measured with a
+bounded request count for realistic per-request latency rather than
+sustained high RPS.
+
+```bash
+npm run build && npm run start   # in one terminal
+node scripts/load-test.mjs       # in another
+```
+
+Representative results from a local run (Apple Silicon, single instance):
+
+| Route | Requests | Throughput | p50 | p97.5 | p99 |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| `/` (static) | 51,410 in 15s | 3,428 req/s | 4ms | 12ms | 15ms |
+| `/api/risk?zipCode=90001` | 20 sequential | 6.7 req/s | 79ms | 876ms | 876ms |
+
+The `/api/risk` numbers reflect `src/lib/apiCache.ts` in effect -- most
+requests for a recently-queried ZIP hit cache and return in well under
+100ms; the p97.5/p99/max are all the same single slower request, a cache
+miss that had to call external APIs. Re-run against a cold cache (a ZIP
+that hasn't been queried recently) for uncached latency instead.
 
 ## Tableau or Looker Studio
 
@@ -268,6 +345,8 @@ ENABLE_AI_ASSISTANT=true
 ENABLE_AI_PLAN=true
 ENABLE_MODEL_EVALUATION=true
 ENABLE_EXPERIMENTAL_SYMPTOM_SIGNALS=true
+ENABLE_ML_MODEL_SERVING=false
+ENABLE_RAG_KNOWLEDGE_BASE=false
 ```
 
 The health assistant route also includes basic AI guardrails:
@@ -284,6 +363,74 @@ Trace events are written as structured JSON logs with the prefix:
 ```
 
 These logs intentionally exclude API keys, tokens, and secrets.
+
+## AI Assistant Knowledge Base (RAG)
+
+The health assistant's general (non-personalized) answers can be grounded in
+a small curated set of public-health reference snippets via retrieval-
+augmented generation, instead of relying only on the LLM's raw training
+knowledge. This reduces hallucination risk on factual claims and gives the
+assistant citable sources (`src/services/healthKnowledgeBase.ts`).
+
+How it works: each snippet is embedded with OpenAI's
+`text-embedding-3-small` and stored in a Supabase table with a `pgvector`
+column; a Postgres function does cosine-similarity search to find the most
+relevant snippets for a question, which get injected into the assistant's
+prompt with citations.
+
+Setup (one-time):
+
+```bash
+# 1. In the Supabase SQL editor, run:
+supabase/health_knowledge_base.sql
+
+# 2. Add SUPABASE_SERVICE_ROLE_KEY to .env.local (Supabase dashboard ->
+#    Project Settings -> API). This key bypasses row-level security --
+#    never commit it or expose it to the browser. It is only read by the
+#    seeding script below, never by the deployed app.
+
+# 3. Seed the knowledge base:
+node --env-file=.env.local scripts/seed-knowledge-base.mjs
+
+# 4. Turn it on:
+ENABLE_RAG_KNOWLEDGE_BASE=true
+```
+
+Retrieval is gated behind `ENABLE_RAG_KNOWLEDGE_BASE`, which defaults to
+`false` -- like `ENABLE_ML_MODEL_SERVING`, it depends on a manual setup step
+(running the SQL migration and seeding script above) that hasn't happened
+yet on a fresh clone, and attempting retrieval before that step is done adds
+several seconds of latency to every chat request for no benefit. Once
+enabled, retrieval still fails closed with a 2.5s timeout at every step: if
+Supabase isn't configured, the table hasn't been seeded, or the embeddings
+call fails or is slow, `/api/health-chat` falls back to answering from
+dashboard context alone -- exactly as it did before this existed. The
+knowledge base content itself lives in `scripts/knowledge-base-content.mjs`
+for easy review and editing.
+
+## Cross-Instance Rate Limiting
+
+API rate limiting (`src/lib/rateLimit.ts`) is backed by a shared Postgres
+counter (`supabase/rate_limit_buckets.sql`) instead of a plain in-memory
+counter. A plain in-memory `Map` only enforces correctly within a single
+server process -- across multiple serverless invocations or container
+replicas (the normal shape of a production deployment) each instance has
+its own memory, so limits silently don't hold, and everything resets on
+every deploy.
+
+The Postgres-backed check is a single atomic upsert RPC
+(`check_rate_limit`), so concurrent requests for the same key can't race
+each other into an incorrect count. It's `security definer`-scoped: the
+app's public API key can call the function to check/increment a counter,
+but cannot read or write the underlying table directly, so it can't be used
+to inspect or tamper with other keys' rate-limit state via the REST API.
+
+Setup: run `supabase/rate_limit_buckets.sql` in the Supabase SQL editor. No
+app code or environment changes needed -- if the migration hasn't been run
+yet, or the RPC call is slow (1s timeout) or fails for any reason,
+`rateLimit()` falls back to the original in-memory counter rather than
+breaking the API, so this degrades gracefully rather than being a hard
+dependency.
 
 ## Security Scanning
 

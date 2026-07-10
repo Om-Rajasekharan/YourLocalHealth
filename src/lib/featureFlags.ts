@@ -3,7 +3,8 @@ export type FeatureFlag =
   | "aiPlan"
   | "modelEvaluation"
   | "experimentalSymptomSignals"
-  | "mlModelServing";
+  | "mlModelServing"
+  | "ragKnowledgeBase";
 
 const flagEnv: Record<FeatureFlag, string> = {
   aiAssistant: "ENABLE_AI_ASSISTANT",
@@ -11,6 +12,7 @@ const flagEnv: Record<FeatureFlag, string> = {
   modelEvaluation: "ENABLE_MODEL_EVALUATION",
   experimentalSymptomSignals: "ENABLE_EXPERIMENTAL_SYMPTOM_SIGNALS",
   mlModelServing: "ENABLE_ML_MODEL_SERVING",
+  ragKnowledgeBase: "ENABLE_RAG_KNOWLEDGE_BASE",
 };
 
 const defaults: Record<FeatureFlag, boolean> = {
@@ -19,6 +21,7 @@ const defaults: Record<FeatureFlag, boolean> = {
   modelEvaluation: true,
   experimentalSymptomSignals: true,
   mlModelServing: false,
+  ragKnowledgeBase: false,
 };
 
 function parseBoolean(value: string | undefined, fallback: boolean) {

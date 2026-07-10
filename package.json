@@ -8,9 +8,16 @@
     "start": "next start",
     "lint": "eslint",
     "test": "vitest run",
-    "validate:data": "python3 ml/validate_training_data.py data/synthetic_checkins.csv --output docs/data_validation_report.md"
+    "validate:data": "python3 ml/validate_training_data.py data/synthetic_checkins.csv --output docs/data_validation_report.md",
+    "load-test": "node scripts/load-test.mjs"
   },
   "dependencies": {
+    "@opentelemetry/api": "^1.9.1",
+    "@opentelemetry/exporter-trace-otlp-http": "^0.220.0",
+    "@opentelemetry/resources": "^2.9.0",
+    "@opentelemetry/sdk-trace-base": "^2.9.0",
+    "@opentelemetry/sdk-trace-node": "^2.9.0",
+    "@opentelemetry/semantic-conventions": "^1.43.0",
     "@react-three/drei": "^10.7.7",
     "@react-three/fiber": "^9.6.1",
     "@supabase/supabase-js": "^2.108.1",
@@ -26,6 +33,7 @@
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "autocannon": "^8.0.0",
     "eslint": "^9",
     "eslint-config-next": "15.5.19",
     "tailwindcss": "^4",
