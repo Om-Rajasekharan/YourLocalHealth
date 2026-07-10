@@ -33,7 +33,7 @@ TOP_DRIVER_COUNT = 5
 app = FastAPI(title="MyLocalHealth Symptom Model Service")
 
 _pipelines: dict[str, object] = {}
-_explainers: dict[str, "shap.TreeExplainer"] = {}
+_explainers: dict[str, object] = {}
 _positive_rates: dict[str, Optional[float]] = {}
 
 
@@ -55,8 +55,26 @@ def _load_models() -> None:
         pipeline = joblib.load(model_path)
         _pipelines[target] = pipeline
         _positive_rates[target] = positive_rates.get(target)
+
+        classifier = pipeline.named_steps["classifier"]
+        preprocessor = pipeline.named_steps["preprocessor"]
         try:
-            _explainers[target] = shap.TreeExplainer(pipeline.named_steps["classifier"])
+            if hasattr(classifier, "feature_importances_"):
+                # Tree ensembles (RandomForest/GradientBoosting/ExtraTrees):
+                # TreeExplainer reads the tree structure directly, no
+                # background data needed.
+                _explainers[target] = shap.TreeExplainer(classifier)
+            elif hasattr(classifier, "coef_"):
+                # Linear models (LogisticRegression) need a background
+                # distribution -- train_symptom_model.py saves a raw feature
+                # sample per target specifically for this.
+                background_path = MODELS_DIR / f"{target}_background.csv"
+                if background_path.exists():
+                    background = pd.read_csv(background_path)
+                    background_transformed = preprocessor.transform(background)
+                    _explainers[target] = shap.LinearExplainer(
+                        classifier, background_transformed
+                    )
         except Exception:  # noqa: BLE001 -- explanations are a bonus, never block serving
             pass
 

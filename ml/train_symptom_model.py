@@ -625,10 +625,20 @@ def train_target(
     model_path = output_dir / f"{target}_model.joblib"
     metrics_path = output_dir / f"{target}_metrics.json"
     importance_path = output_dir / f"{target}_feature_importance.csv"
+    background_path = output_dir / f"{target}_background.csv"
 
     joblib.dump(final_model, model_path)
     importance = feature_importance(final_model)
     importance.to_csv(importance_path, index=False)
+
+    # A raw (pre-preprocessing) feature sample for serve_models.py to build a
+    # SHAP LinearExplainer background from when a linear model wins -- tree
+    # models don't need this, but saving it unconditionally means serving
+    # doesn't silently lose explanations if a re-run picks a different model.
+    background_sample = features.sample(
+        min(100, len(features)), random_state=random_state
+    )
+    background_sample.to_csv(background_path, index=False)
 
     metadata = {
         "target": target,
@@ -637,6 +647,7 @@ def train_target(
         "model_path": str(model_path),
         "metrics_path": str(metrics_path),
         "feature_importance_path": str(importance_path),
+        "background_path": str(background_path),
         "selected_model": best_model_name,
         "rows": int(len(labels)),
         "positive_rows": int(labels.sum()),
