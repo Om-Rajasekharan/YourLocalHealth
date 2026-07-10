@@ -57,6 +57,37 @@ function AuthPanel({
   const [password, setPassword] = useState("");
   const [authMessage, setAuthMessage] = useState("");
   const [authLoading, setAuthLoading] = useState(false);
+  const [resetLoading, setResetLoading] = useState(false);
+
+  const handleForgotPassword = async () => {
+    setAuthMessage("");
+
+    if (!email.trim()) {
+      setAuthMessage("Enter your email above first, then click \"Forgot password?\".");
+      return;
+    }
+
+    if (!supabase) {
+      setAuthMessage("Password reset is not available yet. Please try again later.");
+      return;
+    }
+
+    setResetLoading(true);
+
+    const result = await supabase.auth.resetPasswordForEmail(email.trim(), {
+      redirectTo: `${window.location.origin}/reset-password`,
+    });
+
+    if (result.error) {
+      setAuthMessage(result.error.message);
+    } else {
+      setAuthMessage(
+        `If an account exists for ${email.trim()}, a password reset link is on its way.`
+      );
+    }
+
+    setResetLoading(false);
+  };
 
   const handleSignIn = async () => {
     setAuthMessage("");
@@ -170,6 +201,14 @@ function AuthPanel({
         >
           Create account
         </Link>
+        <button
+          type="button"
+          onClick={() => void handleForgotPassword()}
+          disabled={resetLoading}
+          className="rounded-lg px-4 py-2 text-sm font-semibold text-[var(--foreground-muted)] underline-offset-2 transition hover:text-[var(--foreground)] hover:underline disabled:text-slate-400"
+        >
+          {resetLoading ? "Sending reset link" : "Forgot password?"}
+        </button>
       </div>
       {authMessage && (
         <p className="mt-3 text-xs leading-5 text-[var(--foreground-muted)]">
