@@ -78,6 +78,7 @@ try:
         GradientBoostingClassifier,
         RandomForestClassifier,
     )
+    from sklearn.dummy import DummyClassifier
     from sklearn.impute import SimpleImputer
     from sklearn.linear_model import LogisticRegression
     from sklearn.metrics import (
@@ -102,6 +103,7 @@ except ModuleNotFoundError as import_error:
     ExtraTreesClassifier = None
     GradientBoostingClassifier = None
     RandomForestClassifier = None
+    DummyClassifier = None
     SimpleImputer = None
     LogisticRegression = None
     StratifiedKFold = None
@@ -381,6 +383,92 @@ def metric_summary(labels: pd.Series, probabilities: pd.Series) -> dict[str, Any
     return summary
 
 
+def calibration_summary(
+    labels: pd.Series, probabilities: pd.Series, n_bins: int = 10
+) -> dict[str, Any] | None:
+    """Bins predictions by predicted probability and compares each bin's mean
+    prediction to its observed positive rate, so a claimed "70% risk" can be
+    checked against how often that bin was actually positive. Reports the
+    Expected Calibration Error (a sample-weighted average of that gap) since
+    the app only ever shows users a probability, never a thresholded
+    decision -- so calibration matters more here than accuracy-style metrics."""
+    if labels.nunique() < 2 or len(labels) < 10:
+        return None
+
+    resolved_bins = max(2, min(n_bins, len(labels) // 5))
+    edges = [i / resolved_bins for i in range(resolved_bins + 1)]
+
+    probs = probabilities.to_numpy()
+    labs = labels.to_numpy().astype(float)
+
+    bins = []
+    weighted_error = 0.0
+    for i in range(resolved_bins):
+        lo, hi = edges[i], edges[i + 1]
+        in_bin = (probs >= lo) & (probs <= hi if i == resolved_bins - 1 else probs < hi)
+        count = int(in_bin.sum())
+        if count == 0:
+            continue
+
+        predicted_mean = round(float(probs[in_bin].mean()), 4)
+        observed_rate = round(float(labs[in_bin].mean()), 4)
+        bins.append(
+            {
+                "bin_range": [round(lo, 2), round(hi, 2)],
+                "predicted_mean": predicted_mean,
+                "observed_rate": observed_rate,
+                "count": count,
+            }
+        )
+        weighted_error += (count / len(labs)) * abs(predicted_mean - observed_rate)
+
+    if not bins:
+        return None
+
+    return {
+        "expected_calibration_error": round(weighted_error, 4),
+        "bins": bins,
+    }
+
+
+def evaluate_baseline(
+    x_train: pd.DataFrame,
+    y_train: pd.Series,
+    x_test: pd.DataFrame,
+    y_test: pd.Series,
+    n_splits: int,
+    random_state: int,
+) -> dict[str, Any]:
+    """Evaluates a DummyClassifier that always predicts the training positive
+    rate, through the same cross-validation and holdout path as the real
+    candidates. This is diagnostic only -- it is never eligible for selection
+    as the deployed model -- and exists so "the model beats guessing the
+    average rate" is a checked fact instead of an assumption."""
+    baseline = DummyClassifier(strategy="prior")
+
+    cv = StratifiedKFold(n_splits=n_splits, shuffle=True, random_state=random_state)
+    cv_probabilities = cross_val_predict(
+        baseline, x_train, y_train, cv=cv, method="predict_proba"
+    )[:, 1]
+    cv_metrics = metric_summary(
+        y_train, pd.Series(cv_probabilities, index=y_train.index)
+    )
+    cv_metrics["model_name"] = "baseline_prior"
+
+    baseline.fit(x_train, y_train)
+    holdout_probabilities = pd.Series(
+        baseline.predict_proba(x_test)[:, 1], index=x_test.index
+    )
+    holdout_metrics = metric_summary(y_test, holdout_probabilities)
+    holdout_metrics["calibration"] = calibration_summary(y_test, holdout_probabilities)
+
+    return {
+        "description": "DummyClassifier(strategy='prior') always predicts the training positive rate; a real model should beat this.",
+        "cross_validation": cv_metrics,
+        "holdout_metrics": holdout_metrics,
+    }
+
+
 def feature_names(model: Pipeline) -> list[str]:
     preprocessor = model.named_steps["preprocessor"]
     return list(preprocessor.get_feature_names_out())
@@ -514,11 +602,21 @@ def train_target(
     final_model.fit(x_train, y_train)
     holdout_probabilities = probability_scores(final_model, x_test)
     holdout_metrics = metric_summary(y_test, holdout_probabilities)
+    holdout_metrics["calibration"] = calibration_summary(y_test, holdout_probabilities)
     holdout_report = classification_report(
         y_test,
         holdout_probabilities >= 0.5,
         output_dict=True,
         zero_division=0,
+    )
+
+    baseline = evaluate_baseline(
+        x_train, y_train, x_test, y_test, n_splits, random_state
+    )
+    baseline["roc_auc_lift"] = round(
+        holdout_metrics.get("roc_auc", 0)
+        - baseline["holdout_metrics"].get("roc_auc", 0),
+        4,
     )
 
     final_model.fit(features, labels)
@@ -551,11 +649,13 @@ def train_target(
         "cross_validation": ranked_models,
         "holdout_metrics": holdout_metrics,
         "holdout_classification_report": holdout_report,
+        "baseline": baseline,
         "top_features": importance.head(15).to_dict(orient="records"),
         "notes": [
             "This is a user-check-in model, not a clinical prediction model.",
             "Metrics are only meaningful once the dataset contains enough diverse check-ins.",
             "Use prospective validation before showing ML predictions as product claims.",
+            "Calibration bins predicted probability against observed outcome rate on the holdout split; expected_calibration_error near 0 means a claimed 70% risk behaves like 70% in practice.",
         ],
     }
 
@@ -609,7 +709,15 @@ def main() -> int:
                 f"Trained {result['target']} with {result['selected_model']} "
                 f"on {result['rows']} rows. Holdout ROC AUC: "
                 f"{result['holdout_metrics'].get('roc_auc', 'n/a')}"
+                f" (baseline {result['baseline']['holdout_metrics'].get('roc_auc', 'n/a')}, "
+                f"lift {result['baseline']['roc_auc_lift']})"
             )
+            calibration = result["holdout_metrics"].get("calibration")
+            if calibration:
+                print(
+                    f"  calibration: expected_calibration_error="
+                    f"{calibration['expected_calibration_error']}"
+                )
             print(f"  model: {result['model_path']}")
             print(f"  metrics: {result['metrics_path']}")
             print(f"  feature importance: {result['feature_importance_path']}")

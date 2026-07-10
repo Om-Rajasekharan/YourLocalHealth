@@ -58,6 +58,22 @@ The Python training script uses:
 - ROC AUC, average precision, balanced accuracy, precision, recall, F1, Brier
   score, and confusion matrix
 - feature importance export for transparency
+- a `DummyClassifier(strategy="prior")` baseline, evaluated through the same
+  cross-validation and holdout path as every real candidate, so "the model
+  beats guessing the average rate" is a checked number (`baseline` in
+  `ml/models/<target>_metrics.json`) rather than an assumption
+- calibration reporting on the holdout split (`holdout_metrics.calibration`):
+  predicted-probability bins compared against observed outcome rate, plus an
+  Expected Calibration Error summary. This matters more than accuracy-style
+  metrics for this product specifically, since the app only ever shows users a
+  probability, never a thresholded yes/no decision.
+
+`ml/generate_model_report.py` surfaces both of these in its "Baseline
+Comparison & Calibration" section. As of the last synthetic-data run, every
+target shows positive ROC AUC lift over baseline (0.08-0.25), and
+`headache_or_fatigue` has a notably high calibration error (~0.31) despite a
+positive lift -- its probabilities rank-order better than chance but should
+not yet be read as literal percentages.
 
 Synthetic check-ins are for pipeline testing only. Synthetic performance should
 not be reported as real-world accuracy.
@@ -66,13 +82,15 @@ not be reported as real-world accuracy.
 
 1. Collect enough real check-ins across multiple ZIP codes and seasons.
 2. Separate synthetic rows from real user labels in all reports.
-3. Evaluate calibration, not just discrimination.
-4. Stratify performance by geography, season, respiratory-virus period, and
+3. Stratify performance by geography, season, respiratory-virus period, and
    data-confidence level.
-5. Test whether adding equity and chronic-disease context improves out-of-sample
+4. Test whether adding equity and chronic-disease context improves out-of-sample
    performance over environmental signals alone.
-6. Add prospective validation before making strong prediction claims.
-7. Keep all user-facing wording informational and avoid medical advice.
+5. Add prospective validation before making strong prediction claims.
+6. Keep all user-facing wording informational and avoid medical advice.
+7. Report cross-validation fold variance (mean ± std), not just a point
+   estimate, once real check-in volume makes per-fold sample sizes stable
+   enough to be meaningful.
 
 ## Demo Language
 

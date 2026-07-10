@@ -58,6 +58,32 @@ jobs:
       - name: Train all symptom models
         run: python3 ml/train_symptom_model.py data/synthetic_checkins.csv --all-targets
 
+      - name: Verify baseline comparison and calibration reporting
+        run: |
+          python3 -c "
+          import json
+
+          with open('ml/models/training_summary.json') as handle:
+              summary = json.load(handle)
+
+          trained = [r for r in summary['results'] if r['status'] == 'trained']
+          assert len(trained) == 9, f'expected 9 trained targets, got {len(trained)}'
+
+          for result in trained:
+              baseline = result.get('baseline')
+              assert baseline, f\"{result['target']} is missing a baseline comparison\"
+              assert 'roc_auc_lift' in baseline, f\"{result['target']} baseline missing roc_auc_lift\"
+
+              calibration = result.get('holdout_metrics', {}).get('calibration')
+              assert calibration, f\"{result['target']} is missing holdout calibration reporting\"
+              assert 'expected_calibration_error' in calibration, f\"{result['target']} missing expected_calibration_error\"
+
+          print('All 9 targets report a baseline comparison and calibration.')
+          "
+
+      - name: Generate model report
+        run: python3 ml/generate_model_report.py --output ml/model_report.md
+
       - name: Start model serving microservice
         run: |
           nohup uvicorn ml.serve_models:app --host 127.0.0.1 --port 8000 > uvicorn.log 2>&1 &

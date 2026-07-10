@@ -160,6 +160,9 @@ def model_quality(metrics: dict[str, Any]) -> str:
 
 def summarize_result(result: dict[str, Any], top_features: int) -> dict[str, Any]:
     holdout = result.get("holdout_metrics", {})
+    baseline = result.get("baseline", {})
+    baseline_holdout = baseline.get("holdout_metrics", {})
+    calibration = holdout.get("calibration")
     features = [
         {
             "feature": readable_feature_name(item.get("feature", "")),
@@ -179,6 +182,9 @@ def summarize_result(result: dict[str, Any], top_features: int) -> dict[str, Any
         "average_precision": holdout.get("average_precision"),
         "balanced_accuracy": holdout.get("balanced_accuracy"),
         "quality": model_quality(holdout),
+        "baseline_roc_auc": baseline_holdout.get("roc_auc"),
+        "roc_auc_lift": baseline.get("roc_auc_lift"),
+        "calibration_error": calibration.get("expected_calibration_error") if calibration else None,
         "top_features": features,
         "reason": result.get("reason"),
     }
@@ -234,6 +240,35 @@ def build_markdown(summary: dict[str, Any], compact: list[dict[str, Any]]) -> st
             )
         lines.append("")
 
+        lines.extend(
+            [
+                "## Baseline Comparison & Calibration",
+                "",
+                "Baseline is a `DummyClassifier` that always predicts the training",
+                "positive rate -- it never sees the input features. ROC AUC lift is",
+                "how much discrimination the trained model adds over that naive",
+                "guess. Calibration error (ECE) checks whether a claimed probability",
+                "matches the observed outcome rate on the holdout split; lower is",
+                "better, and it is a more relevant check for this product than",
+                "accuracy, since the app only ever shows a probability, never a",
+                "thresholded yes/no decision.",
+                "",
+                "| Outcome | Baseline ROC AUC | Model ROC AUC | Lift | Calibration error (ECE) |",
+                "| --- | ---: | ---: | ---: | ---: |",
+            ]
+        )
+        for result in trained:
+            lines.append(
+                "| {label} | {baseline} | {model} | {lift} | {ece} |".format(
+                    label=result["label"],
+                    baseline=number(result["baseline_roc_auc"]),
+                    model=number(result["roc_auc"]),
+                    lift=number(result["roc_auc_lift"]),
+                    ece=number(result["calibration_error"]),
+                )
+            )
+        lines.append("")
+
         lines.extend(["## Top Predictors", ""])
         for result in trained:
             lines.extend([f"### {result['label']}", ""])
@@ -260,8 +295,10 @@ def build_markdown(summary: dict[str, Any], compact: list[dict[str, Any]]) -> st
             "1. Collect real user check-ins linked to the exact snapshot shown that day.",
             "2. Keep synthetic rows separate from real labels when reporting performance.",
             "3. Track model drift by location, season, and respiratory-virus period.",
-            "4. Validate calibration so a predicted 30% risk behaves like 30% in reality.",
-            "5. Review feature importance for leakage or proxy variables before launch.",
+            "4. Review feature importance for leakage or proxy variables before launch.",
+            "5. Watch targets with a high calibration error (see table above) -- their",
+            "   probabilities rank-order better than chance but should not be read as",
+            "   literal percentages yet.",
             "",
             "## Guardrails",
             "",
