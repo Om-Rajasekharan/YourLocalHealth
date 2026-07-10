@@ -23,6 +23,7 @@ const predictResponseSchema = z.object({
     z.string(),
     z.object({
       probability: z.number().min(0).max(1).nullable(),
+      rawProbability: z.number().min(0).max(1).optional(),
       trainingPositiveRate: z.number().min(0).max(1).nullable().optional(),
       topDrivers: z
         .array(

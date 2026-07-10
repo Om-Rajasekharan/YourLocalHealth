@@ -14,6 +14,7 @@ describe("getMlPredictions", () => {
         predictions: {
           felt_impact: {
             probability: 0.82,
+            rawProbability: 0.73,
             trainingPositiveRate: 0.8,
             topDrivers: [{ feature: "heat_risk", impact: 0.05 }],
           },
@@ -26,6 +27,7 @@ describe("getMlPredictions", () => {
     const result = await getMlPredictions({ aqi: 3, city: "Los Angeles" });
 
     expect(result?.predictions.felt_impact.probability).toBe(0.82);
+    expect(result?.predictions.felt_impact.rawProbability).toBe(0.73);
     expect(result?.predictions.felt_impact.topDrivers).toEqual([
       { feature: "heat_risk", impact: 0.05 },
     ]);

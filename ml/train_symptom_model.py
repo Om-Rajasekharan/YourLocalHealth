@@ -71,6 +71,7 @@ from typing import Any
 
 try:
     import joblib
+    import numpy as np
     import pandas as pd
     from sklearn.compose import ColumnTransformer
     from sklearn.ensemble import (
@@ -80,6 +81,7 @@ try:
     )
     from sklearn.dummy import DummyClassifier
     from sklearn.impute import SimpleImputer
+    from sklearn.inspection import permutation_importance
     from sklearn.linear_model import LogisticRegression
     from sklearn.metrics import (
         accuracy_score,
@@ -98,6 +100,7 @@ try:
     from sklearn.preprocessing import OneHotEncoder, StandardScaler
 except ModuleNotFoundError as import_error:
     joblib = None
+    np = None
     pd = None
     ColumnTransformer = Any
     ExtraTreesClassifier = None
@@ -105,6 +108,7 @@ except ModuleNotFoundError as import_error:
     RandomForestClassifier = None
     DummyClassifier = None
     SimpleImputer = None
+    permutation_importance = None
     LogisticRegression = None
     StratifiedKFold = None
     Pipeline = Any
@@ -431,6 +435,47 @@ def calibration_summary(
     }
 
 
+def bootstrap_metric_ci(
+    labels: pd.Series,
+    probabilities: pd.Series,
+    metric_fn,
+    random_state: int,
+    n_resamples: int = 1000,
+) -> dict[str, float] | None:
+    """A 95% confidence interval for a metric via case resampling: redraw the
+    holdout set with replacement n_resamples times, recompute the metric each
+    time, and report the 2.5th/97.5th percentiles. This turns a single point
+    estimate (e.g. "ROC AUC 0.66") into an honest range (e.g. "0.58-0.74"),
+    which matters most for the low-prevalence targets where a holdout of a
+    few hundred rows makes a point estimate fairly noisy."""
+    if len(labels) < 20:
+        return None
+
+    rng = np.random.default_rng(random_state)
+    labels_arr = labels.to_numpy()
+    probs_arr = probabilities.to_numpy()
+    n = len(labels_arr)
+    scores = []
+
+    for _ in range(n_resamples):
+        indices = rng.integers(0, n, size=n)
+        resampled_labels = labels_arr[indices]
+        if len(np.unique(resampled_labels)) < 2:
+            continue
+        try:
+            scores.append(metric_fn(resampled_labels, probs_arr[indices]))
+        except ValueError:
+            continue
+
+    if len(scores) < 50:
+        return None
+
+    return {
+        "low": round(float(np.percentile(scores, 2.5)), 4),
+        "high": round(float(np.percentile(scores, 97.5)), 4),
+    }
+
+
 def evaluate_baseline(
     x_train: pd.DataFrame,
     y_train: pd.Series,
@@ -563,6 +608,7 @@ def train_target(
 
     model_scores = []
     n_splits = min(5, int(train_class_counts.min()))
+    cv_probabilities_by_model: dict[str, pd.Series] = {}
 
     for model_name, classifier in candidate_models(random_state).items():
         model = build_pipeline(classifier, numeric_features, categorical_features)
@@ -576,10 +622,10 @@ def train_target(
             cv=cv,
             method="predict_proba",
         )[:, 1]
-        metrics = metric_summary(
-            y_train,
-            pd.Series(probabilities, index=y_train.index),
+        cv_probabilities_by_model[model_name] = pd.Series(
+            probabilities, index=y_train.index
         )
+        metrics = metric_summary(y_train, cv_probabilities_by_model[model_name])
         metrics["model_name"] = model_name
         model_scores.append(metrics)
 
@@ -603,11 +649,53 @@ def train_target(
     holdout_probabilities = probability_scores(final_model, x_test)
     holdout_metrics = metric_summary(y_test, holdout_probabilities)
     holdout_metrics["calibration"] = calibration_summary(y_test, holdout_probabilities)
+    holdout_metrics["roc_auc_ci95"] = bootstrap_metric_ci(
+        y_test, holdout_probabilities, roc_auc_score, random_state
+    )
+    holdout_metrics["brier_score_ci95"] = bootstrap_metric_ci(
+        y_test, holdout_probabilities, brier_score_loss, random_state
+    )
     holdout_report = classification_report(
         y_test,
         holdout_probabilities >= 0.5,
         output_dict=True,
         zero_division=0,
+    )
+
+    # Platt scaling: fit a 1D logistic regression mapping the winning model's
+    # cross-validated (out-of-fold, never-seen-during-training) probabilities
+    # to observed outcomes, then apply it to the holdout to prove calibration
+    # actually improves -- not just measure that it's off.
+    calibrator = LogisticRegression().fit(
+        cv_probabilities_by_model[best_model_name].to_numpy().reshape(-1, 1),
+        y_train,
+    )
+    calibrated_holdout_probabilities = pd.Series(
+        calibrator.predict_proba(
+            holdout_probabilities.to_numpy().reshape(-1, 1)
+        )[:, 1],
+        index=y_test.index,
+    )
+    calibrated_metrics = metric_summary(y_test, calibrated_holdout_probabilities)
+    holdout_metrics["calibrated"] = {
+        "brier_score": calibrated_metrics["brier_score"],
+        "calibration": calibration_summary(y_test, calibrated_holdout_probabilities),
+        "note": "Platt scaling preserves rank order, so ROC AUC is unchanged; only Brier score and calibration bins shift.",
+    }
+
+    permutation = permutation_importance(
+        final_model,
+        x_test,
+        y_test,
+        scoring="roc_auc",
+        n_repeats=10,
+        random_state=random_state,
+        n_jobs=-1,
+    )
+    permutation_ranked = sorted(
+        zip(numeric_features + categorical_features, permutation.importances_mean, permutation.importances_std),
+        key=lambda item: item[1],
+        reverse=True,
     )
 
     baseline = evaluate_baseline(
@@ -621,15 +709,42 @@ def train_target(
 
     final_model.fit(features, labels)
 
+    # Refit the calibrator for the production model using out-of-fold
+    # probabilities over the FULL dataset (not just x_train), so the
+    # deployed calibrator matches the deployed (full-data-fit) model.
+    full_cv = StratifiedKFold(n_splits=n_splits, shuffle=True, random_state=random_state)
+    full_cv_probabilities = cross_val_predict(
+        build_pipeline(
+            candidate_models(random_state)[best_model_name],
+            numeric_features,
+            categorical_features,
+        ),
+        features,
+        labels,
+        cv=full_cv,
+        method="predict_proba",
+    )[:, 1]
+    production_calibrator = LogisticRegression().fit(
+        full_cv_probabilities.reshape(-1, 1), labels
+    )
+
     output_dir.mkdir(parents=True, exist_ok=True)
     model_path = output_dir / f"{target}_model.joblib"
     metrics_path = output_dir / f"{target}_metrics.json"
     importance_path = output_dir / f"{target}_feature_importance.csv"
+    permutation_importance_path = output_dir / f"{target}_permutation_importance.csv"
     background_path = output_dir / f"{target}_background.csv"
+    calibrator_path = output_dir / f"{target}_calibrator.joblib"
 
     joblib.dump(final_model, model_path)
+    joblib.dump(production_calibrator, calibrator_path)
     importance = feature_importance(final_model)
     importance.to_csv(importance_path, index=False)
+
+    permutation_df = pd.DataFrame(
+        permutation_ranked, columns=["feature", "importance_mean", "importance_std"]
+    )
+    permutation_df.to_csv(permutation_importance_path, index=False)
 
     # A raw (pre-preprocessing) feature sample for serve_models.py to build a
     # SHAP LinearExplainer background from when a linear model wins -- tree
@@ -647,7 +762,9 @@ def train_target(
         "model_path": str(model_path),
         "metrics_path": str(metrics_path),
         "feature_importance_path": str(importance_path),
+        "permutation_importance_path": str(permutation_importance_path),
         "background_path": str(background_path),
+        "calibrator_path": str(calibrator_path),
         "selected_model": best_model_name,
         "rows": int(len(labels)),
         "positive_rows": int(labels.sum()),
@@ -662,11 +779,22 @@ def train_target(
         "holdout_classification_report": holdout_report,
         "baseline": baseline,
         "top_features": importance.head(15).to_dict(orient="records"),
+        "permutation_importance": [
+            {
+                "feature": feature,
+                "importance_mean": round(float(mean), 4),
+                "importance_std": round(float(std), 4),
+            }
+            for feature, mean, std in permutation_ranked[:15]
+        ],
         "notes": [
             "This is a user-check-in model, not a clinical prediction model.",
             "Metrics are only meaningful once the dataset contains enough diverse check-ins.",
             "Use prospective validation before showing ML predictions as product claims.",
             "Calibration bins predicted probability against observed outcome rate on the holdout split; expected_calibration_error near 0 means a claimed 70% risk behaves like 70% in practice.",
+            "holdout_metrics.calibrated shows the same probabilities after Platt scaling -- the calibrator applied in production -- so the raw-vs-calibrated calibration error can be compared directly.",
+            "roc_auc_ci95/brier_score_ci95 are 95% bootstrap confidence intervals from the holdout split, not just point estimates; they widen for low-prevalence targets where the holdout has few positive examples.",
+            "top_features uses the model's built-in impurity/coefficient importance, which is known to be biased toward high-cardinality one-hot categories; permutation_importance measures actual holdout ROC AUC drop per feature and is model-agnostic, so prefer it when the two disagree.",
         ],
     }
 

@@ -34,6 +34,7 @@ app = FastAPI(title="MyLocalHealth Symptom Model Service")
 
 _pipelines: dict[str, object] = {}
 _explainers: dict[str, object] = {}
+_calibrators: dict[str, object] = {}
 _positive_rates: dict[str, Optional[float]] = {}
 
 
@@ -55,6 +56,10 @@ def _load_models() -> None:
         pipeline = joblib.load(model_path)
         _pipelines[target] = pipeline
         _positive_rates[target] = positive_rates.get(target)
+
+        calibrator_path = MODELS_DIR / f"{target}_calibrator.joblib"
+        if calibrator_path.exists():
+            _calibrators[target] = joblib.load(calibrator_path)
 
         classifier = pipeline.named_steps["classifier"]
         preprocessor = pipeline.named_steps["preprocessor"]
@@ -188,8 +193,22 @@ def predict(payload: FeatureSnapshotRequest):
             proba = pipeline.predict_proba(frame)[0]
             classes = list(pipeline.classes_)
             positive_index = classes.index(True) if True in classes else len(classes) - 1
+            raw_probability = float(proba[positive_index])
+
+            calibrator = _calibrators.get(target)
+            if calibrator is not None:
+                calibrated_probability = float(
+                    calibrator.predict_proba([[raw_probability]])[0][1]
+                )
+            else:
+                calibrated_probability = raw_probability
+
             entry = {
-                "probability": round(float(proba[positive_index]), 4),
+                # Calibrated via Platt scaling so this behaves like an actual
+                # probability (see train_symptom_model.py); rawProbability is
+                # the model's uncalibrated output, kept for transparency.
+                "probability": round(calibrated_probability, 4),
+                "rawProbability": round(raw_probability, 4),
                 "trainingPositiveRate": _positive_rates.get(target),
             }
             try:

@@ -58,10 +58,11 @@ jobs:
       - name: Train all symptom models
         run: python3 ml/train_symptom_model.py data/synthetic_checkins.csv --all-targets
 
-      - name: Verify baseline comparison and calibration reporting
+      - name: Verify baseline, calibration, bootstrap CI, and permutation importance
         run: |
           python3 -c "
           import json
+          from pathlib import Path
 
           with open('ml/models/training_summary.json') as handle:
               summary = json.load(handle)
@@ -70,15 +71,28 @@ jobs:
           assert len(trained) == 9, f'expected 9 trained targets, got {len(trained)}'
 
           for result in trained:
+              target = result['target']
+
               baseline = result.get('baseline')
-              assert baseline, f\"{result['target']} is missing a baseline comparison\"
-              assert 'roc_auc_lift' in baseline, f\"{result['target']} baseline missing roc_auc_lift\"
+              assert baseline, f'{target} is missing a baseline comparison'
+              assert 'roc_auc_lift' in baseline, f'{target} baseline missing roc_auc_lift'
 
-              calibration = result.get('holdout_metrics', {}).get('calibration')
-              assert calibration, f\"{result['target']} is missing holdout calibration reporting\"
-              assert 'expected_calibration_error' in calibration, f\"{result['target']} missing expected_calibration_error\"
+              holdout = result.get('holdout_metrics', {})
+              calibration = holdout.get('calibration')
+              assert calibration, f'{target} is missing holdout calibration reporting'
+              assert 'expected_calibration_error' in calibration, f'{target} missing expected_calibration_error'
 
-          print('All 9 targets report a baseline comparison and calibration.')
+              calibrated = holdout.get('calibrated', {}).get('calibration')
+              assert calibrated, f'{target} is missing calibrated (post-Platt-scaling) calibration reporting'
+
+              assert holdout.get('roc_auc_ci95'), f'{target} is missing a bootstrap ROC AUC confidence interval'
+              assert holdout.get('brier_score_ci95'), f'{target} is missing a bootstrap Brier score confidence interval'
+
+              assert result.get('permutation_importance'), f'{target} is missing permutation importance'
+              assert Path(result['calibrator_path']).exists(), f'{target} calibrator artifact was not written'
+              assert Path(result['permutation_importance_path']).exists(), f'{target} permutation importance CSV was not written'
+
+          print('All 9 targets report baseline, raw+calibrated calibration, bootstrap CIs, and permutation importance.')
           "
 
       - name: Generate model report
@@ -111,8 +125,9 @@ jobs:
           assert len(predictions) == 9, f'expected 9 targets, got {len(predictions)}'
           for target, result in predictions.items():
               assert result['probability'] is not None, f'{target} produced no probability'
+              assert result.get('rawProbability') is not None, f'{target} produced no rawProbability'
               assert result.get('topDrivers'), f'{target} produced no SHAP top drivers'
-          print('All 9 models produced predictions with SHAP explanations.')
+          print('All 9 models produced calibrated predictions with SHAP explanations.')
           "
 
       - name: Print service log on failure

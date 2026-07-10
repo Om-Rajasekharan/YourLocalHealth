@@ -67,13 +67,38 @@ The Python training script uses:
   Expected Calibration Error summary. This matters more than accuracy-style
   metrics for this product specifically, since the app only ever shows users a
   probability, never a thresholded yes/no decision.
+- calibration *correction*, not just measurement: a Platt-scaling calibrator
+  (a 1D logistic regression mapping raw probability to observed outcome,
+  fit on cross-validated out-of-fold probabilities so it never sees the same
+  rows twice) is saved per target (`ml/models/<target>_calibrator.joblib`)
+  and applied by `ml/serve_models.py` before a probability is returned. Both
+  `holdout_metrics.calibration` (raw) and `holdout_metrics.calibrated.calibration`
+  (after Platt scaling) are reported so the improvement is provable, not
+  assumed. Platt scaling preserves rank order, so ROC AUC is identical before
+  and after -- only Brier score and calibration error change.
+- 95% bootstrap confidence intervals (`holdout_metrics.roc_auc_ci95`,
+  `holdout_metrics.brier_score_ci95`) from 1,000 resamples of the holdout
+  split, so a metric is reported as a range, not a single number that implies
+  more precision than a few-hundred-row holdout can support.
+- permutation importance (`ml/models/<target>_permutation_importance.csv`,
+  `permutation_importance` in the metrics JSON) alongside the existing
+  built-in feature importance. Built-in importance (impurity-based for tree
+  models, coefficient magnitude for logistic regression) is known to be
+  biased toward high-cardinality one-hot-encoded categorical features;
+  permutation importance instead measures the actual holdout ROC AUC drop
+  when a feature is shuffled, and is comparable across all four candidate
+  model types.
 
-`ml/generate_model_report.py` surfaces both of these in its "Baseline
-Comparison & Calibration" section. As of the last synthetic-data run, every
-target shows positive ROC AUC lift over baseline (0.08-0.25), and
-`headache_or_fatigue` has a notably high calibration error (~0.31) despite a
-positive lift -- its probabilities rank-order better than chance but should
-not yet be read as literal percentages.
+`ml/generate_model_report.py` surfaces all of this in its "Trained Targets",
+"Baseline Comparison & Calibration", and "Permutation Importance" sections.
+As of the last synthetic-data run: every target shows positive ROC AUC lift
+over baseline (0.08-0.25) in this particular run, though `missed_work_school_activity`
+(5.2% positive rate) has shown a *negative* lift on other random draws, and
+its 95% ROC AUC CI dips below 0.5 -- both honestly reported rather than
+hidden. Calibration correction produced large, real improvements: e.g.
+`headache_or_fatigue`'s Expected Calibration Error dropped from ~0.31 (raw)
+to ~0.01 (calibrated) in the same run, meaning its raw probabilities were
+badly overconfident and are now corrected before being served.
 
 Synthetic check-ins are for pipeline testing only. Synthetic performance should
 not be reported as real-world accuracy.
@@ -88,9 +113,13 @@ not be reported as real-world accuracy.
    performance over environmental signals alone.
 5. Add prospective validation before making strong prediction claims.
 6. Keep all user-facing wording informational and avoid medical advice.
-7. Report cross-validation fold variance (mean ± std), not just a point
-   estimate, once real check-in volume makes per-fold sample sizes stable
-   enough to be meaningful.
+7. Revisit Platt scaling vs. isotonic regression for calibration once real
+   check-in volume is large enough per target -- isotonic is more flexible
+   but needs more data per probability bin to avoid overfitting, which is why
+   Platt scaling (parametric, robust on small samples) was chosen for now.
+8. Compare built-in vs. permutation feature importance rankings once real
+   data accumulates; a persistent disagreement between the two is a signal
+   worth investigating before trusting either for product claims.
 
 ## Demo Language
 
