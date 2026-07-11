@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { fetchWithRetries } from "../../../lib/apiCache";
 import { stateMap } from "../../../lib/states";
 import type { LocalHealthNewsArticle } from "../../../services/localNews";
 
@@ -165,7 +166,7 @@ export async function GET(request: Request) {
   });
 
   async function fetchGdeltArticles() {
-    const response = await fetch(
+    const response = await fetchWithRetries(
       `${GDELT_DOC_API_URL}?${params.toString()}`,
       { cache: "no-store" }
     );
@@ -204,7 +205,7 @@ export async function GET(request: Request) {
       gl: "US",
       ceid: "US:en",
     });
-    const response = await fetch(
+    const response = await fetchWithRetries(
       `${GOOGLE_NEWS_RSS_URL}?${googleParams.toString()}`,
       { cache: "no-store" }
     );
@@ -217,10 +218,19 @@ export async function GET(request: Request) {
   }
 
   try {
-    const [gdeltArticles, googleArticles] = await Promise.all([
+    // allSettled, not all: each source already retries transient failures
+    // on its own (fetchWithRetries), but if one source is still down after
+    // retries, that shouldn't discard articles the other source did
+    // successfully return -- Promise.all would fail the whole request on
+    // either rejecting.
+    const [gdeltResult, googleResult] = await Promise.allSettled([
       fetchGdeltArticles(),
       fetchGoogleNewsArticles(),
     ]);
+    const gdeltArticles =
+      gdeltResult.status === "fulfilled" ? gdeltResult.value : [];
+    const googleArticles =
+      googleResult.status === "fulfilled" ? googleResult.value : [];
     const relevantArticles = mergeArticles([
       ...gdeltArticles,
       ...googleArticles,

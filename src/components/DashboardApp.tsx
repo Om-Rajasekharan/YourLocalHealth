@@ -161,7 +161,7 @@ function AccountActions({ user }: { user: ReturnType<typeof useDashboardData>["u
   if (user) {
     return (
       <Link
-        className="rounded-full border border-[var(--border)] bg-white px-4 py-2 text-sm font-medium text-[var(--primary-ink)] hover:bg-[var(--primary-soft)]"
+        className="bespoke-control px-4 py-2 text-sm"
         href="/account"
       >
         Account
@@ -172,13 +172,13 @@ function AccountActions({ user }: { user: ReturnType<typeof useDashboardData>["u
   return (
     <div className="flex items-center gap-2">
       <Link
-        className="hidden rounded-full border border-[var(--border)] bg-white px-4 py-2 text-sm font-medium text-[var(--primary-ink)] hover:bg-[var(--primary-soft)] sm:inline-flex"
+        className="bespoke-control hidden px-4 py-2 text-sm sm:inline-flex"
         href="/account"
       >
         Sign in
       </Link>
       <Link
-        className="rounded-full bg-[var(--primary-ink)] px-4 py-2 text-sm font-medium text-white hover:bg-[var(--primary)]"
+        className="bespoke-button px-4 py-2 text-sm"
         href="/signup"
       >
         Sign up
@@ -220,13 +220,6 @@ function clampPercent(score: number) {
   return Math.max(0, Math.min(100, Math.round(score)));
 }
 
-const featureLinks: { label: string; href: string; hash?: string }[] = [
-  { label: "Forecast", href: "#forecast", hash: "forecast" },
-  { label: "Exposure Twin", href: "#twin", hash: "twin" },
-  { label: "Model & Data", href: "#model", hash: "model" },
-  { label: "Public health", href: "#about", hash: "about" },
-];
-
 const visibleDashboardViews: DashboardView[] = [
   "overview",
   "forecast",
@@ -265,70 +258,65 @@ function LandingHero({
   };
 
   return (
-    <main className="min-h-screen bg-[var(--background)]">
-      <header className="sticky top-0 z-30 border-b border-[var(--border)]/70 bg-[var(--background)]/85 backdrop-blur">
-        <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-6">
-          <Link href="/" className="flex items-center gap-2">
-            <BrandMark />
-            <span className="font-heading text-lg font-semibold tracking-tight text-[var(--primary-ink)]">
-              MyLocalHealth
-            </span>
-          </Link>
-          <nav className="hidden items-center gap-8 text-sm text-[var(--muted-foreground)] md:flex">
-            {featureLinks.map((link) => (
-              <a className="hover:text-[var(--primary-ink)]" href={link.href} key={link.label}>
-                {link.label}
-              </a>
-            ))}
-          </nav>
-          <div className="flex items-center gap-2">
-            <AccountActions user={user} />
-            <a
-              className="hidden items-center gap-1.5 rounded-full bg-[var(--primary)] px-4 py-2 text-sm font-medium text-white hover:bg-[var(--primary-ink)] lg:inline-flex"
-              href="#zip-search"
-            >
-              Search a ZIP <span aria-hidden>→</span>
-            </a>
+    <main className="landing-register-page min-h-screen">
+      <div className="mx-auto max-w-6xl px-5 py-3 md:px-8 md:py-6">
+        <div className="landing-register-paper border border-[var(--border)] bg-[var(--background)] shadow-[0_1px_0_0_rgba(19,41,75,0.06),0_20px_40px_-24px_rgba(19,41,75,0.18)]">
+          <div className="landing-register-topline border-b border-[var(--border)]">
+            <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-2 px-5 py-2.5 md:px-8">
+              <span className="register-mono text-[10px] text-[var(--muted-foreground)]">
+                Live local snapshot
+              </span>
+              <span className="register-mono text-[10px] text-[var(--muted-foreground)]">
+                Public health · neighborhood context
+              </span>
+              <span className="register-mono text-[10px] text-[var(--primary)]">
+                ● Data-linked · confidence shown
+              </span>
+            </div>
           </div>
-        </div>
-      </header>
 
-      <section className="relative overflow-hidden">
-        <div className="hero-grid-bg absolute inset-0 opacity-70" />
-        <div className="absolute inset-x-0 top-0 h-[520px] bg-gradient-to-b from-[var(--primary-soft)]/70 via-[var(--primary-soft)]/20 to-transparent" />
-        <div className="relative mx-auto max-w-7xl px-6 pb-20 pt-20 lg:pt-28">
-          <div className="grid gap-14 lg:grid-cols-[1.15fr_1fr] lg:items-center">
-            <div>
-              <div className="inline-flex items-center gap-2 rounded-full border border-[var(--primary)]/20 bg-white px-3 py-1 text-xs font-medium text-[var(--primary)] shadow-sm">
-                <span className="relative flex h-2 w-2">
-                  <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[var(--primary)]/50" />
-                  <span className="relative inline-flex h-2 w-2 rounded-full bg-[var(--primary)]" />
-                </span>
-                Live public-health signals by ZIP code
-              </div>
-              <h1 className="mt-6 font-heading text-5xl font-semibold leading-[1.05] tracking-tight text-[var(--primary-ink)] sm:text-6xl">
-                Your neighborhood&apos;s{" "}
-                <span className="relative inline-block">
-                  <span className="relative z-10">health forecast</span>
-                  <span className="absolute inset-x-0 bottom-1 -z-0 h-3 rounded-sm bg-[var(--accent)]/40" />
-                </span>
-                , not just the weather.
-              </h1>
-              <p className="mt-6 max-w-xl text-lg leading-relaxed text-[var(--muted-foreground)]">
-                Air quality, heat, pollen, flu, COVID wastewater, equity context,
-                and personal exposure combined into a readable local risk snapshot.
+          <header className="border-b border-[var(--border)] px-5 py-8 text-center md:px-8 md:py-12">
+            <div className="mx-auto flex max-w-3xl items-center justify-center gap-3">
+              <BrandMark small />
+              <span className="brand-wordmark brand-wordmark-compact">
+                <span className="brand-wordmark-my">My</span>
+                <span className="brand-wordmark-local">Local</span>
+                <span className="brand-wordmark-health">Health</span>
+              </span>
+            </div>
+            <h1 className="landing-register-title mx-auto mt-5 max-w-4xl text-5xl leading-[0.95] text-[var(--primary-ink)] md:text-7xl">
+              Health signals around you.
+            </h1>
+            <div className="mx-auto mt-5 flex max-w-xl items-center justify-center gap-4 register-mono text-[10px] text-[var(--muted-foreground)]">
+              <span className="h-px flex-1 bg-[var(--border)]" />
+              <span>Forecast · exposure · model transparency</span>
+              <span className="h-px flex-1 bg-[var(--border)]" />
+            </div>
+            <div className="mt-5 flex flex-wrap justify-center gap-2">
+              <AccountActions user={user} />
+            </div>
+          </header>
+
+          <section className="grid grid-cols-1 border-b border-[var(--border)] md:grid-cols-12">
+            <div className="border-b border-[var(--border)] p-6 md:col-span-7 md:border-b-0 md:border-r md:p-10">
+              <span className="spec-tab">Local snapshot</span>
+              <h2 className="mt-4 font-editorial text-3xl font-semibold leading-[1.08] text-[var(--primary-ink)] md:text-[2.6rem]">
+                Your neighborhood&apos;s health forecast, built for the place you actually live.
+              </h2>
+              <p className="mt-5 max-w-xl text-[15px] leading-relaxed text-[var(--muted-foreground)]">
+                Air quality, heat, pollen, flu, COVID wastewater, equity context, and personal exposure — combined into one local risk forecast. No black box. No hype. Just sources, uncertainty, and plain-language context.
               </p>
 
               <form
                 id="zip-search"
-                className="mt-8 flex max-w-lg items-center gap-2 rounded-full border border-[var(--border)] bg-white p-2 shadow-[0_10px_40px_-12px_rgba(19,41,75,0.18)]"
+                className="landing-register-zip mt-8 flex max-w-lg items-center gap-0 border border-[var(--primary-ink)] bg-[var(--card)]"
                 onSubmit={handleSubmit}
               >
-                <div className="flex flex-1 items-center gap-3 pl-4">
+                <div className="flex flex-1 items-center gap-2 px-3">
                   <Icon name="map" className="h-4 w-4 text-[var(--primary)]" />
                   <input
                     aria-label="ZIP code"
-                    className="w-full bg-transparent py-2 text-base text-[var(--primary-ink)] placeholder:text-[var(--muted-foreground)]/70 focus:outline-none"
+                    className="w-full bg-transparent py-3 register-mono text-sm text-[var(--primary-ink)] placeholder:text-[var(--muted-foreground)]/70 focus:outline-none"
                     inputMode="numeric"
                     onChange={(event) => {
                       setZip(event.target.value.replace(/[^0-9]/g, "").slice(0, 5));
@@ -339,37 +327,19 @@ function LandingHero({
                   />
                 </div>
                 <button
-                  className="inline-flex items-center gap-2 rounded-full bg-[var(--primary)] px-5 py-3 text-sm font-medium text-white transition hover:bg-[var(--primary-ink)] disabled:opacity-60"
+                  className="inline-flex self-stretch items-center gap-2 border-l border-[var(--primary-ink)] bg-[var(--primary-ink)] px-5 register-mono text-[11px] text-[var(--primary-foreground)] transition hover:bg-[var(--primary)] disabled:opacity-60"
                   disabled={loading}
                   type="submit"
                 >
-                  <Icon name="search" className="h-4 w-4" />
-                  {loading ? "Loading" : "See my forecast"}
+                  <Icon name="search" className="h-3.5 w-3.5" />
+                  {loading ? "Loading" : "View forecast"}
                 </button>
               </form>
-              {loading && (
-                <div className="mt-5 max-w-lg rounded-2xl border border-[var(--border)] bg-white p-4 shadow-sm">
-                  <div className="flex items-center gap-3">
-                    <span className="relative flex h-3 w-3">
-                      <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[var(--primary)]/50" />
-                      <span className="relative inline-flex h-3 w-3 rounded-full bg-[var(--primary)]" />
-                    </span>
-                    <p className="text-sm font-medium text-[var(--primary-ink)]">
-                      Building your local health snapshot
-                    </p>
-                  </div>
-                  <div className="mt-4 grid gap-2">
-                    <div className="h-2 rounded-full bg-[var(--primary-soft)]" />
-                    <div className="h-2 w-4/5 rounded-full bg-[var(--primary-soft)]" />
-                    <div className="h-2 w-2/3 rounded-full bg-[var(--primary-soft)]" />
-                  </div>
-                </div>
-              )}
-              <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-[var(--muted-foreground)]">
-                <span>Try:</span>
+              <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1 register-mono text-[10px] text-[var(--muted-foreground)]">
+                <span>Try example ZIPs:</span>
                 {["27514", "10025", "94110", "60614"].map((sample) => (
                   <button
-                    className="rounded-full border border-[var(--border)] bg-white px-2.5 py-1 font-medium text-[var(--primary)] hover:border-[var(--primary)]"
+                    className="border border-[var(--border)] bg-[var(--card)] px-2 py-0.5 text-[var(--primary)] hover:border-[var(--primary-ink)] hover:text-[var(--primary-ink)]"
                     key={sample}
                     onClick={() => {
                       setZip(sample);
@@ -381,275 +351,251 @@ function LandingHero({
                   </button>
                 ))}
               </div>
+              {loading && (
+                <p className="mt-4 register-mono text-xs text-[var(--primary)]">
+                  Building your local health snapshot…
+                </p>
+              )}
               {zipError && <p className="mt-4 text-sm font-medium text-[var(--danger)]">{zipError}</p>}
               {error && <p className="mt-4 text-sm font-medium text-[var(--danger)]">{error}</p>}
             </div>
 
-            <HeroForecastCard />
-          </div>
-        </div>
-      </section>
+            <aside className="p-6 md:col-span-5 md:p-10">
+              <span className="register-mono text-[10px] text-[var(--primary)]">
+                Sample preview
+              </span>
+              <div className="mt-4 border-l-2 border-[var(--primary-ink)] pl-4">
+                <div className="register-mono text-[10px] text-[var(--muted-foreground)]">
+                  Chapel Hill · 27514 · sample snapshot
+                </div>
+                <div className="mt-1 font-editorial text-2xl font-semibold leading-tight text-[var(--primary-ink)]">
+                  Moderate day. Ozone climbs by Friday.
+                </div>
+              </div>
 
-      <section className="border-y border-[var(--border)] bg-white">
-        <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-6 px-6 py-6 text-xs uppercase tracking-widest text-[var(--muted-foreground)]">
-          <span className="font-medium text-[var(--primary-ink)]">Signals combined from</span>
-          <span>OpenWeather</span>
-          <span>CDC FluView</span>
-          <span>CDC NWSS</span>
-          <span>NOAA alerts</span>
-          <span>CDC PLACES</span>
-        </div>
-      </section>
+              <div className="mt-6 grid grid-cols-3 border border-[var(--border)]">
+                <LandingMiniStat icon="wind" label="Air" value="AQI 72" />
+                <LandingMiniStat divider icon="spark" label="Pollen" value="High" />
+                <LandingMiniStat divider icon="droplet" label="Wastewater" value="↓ 12%" />
+              </div>
 
-      <section className="mx-auto max-w-7xl px-6 py-24" id="forecast">
-        <div className="mx-auto max-w-2xl text-center">
-          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[var(--primary)]">
-            Three lenses on local health
-          </p>
-          <h2 className="mt-3 font-heading text-4xl font-semibold tracking-tight text-[var(--primary-ink)]">
-            Made for people, not just for models.
-          </h2>
-        </div>
+              <div className="mt-6">
+                <div className="register-mono text-[10px] text-[var(--muted-foreground)]">
+                  Seven-day exposure index
+                </div>
+                <LandingMiniForecast />
+              </div>
 
-        <div className="mt-14 grid gap-6 md:grid-cols-3">
-          <LandingFeature id="forecast" icon="activity" title="7-day local risk forecast" eyebrow="Forecast" visual={<ForecastMini />} />
-          <LandingFeature id="twin" icon="heart" title="Your personal exposure model" eyebrow="Exposure Twin" visual={<TwinMini />} />
-          <LandingFeature id="model" icon="shield" title="Transparent risk contributors" eyebrow="Model & Data" visual={<ModelMini />} />
-        </div>
-      </section>
-
-      <section className="mx-auto grid max-w-7xl gap-5 px-6 pb-24 md:grid-cols-3" aria-label="Feature details">
-        <FeatureDetail
-          id="learn-forecast"
-          title="Forecast"
-          copy="The forecast combines current air quality, heat, UV, pollutant pressure, respiratory illness activity, and weather alerts into a plain-language risk window for the next few days."
-          stat="24-hour windows"
-        />
-        <FeatureDetail
-          id="learn-twin"
-          title="Exposure Twin"
-          copy="The Twin adjusts the local forecast with profile and routine context, like time outside, traffic exposure, activity level, and symptom check-ins when a user chooses to add them."
-          stat="Personal context"
-        />
-        <FeatureDetail
-          id="learn-model"
-          title="Model & Data"
-          copy="The model view shows what contributed to a score, how fresh the data is, and where each signal came from so the dashboard stays explainable instead of mysterious."
-          stat="Transparent inputs"
-        />
-      </section>
-
-      <section className="mx-auto max-w-7xl px-6 pb-24" id="about">
-        <div className="relative overflow-hidden rounded-3xl bg-[var(--primary-ink)] px-10 py-16 text-white">
-          <div className="absolute -right-24 -top-24 h-96 w-96 rounded-full bg-[var(--accent)]/25 blur-3xl" />
-          <div className="relative grid gap-8 md:grid-cols-[1.4fr_1fr] md:items-center">
-            <div>
-              <h3 className="font-heading text-3xl font-semibold tracking-tight sm:text-4xl">
-                Public health, translated for the block you live on.
-              </h3>
-              <p className="mt-4 max-w-xl text-white/70">
-                Search a ZIP code to explore forecast, exposure twin, and transparent model views.
+              <p className="mt-5 border-t border-dashed border-[var(--border)] pt-3 font-editorial text-sm text-[var(--primary-ink)]">
+                &quot;Wednesday risk climbs — driven by ozone and oak pollen. Run before 9am.&quot;
               </p>
+              <div className="mt-1 register-mono text-[9px] text-[var(--muted-foreground)]">
+                Based on sample forecast signals
+              </div>
+            </aside>
+          </section>
+
+          <section className="border-b border-[var(--border)] bg-[var(--background)]/60">
+            <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-1 px-5 py-3 register-mono text-[10px] text-[var(--muted-foreground)] md:px-8">
+              <span className="text-[var(--primary-ink)]">Signals included —</span>
+              <span>OpenWeather</span>
+              <span>NOAA alerts</span>
+              <span>CDC FluView</span>
+              <span>CDC NWSS</span>
+              <span>CDC PLACES</span>
+              <span>Census ACS</span>
             </div>
-            <div className="flex flex-wrap gap-3 md:justify-end">
-              <a
-                className="inline-flex items-center gap-2 rounded-full bg-white px-5 py-3 text-sm font-medium text-[var(--primary-ink)] hover:bg-[var(--primary-soft)]"
-                href="#zip-search"
-              >
-                Search a ZIP <span aria-hidden>→</span>
-              </a>
-              <a className="inline-flex items-center gap-2 rounded-full border border-white/25 px-5 py-3 text-sm font-medium text-white hover:bg-white/10" href="#model">
-                How the model works
-              </a>
+          </section>
+
+          <section className="grid grid-cols-1 md:grid-cols-3">
+            <LandingColumnCard
+              body="A calibrated health-risk score for your ZIP, decomposed into the drivers that matter — air, heat, pollen, flu, and wastewater."
+              eyebrow="The Forecast"
+              icon="activity"
+              num="03"
+              stat={{ label: "Main view", value: "24-hour pulse" }}
+              title="A local exposure outlook."
+            />
+            <LandingColumnCard
+              body="A private simulation turns routine, profile factors, and symptom check-ins into a personalized exposure score you can understand."
+              divider
+              eyebrow="The Exposure Twin"
+              icon="heart"
+              num="04"
+              stat={{ label: "Personal context", value: "Routine + profile" }}
+              title="Your day, translated into exposure."
+            />
+            <LandingColumnCard
+              body="Each prediction shows the data behind it — source, freshness, confidence, and contributors. No black box."
+              divider
+              eyebrow="Model & Data"
+              icon="shield"
+              num="05"
+              stat={{ label: "Top promise", value: "Show the work" }}
+              title="Every score with sources on record."
+            />
+          </section>
+
+          <section className="border-t border-[var(--border)] bg-[var(--card)]" id="about">
+            <div className="grid grid-cols-1 items-center gap-6 px-5 py-10 md:grid-cols-[1.5fr_1fr] md:px-10">
+              <div>
+                <span className="register-mono text-[10px] text-[var(--primary)]">
+                  How it works
+                </span>
+                <h3 className="mt-3 font-editorial text-3xl font-semibold leading-tight text-[var(--primary-ink)] md:text-4xl">
+                  Public health, translated for the block you live on.
+                </h3>
+                <p className="mt-3 max-w-xl text-sm text-[var(--muted-foreground)]">
+                  Search a ZIP code to open the dashboard: forecast, exposure twin, local context, and model transparency views.
+                </p>
+              </div>
+              <div className="flex flex-wrap gap-3 md:justify-end">
+                <a
+                  className="inline-flex items-center gap-2 border border-[var(--primary-ink)] bg-[var(--primary-ink)] px-5 py-3 register-mono text-[11px] text-[var(--primary-foreground)] hover:bg-[var(--primary)]"
+                  href="#zip-search"
+                >
+                  Search a ZIP <span aria-hidden>↗</span>
+                </a>
+                <a
+                  className="inline-flex items-center gap-2 border border-[var(--primary-ink)] px-5 py-3 register-mono text-[11px] text-[var(--primary-ink)] hover:bg-[var(--primary-ink)] hover:text-[var(--primary-foreground)]"
+                  href="#colophon"
+                >
+                  How the model works
+                </a>
+              </div>
             </div>
-          </div>
+          </section>
+
+          <footer className="border-t border-[var(--border)] px-5 py-6 md:px-8" id="colophon">
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+              <LandingFooterNote
+                label="Sources"
+                text="OpenWeather, CDC respiratory illness data, CDC wastewater, National Weather Service alerts, CDC PLACES, Census ACS."
+              />
+              <LandingFooterNote
+                label="Method"
+                text="Composite local risk score with data freshness, confidence, and contributor views exposed to the user."
+              />
+              <LandingFooterNote
+                label="Safety"
+                text="Informational only. MyLocalHealth does not provide medical advice, diagnosis, or treatment."
+              />
+            </div>
+          </footer>
         </div>
-      </section>
+      </div>
     </main>
   );
 }
 
-function HeroForecastCard() {
-  const days = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
-  const scores = [38, 42, 55, 68, 74, 61, 48];
-
-  return (
-    <div className="relative">
-      <div className="absolute -inset-4 rounded-[2rem] bg-gradient-to-br from-[var(--primary)]/20 via-[var(--accent)]/10 to-transparent blur-2xl" />
-      <div className="lifted-shadow relative rounded-3xl border border-[var(--border)] bg-white p-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <div className="text-xs font-semibold uppercase tracking-widest text-[var(--primary)]">
-              Chapel Hill · 27514
-            </div>
-            <div className="mt-1 font-heading text-2xl font-semibold text-[var(--primary-ink)]">
-              Moderate risk today
-            </div>
-          </div>
-          <div className="grid h-14 w-14 place-items-center rounded-2xl bg-[var(--primary)] text-white">
-            <span className="font-heading text-xl font-semibold">55</span>
-          </div>
-        </div>
-        <div className="mt-6 grid grid-cols-3 gap-3">
-          <MiniStat icon="wind" label="AQI" value="72" />
-          <MiniStat icon="thermo" label="Heat" value="88°F" tone="warning" />
-          <MiniStat icon="droplet" label="Wastewater" value="Low" tone="success" />
-        </div>
-        <div className="mt-6 flex items-end justify-between gap-2">
-          {scores.map((score, index) => (
-            <div className="flex flex-1 flex-col items-center gap-2" key={days[index]}>
-              <div
-                className="w-full rounded-t-md bg-gradient-to-t from-[var(--primary)] to-[var(--accent)]"
-                style={{ height: `${score * 1.45}px` }}
-              />
-              <span className="text-[10px] font-medium text-[var(--muted-foreground)]">{days[index]}</span>
-            </div>
-          ))}
-        </div>
-        <div className="mt-5 flex items-center gap-2 rounded-xl bg-[var(--primary-soft)] px-3 py-2 text-xs text-[var(--primary-ink)]">
-          <Icon name="chart" className="h-3.5 w-3.5 text-[var(--primary)]" />
-          Best outdoor window: before 10am or after 7pm.
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function MiniStat({
+function LandingMiniStat({
   icon,
   label,
   value,
-  tone = "primary",
+  divider,
 }: {
   icon: IconName;
   label: string;
   value: string;
-  tone?: "primary" | "success" | "warning";
+  divider?: boolean;
 }) {
-  const color =
-    tone === "success"
-      ? "text-[var(--success)]"
-      : tone === "warning"
-      ? "text-[var(--warning)]"
-      : "text-[var(--primary)]";
   return (
-    <div className="rounded-xl border border-[var(--border)] bg-[var(--primary-soft)]/40 p-3">
-      <div className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wider text-[var(--muted-foreground)]">
-        <Icon name={icon} className={`h-3 w-3 ${color}`} />
+    <div className={`p-3 ${divider ? "border-l border-[var(--border)]" : ""}`}>
+      <div className="flex items-center gap-1.5 register-mono text-[9px] text-[var(--muted-foreground)]">
+        <Icon name={icon} className="h-3 w-3 text-[var(--primary)]" />
         {label}
       </div>
-      <div className="mt-1 font-heading text-lg font-semibold text-[var(--primary-ink)]">{value}</div>
+      <div className="mt-1 font-display text-lg font-bold tracking-tight text-[var(--primary-ink)]">
+        {value}
+      </div>
     </div>
   );
 }
 
-function LandingFeature({
-  id,
-  icon,
+function LandingMiniForecast() {
+  const days = ["M", "T", "W", "T", "F", "S", "S"];
+  const scores = [38, 42, 55, 68, 74, 61, 48];
+  const max = Math.max(...scores);
+
+  return (
+    <div className="mt-2 border border-[var(--border)] bg-[var(--card)] p-3">
+      <div className="flex items-end gap-1.5" style={{ height: 90 }}>
+        {scores.map((score, index) => (
+          <div className="flex flex-1 flex-col items-center gap-1" key={`${days[index]}-${index}`}>
+            <div
+              className="w-full bg-[var(--primary-ink)]"
+              style={{ height: `${(score / max) * 78}px` }}
+            />
+            <span className="register-mono text-[9px] text-[var(--muted-foreground)]">
+              {days[index]}
+            </span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function LandingColumnCard({
+  body,
+  divider,
   eyebrow,
-  title,
-  visual,
-}: {
-  id: string;
-  icon: IconName;
-  eyebrow: string;
-  title: string;
-  visual: React.ReactNode;
-}) {
-  const copy =
-    id === "forecast"
-      ? "A calibrated daily health-risk score decomposed into the drivers that matter."
-      : id === "twin"
-      ? "A private exposure model that turns routine, location, and check-ins into a score you recognize."
-      : "Every prediction shows the source, freshness, confidence, and contributors behind it.";
-  const learnHref = `#learn-${id}`;
-
-  return (
-    <div className="soft-shadow group relative flex flex-col overflow-hidden rounded-3xl border border-[var(--border)] bg-white transition hover:-translate-y-1 hover:lifted-shadow" id={id}>
-      <div className="border-b border-[var(--border)] bg-[var(--primary-soft)]/50 p-6">{visual}</div>
-      <div className="flex flex-1 flex-col p-6">
-        <div className="flex items-center gap-2">
-          <span className="grid h-8 w-8 place-items-center rounded-lg bg-[var(--primary)]/10 text-[var(--primary)]">
-            <Icon name={icon} className="h-4 w-4" />
-          </span>
-          <span className="text-xs font-semibold uppercase tracking-widest text-[var(--primary)]">{eyebrow}</span>
-        </div>
-        <h3 className="mt-4 font-heading text-xl font-semibold text-[var(--primary-ink)]">{title}</h3>
-        <p className="mt-2 text-sm leading-relaxed text-[var(--muted-foreground)]">{copy}</p>
-        <a className="mt-6 inline-flex items-center gap-1 text-sm font-medium text-[var(--primary)] hover:text-[var(--primary-ink)]" href={learnHref}>
-          Learn more <span aria-hidden>→</span>
-        </a>
-      </div>
-    </div>
-  );
-}
-
-function FeatureDetail({
-  id,
-  title,
-  copy,
+  icon,
+  num,
   stat,
+  title,
 }: {
-  id: string;
+  body: string;
+  divider?: boolean;
+  eyebrow: string;
+  icon: IconName;
+  num: string;
+  stat: { label: string; value: string };
   title: string;
-  copy: string;
-  stat: string;
 }) {
   return (
-    <article
-      className="rounded-3xl border border-[var(--border)] bg-white p-6 shadow-sm scroll-mt-24"
-      id={id}
-    >
-      <div className="text-xs font-semibold uppercase tracking-[0.2em] text-[var(--primary)]">
-        {stat}
+    <article className={`landing-column-card flex flex-col p-6 md:p-8 ${divider ? "border-t border-[var(--border)] md:border-l md:border-t-0" : ""}`}>
+      <div className="flex items-center gap-2">
+        <Icon name={icon} className="h-3.5 w-3.5 text-[var(--primary)]" />
+        <span className="register-mono text-[10px] text-[var(--primary)]">
+          {num} · {eyebrow}
+        </span>
       </div>
-      <h3 className="mt-3 font-heading text-2xl font-semibold text-[var(--primary-ink)]">
+      <h3 className="mt-3 font-editorial text-2xl font-semibold leading-tight text-[var(--primary-ink)]">
         {title}
       </h3>
-      <p className="mt-3 text-sm leading-6 text-[var(--muted-foreground)]">{copy}</p>
+      <p className="mt-2 text-sm leading-relaxed text-[var(--muted-foreground)]">{body}</p>
+      <div className="mt-auto flex items-end justify-between gap-3 border-t border-dashed border-[var(--border)] pt-4">
+        <div>
+          <div className="register-mono text-[9px] text-[var(--muted-foreground)]">
+            {stat.label}
+          </div>
+          <div className="font-display text-lg font-bold tracking-tight text-[var(--primary-ink)]">
+            {stat.value}
+          </div>
+        </div>
+        <a className="inline-flex items-center gap-1 register-mono text-[10px] text-[var(--primary)] hover:text-[var(--primary-ink)]" href="#zip-search">
+          Try it <span aria-hidden>↗</span>
+        </a>
+      </div>
     </article>
   );
 }
 
-function ForecastMini() {
+function LandingFooterNote({
+  label,
+  text,
+}: {
+  label: string;
+  text: string;
+}) {
   return (
-    <div className="flex h-32 items-end gap-1.5">
-      {[30, 42, 55, 68, 74, 61, 48].map((height, index) => (
-        <div className="flex-1 rounded-t bg-gradient-to-t from-[var(--primary)] to-[var(--accent)]" key={index} style={{ height: `${height}%` }} />
-      ))}
+    <div>
+      <div className="register-mono text-[10px] text-[var(--muted-foreground)]">
+        {label}
+      </div>
+      <p className="mt-1 text-xs leading-5 text-[var(--muted-foreground)]">{text}</p>
     </div>
-  );
-}
-
-function TwinMini() {
-  return (
-    <svg className="h-32 w-full" viewBox="0 0 200 128">
-      <defs>
-        <linearGradient id="twinMini" x1="0" x2="1" y1="0" y2="1">
-          <stop stopColor="var(--primary)" />
-          <stop offset="1" stopColor="var(--accent)" />
-        </linearGradient>
-      </defs>
-      <circle cx="50" cy="54" fill="url(#twinMini)" opacity=".16" r="38" />
-      <circle cx="50" cy="42" fill="var(--primary)" r="16" />
-      <path d="M28 106c2-28 12-42 22-42s20 14 22 42" fill="var(--primary)" opacity=".8" />
-      <path d="M100 32h76M100 64h58M100 96h70" stroke="var(--border)" strokeWidth="8" strokeLinecap="round" />
-      <path d="M100 32h54M100 64h38M100 96h48" stroke="var(--accent)" strokeWidth="8" strokeLinecap="round" />
-    </svg>
-  );
-}
-
-function ModelMini() {
-  const points = "20,80 45,70 70,72 95,55 120,60 145,40 170,45";
-  return (
-    <svg className="h-32 w-full" viewBox="0 0 200 128">
-      <path d="M20 104h160M20 80h160M20 56h160M20 32h160" stroke="var(--border)" />
-      <polyline fill="none" points={points} stroke="var(--primary)" strokeWidth="3" />
-      {points.split(" ").map((point) => {
-        const [x, y] = point.split(",");
-        return <circle cx={x} cy={y} fill="var(--accent)" key={point} r="4" />;
-      })}
-    </svg>
   );
 }
 
@@ -669,48 +615,48 @@ export function DashboardSidebar({
   zipCode: string;
 }) {
   return (
-    <aside className="hidden w-64 shrink-0 border-r border-[var(--border)] bg-white lg:flex lg:flex-col">
+    <aside className="register-sidebar hidden shrink-0 sm:flex sm:flex-col">
       <button
-        className="flex h-16 items-center gap-2 border-b border-[var(--border)] px-6 text-left"
+        className="register-brand-button"
         onClick={onHome}
         type="button"
+        title="MyLocalHealth home"
       >
-        <BrandMark />
-        <span className="font-heading text-lg font-semibold text-[var(--primary-ink)]">
-          MyLocalHealth
+        <BrandMark small />
+        <span className="brand-wordmark brand-wordmark-sidebar">
+          <span className="brand-wordmark-my">My</span>
+          <span className="brand-wordmark-local">Local</span>
+          <span className="brand-wordmark-health">Health</span>
         </span>
       </button>
-      <div className="flex-1 space-y-1 p-4">
-        <p className="px-3 pb-2 text-[10px] font-semibold uppercase tracking-widest text-[var(--muted-foreground)]">
-          Health tools
-        </p>
+      <div className="register-rail-nav">
         {visibleDashboardViews.map((viewId) => {
           const view = getDashboardView(viewId);
           const isActive = activeView === viewId;
           return (
             <button
-              className={`flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition ${
+              className={`register-rail-button ${
                 isActive
-                  ? "bg-[var(--primary)] text-white shadow-[0_6px_18px_-8px_rgba(46,111,181,0.6)]"
-                  : "text-[var(--sidebar-foreground)] hover:bg-[var(--primary-soft)] hover:text-[var(--primary-ink)]"
+                  ? "register-rail-button-active"
+                  : ""
               }`}
               key={view.id}
               onClick={() => onChange(view.id)}
+              title={view.label}
               type="button"
             >
-              <Icon name={iconForView(view.id)} className="h-4 w-4" />
-              {view.label}
+              <span className="register-rail-number">
+                {String(visibleDashboardViews.indexOf(viewId) + 1).padStart(2, "0")}
+              </span>
+              <Icon name={iconForView(view.id)} className="h-5 w-5" />
+              <span className="register-rail-label">{view.label}</span>
             </button>
           );
         })}
       </div>
-      <div className="m-4 rounded-2xl border border-[var(--border)] bg-[var(--primary-soft)]/60 p-4">
-        <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-widest text-[var(--primary)]">
-          <Icon name="spark" className="h-3.5 w-3.5" /> Local insight
-        </div>
-        <p className="mt-2 text-sm text-[var(--primary-ink)]">
-          {city ? `${city}, ${state}: ZIP ${zipCode}` : "Search a ZIP to load local context."}
-        </p>
+      <div className="register-rail-note">
+        <div className="register-mono text-[9px] text-[var(--primary)]">Location note</div>
+        <p>{city ? `${city}, ${state} · ${zipCode}` : "Search a ZIP to load local context."}</p>
       </div>
     </aside>
   );
@@ -744,7 +690,7 @@ export function DashboardPageShell({
   };
 
   return (
-    <div className="flex min-h-screen bg-[var(--primary-soft)]/30">
+    <div className="flex min-h-screen public-health-bg lovable-dashboard-shell">
       <DashboardSidebar
         activeView={activeView}
         city={city}
@@ -754,7 +700,7 @@ export function DashboardPageShell({
         zipCode={zipCode}
       />
       <div className="flex min-w-0 flex-1 flex-col">
-        <header className="sticky top-0 z-20 flex min-h-16 items-center gap-4 border-b border-[var(--border)] bg-white/85 px-6 py-3 backdrop-blur lg:px-10">
+        <header className="sticky top-0 z-20 flex min-h-16 flex-wrap items-center gap-4 border-b border-[var(--border)] bg-white/85 px-6 py-3 backdrop-blur lg:px-10">
           <button
             className="flex shrink-0 items-center gap-2 lg:hidden"
             onClick={goHome}
@@ -774,13 +720,13 @@ export function DashboardPageShell({
             </h1>
           </div>
           <Link
-            className="ml-auto rounded-full border border-[var(--border)] bg-white px-4 py-2 text-sm font-medium text-[var(--primary-ink)] hover:bg-[var(--primary-soft)]"
+            className="bespoke-control ml-auto px-4 py-2 text-sm"
             href={dashboardHref}
           >
             Dashboard
           </Link>
           <button
-            className="hidden rounded-full bg-[var(--primary-ink)] px-4 py-2 text-sm font-medium text-white hover:bg-[var(--primary)] sm:inline-flex"
+            className="bespoke-button hidden px-4 py-2 text-sm sm:inline-flex"
             onClick={goHome}
             type="button"
           >
@@ -806,7 +752,7 @@ export function EmptyDashboardState({
   title: string;
 }) {
   return (
-    <main className="grid min-h-screen place-items-center bg-[var(--background)] px-6 py-12">
+    <main className="grid min-h-screen place-items-center public-health-bg px-6 py-12">
       <section className="lifted-shadow relative w-full max-w-2xl overflow-hidden rounded-3xl border border-[var(--border)] bg-white p-8">
         <div className="hero-grid-bg absolute inset-0 opacity-60" />
         <div className="relative">
@@ -821,7 +767,7 @@ export function EmptyDashboardState({
             {copy}
           </p>
           <Link
-            className="mt-6 inline-flex rounded-full bg-[var(--primary)] px-5 py-3 text-sm font-medium text-white hover:bg-[var(--primary-ink)]"
+            className="bespoke-button mt-6 px-5 py-3 text-sm"
             href="/"
           >
             Search a ZIP code
@@ -851,6 +797,7 @@ function SummaryRow({
   airQualityLabel,
   heatRisk,
   covidActivity,
+  detailHref,
 }: {
   zipCode: string;
   healthRisk: string;
@@ -858,6 +805,7 @@ function SummaryRow({
   airQualityLabel: string;
   heatRisk: string;
   covidActivity: string;
+  detailHref: (topic: string) => string;
 }) {
   const stats = [
     {
@@ -874,7 +822,7 @@ function SummaryRow({
       sub: airQualityLabel,
       tone: airQualityLabel,
       value: aqi != null ? `${aqi}` : "—",
-      href: `/details/air-quality?zipCode=${zipCode}`,
+      href: detailHref("air-quality"),
     },
     {
       icon: "thermo" as IconName,
@@ -882,7 +830,7 @@ function SummaryRow({
       sub: "Outdoor exposure pressure",
       tone: heatRisk,
       value: heatRisk,
-      href: `/details/heat-risk?zipCode=${zipCode}`,
+      href: detailHref("heat-risk"),
     },
     {
       icon: "droplet" as IconName,
@@ -890,33 +838,41 @@ function SummaryRow({
       sub: "CDC NWSS signal",
       tone: covidActivity,
       value: covidActivity,
-      href: `/details/covid-wastewater?zipCode=${zipCode}`,
+      href: detailHref("covid-wastewater"),
     },
   ];
 
   return (
-    <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-      {stats.map((stat) => (
+    <div className="register-summary-grid">
+      {stats.map((stat, index) => (
         <Link
-          className="soft-shadow group rounded-2xl border border-[var(--border)] bg-white p-5 transition hover:-translate-y-0.5 hover:border-[var(--primary)]/35 hover:shadow-[0_20px_46px_-34px_rgba(19,41,75,0.65)]"
+          className={`register-tile group ${index === 0 ? "register-tile-featured" : ""}`}
           href={stat.href}
           key={stat.label}
         >
-          <div className="flex items-start justify-between">
-            <div>
-              <div className="text-xs font-medium uppercase tracking-wider text-[var(--muted-foreground)]">{stat.label}</div>
-              <div className="mt-2 font-heading text-3xl font-semibold text-[var(--primary-ink)]">{stat.value}</div>
-            </div>
-            <div className={`grid h-10 w-10 place-items-center rounded-xl ${toneClass(stat.tone)}`}>
-              <Icon name={stat.icon} className="h-5 w-5" />
-            </div>
+          <span className="register-fig">Signal {String(index + 1).padStart(2, "0")}</span>
+          <div className="register-tile-label">
+            <Icon name={stat.icon} className="h-4 w-4" />
+            {stat.label}
           </div>
-          <div className="mt-4 flex items-center justify-between gap-2 text-xs text-[var(--muted-foreground)]">
-            <span>{stat.sub}</span>
-            <span className="font-semibold text-[var(--primary)] opacity-0 transition group-hover:opacity-100">
-              Open →
-            </span>
+          <div className="mt-4 flex items-end gap-2">
+            <div className="register-tile-value">{stat.value}</div>
+            {index === 0 && <span className="register-tile-delta">+ live</span>}
           </div>
+          <div className="mt-4 border-t border-dashed border-[var(--border)] pt-3 text-sm text-[var(--muted-foreground)]">
+            {stat.sub}
+          </div>
+          {index === 0 && (
+            <p className="mt-3 text-sm leading-snug text-[var(--primary-ink)]/80">
+              &quot;Current score is driven by the strongest local signals available for this ZIP.&quot;
+            </p>
+          )}
+          <span className="register-open-link">
+            Open details →
+          </span>
+          <span className={`sr-only ${toneClass(stat.tone)}`}>
+            {stat.tone}
+          </span>
         </Link>
       ))}
     </div>
@@ -963,7 +919,7 @@ function DashboardForecastPanel({
       : ["No dominant driver is available for this time window yet."];
 
   return (
-    <section className="soft-shadow rounded-3xl border border-[var(--border)] bg-white p-6" id="forecast">
+    <section className="register-panel p-6" id="forecast">
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
           <div className="text-xs font-semibold uppercase tracking-widest text-[var(--primary)]">Forecast</div>
@@ -972,11 +928,11 @@ function DashboardForecastPanel({
             Air quality is {airQualityLabel.toLowerCase()}; heat risk is {heatRisk.toLowerCase()}.
           </p>
         </div>
-        <Link className="rounded-full border border-[var(--border)] px-3 py-1.5 text-xs font-medium text-[var(--primary-ink)] hover:bg-[var(--primary-soft)]" href={getDashboardUrl(zipCode, "forecast")}>
+        <Link className="register-mini-button" href={getDashboardUrl(zipCode, "forecast")}>
           Full forecast
         </Link>
       </div>
-      <div className="mt-6 flex h-[280px] items-end gap-3 border-b border-l border-[var(--border)] px-3 pb-4">
+      <div className="register-chart-frame mt-6 flex h-[280px] items-end gap-3 px-3 pb-4">
         {bars.map((bar, index) => {
           const selected = selectedIndex === index;
           return (
@@ -989,12 +945,12 @@ function DashboardForecastPanel({
           >
             <div className="relative w-full">
               <div
-                className={`mx-auto w-full rounded-t-xl bg-gradient-to-t from-[var(--primary)] to-[var(--accent)] transition group-hover:opacity-80 ${
+                className={`register-bar mx-auto w-full transition group-hover:opacity-80 ${
                   selected ? "ring-4 ring-[var(--primary)]/20" : ""
                 }`}
                 style={{ height: `${Math.max(26, bar.risk * 2.4)}px` }}
               />
-              <span className={`absolute -top-7 left-1/2 -translate-x-1/2 rounded-full bg-[var(--primary-ink)] px-2 py-1 text-[10px] text-white ${
+              <span className={`register-tooltip absolute -top-7 left-1/2 -translate-x-1/2 px-2 py-1 text-[10px] ${
                 selected ? "block" : "hidden group-hover:block"
               }`}>
                 {bar.risk}
@@ -1006,7 +962,7 @@ function DashboardForecastPanel({
         })}
       </div>
       {selectedBar && (
-        <div className="mt-4 grid gap-3 rounded-2xl border border-[var(--border)] bg-[var(--primary-soft)]/35 p-4 text-sm md:grid-cols-[1fr_1.2fr]">
+        <div className="register-inset-panel mt-4 grid gap-3 p-4 text-sm md:grid-cols-[1fr_1.2fr]">
           <div>
             <div className="text-[11px] font-semibold uppercase tracking-widest text-[var(--primary)]">
               Selected window
@@ -1028,7 +984,7 @@ function DashboardForecastPanel({
             <ul className="mt-2 space-y-1.5 text-[var(--primary-ink)]">
               {selectedDrivers.map((driver) => (
                 <li className="flex gap-2" key={driver}>
-                  <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-[var(--primary)]" />
+                  <span className="mt-2 h-1.5 w-1.5 shrink-0 bg-[var(--warning)]" />
                   <span>{driver}</span>
                 </li>
               ))}
@@ -1091,7 +1047,7 @@ function DashboardTwinPanel({
   const outdoorDelta = simulatedScore - score;
 
   return (
-    <section className="soft-shadow flex flex-col rounded-3xl border border-[var(--border)] bg-white p-6" id="twin">
+    <section className="register-panel flex flex-col p-6" id="twin">
       <div className="flex items-start justify-between">
         <div>
           <div className="text-xs font-semibold uppercase tracking-widest text-[var(--primary)]">Exposure Twin</div>
@@ -1126,7 +1082,7 @@ function DashboardTwinPanel({
           <TwinLine label="Profile" value={profileSignal} color="success" />
         </div>
       </div>
-      <div className="mt-5 rounded-2xl border border-[var(--border)] bg-white p-4">
+      <div className="register-inset-panel mt-5 p-4">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <div>
             <div className="text-[11px] font-semibold uppercase tracking-widest text-[var(--primary)]">
@@ -1176,7 +1132,7 @@ function DashboardTwinPanel({
           />
         </div>
       </div>
-      <div className="mt-6 rounded-2xl border border-[var(--border)] bg-[var(--primary-soft)]/40 p-4">
+      <div className="register-inset-panel mt-6 p-4">
         <div className="text-[11px] font-semibold uppercase tracking-widest text-[var(--muted-foreground)]">Today&apos;s timeline</div>
         <div className="mt-2 flex h-20 items-end gap-1.5">
           {[20, 42, 55, 68, 74, 62, 48, 30].map((height, index) => (
@@ -1281,14 +1237,14 @@ function ContributorsPanel({
       : "This contributor is close to baseline, so it is not strongly moving the score either way.";
 
   return (
-    <section className="soft-shadow rounded-3xl border border-[var(--border)] bg-white p-6" id="model">
+    <section className="register-panel p-6" id="model">
       <div className="flex items-start justify-between">
         <div>
           <div className="text-xs font-semibold uppercase tracking-widest text-[var(--primary)]">Model & Data</div>
           <h2 className="mt-1 font-heading text-2xl font-semibold text-[var(--primary-ink)]">Interactive risk explorer</h2>
           <p className="mt-1 text-sm text-[var(--muted-foreground)]">Tap a driver to see what it means, how it compares with baseline, and what to do next.</p>
         </div>
-        <Link className="inline-flex items-center gap-1 rounded-full border border-[var(--border)] px-3 py-1.5 text-xs font-medium text-[var(--primary-ink)] hover:bg-[var(--primary-soft)]" href={getDashboardUrl(zipCode, "model")}>
+        <Link className="register-mini-button" href={getDashboardUrl(zipCode, "model")}>
           Methodology
         </Link>
       </div>
@@ -1298,10 +1254,10 @@ function ContributorsPanel({
           const active = selectedIndex === index;
           return (
             <button
-              className={`shrink-0 rounded-full border px-4 py-2 text-sm font-semibold transition ${
+              className={`register-factor-button shrink-0 border px-4 py-2 text-sm font-semibold transition ${
                 active
-                  ? "border-[var(--primary)] bg-[var(--primary)] text-white shadow-sm"
-                  : "border-[var(--border)] bg-white text-[var(--primary-ink)] hover:border-[var(--primary)]/40 hover:bg-[var(--primary-soft)]"
+                  ? "register-factor-button-active"
+                  : ""
               }`}
               key={row.factor}
               onClick={() => setSelectedIndex(index)}
@@ -1314,7 +1270,7 @@ function ContributorsPanel({
       </div>
 
       {selected && (
-        <div className="mt-3 rounded-2xl border border-[var(--primary)]/25 bg-gradient-to-br from-[var(--primary)]/12 via-white to-[var(--primary-soft)] p-5">
+        <div className="register-callout mt-3 p-5">
           <div className="flex flex-col gap-4 xl:flex-row xl:items-stretch xl:justify-between">
             <div>
               <div className="text-[11px] font-semibold uppercase tracking-widest text-[var(--primary)]">
@@ -1329,7 +1285,7 @@ function ContributorsPanel({
               <p className="mt-2 text-sm font-medium text-[var(--primary-ink)]">
                 {selectedInterpretation}
               </p>
-              <p className="mt-3 rounded-xl border border-[var(--border)] bg-white/80 p-3 text-sm leading-6 text-[var(--primary-ink)]">
+              <p className="register-inset-panel mt-3 p-3 text-sm leading-6 text-[var(--primary-ink)]">
                 <span className="font-semibold text-[var(--primary)]">What to do:</span>{" "}
                 {selected.advice}
               </p>
@@ -1344,7 +1300,7 @@ function ContributorsPanel({
       )}
 
       <div className="mt-5 grid gap-6 xl:grid-cols-[0.85fr_1fr] xl:items-start">
-        <div className="rounded-2xl border border-[var(--border)] bg-white p-4 shadow-sm">
+        <div className="register-inset-panel p-4">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
               <div className="text-[11px] font-semibold uppercase tracking-widest text-[var(--primary)]">
@@ -1430,7 +1386,7 @@ function ContributorsPanel({
         </div>
 
         <div className="space-y-3 text-sm">
-          <div className="rounded-2xl border border-[var(--border)] bg-[var(--primary-soft)]/40 p-4">
+          <div className="register-inset-panel p-4">
             <div className="text-[11px] font-semibold uppercase tracking-widest text-[var(--primary)]">
               Tap to inspect
             </div>
@@ -1442,10 +1398,10 @@ function ContributorsPanel({
           {rows.map((row) => (
             <li key={row.factor}>
               <button
-                className={`w-full rounded-2xl border px-4 py-3 text-left transition ${
+                className={`register-factor-row w-full border px-4 py-3 text-left transition ${
                   selected?.factor === row.factor
-                    ? "border-[var(--primary)] bg-[var(--primary)]/10 shadow-sm"
-                    : "border-[var(--border)] bg-[var(--primary-soft)]/30 hover:border-[var(--primary)]/40 hover:bg-white"
+                    ? "register-factor-row-active"
+                    : ""
                 }`}
                 onClick={() => setSelectedIndex(rows.findIndex((item) => item.factor === row.factor))}
                 type="button"
@@ -1461,8 +1417,8 @@ function ContributorsPanel({
                   </div>
                 </div>
                 <div className="mt-3 grid grid-cols-[1fr_auto] items-center gap-3">
-                  <div className="h-2 overflow-hidden rounded-full bg-white">
-                    <div className="h-full rounded-full bg-[var(--primary)]" style={{ width: `${row.value}%` }} />
+                  <div className="h-2 overflow-hidden bg-[var(--paper)]">
+                    <div className="h-full bg-[var(--primary)]" style={{ width: `${row.value}%` }} />
                   </div>
                   <span className="text-[11px] font-medium text-[var(--muted-foreground)]">
                     Inspect →
@@ -1526,7 +1482,7 @@ function adviceForContributor(label: string) {
 
 function MetricPill({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-xl border border-[var(--border)] bg-[var(--primary-soft)]/40 p-3">
+    <div className="register-metric-pill p-3">
       <div className="text-[10px] font-semibold uppercase tracking-widest text-[var(--muted-foreground)]">
         {label}
       </div>
@@ -1543,18 +1499,20 @@ function SecondaryPanels({
   localNews,
   healthEquityLevel,
   alertRisk,
+  detailHref,
 }: {
   zipCode: string;
   fluActivity: string;
   localNews: ReturnType<typeof useDashboardData>["localNews"];
   healthEquityLevel: string;
   alertRisk: string;
+  detailHref: (topic: string) => string;
 }) {
   return (
     <div className="grid gap-4 sm:grid-cols-2">
-      <SmallPanel description="CDC respiratory illness signal" href={`/details/flu-activity?zipCode=${zipCode}`} icon="wind" label="Flu activity" title={fluActivity} />
-      <SmallPanel description="Community vulnerability context" href={`/details/health-equity?zipCode=${zipCode}`} icon="users" label="Health equity" title={healthEquityLevel} />
-      <SmallPanel description="Official severe-weather context" href={`/details/weather-alerts?zipCode=${zipCode}`} icon="alert" label="Weather alerts" title={alertRisk} />
+      <SmallPanel description="CDC respiratory illness signal" href={detailHref("flu-activity")} icon="wind" label="Flu activity" title={fluActivity} />
+      <SmallPanel description="Community vulnerability context" href={detailHref("health-equity")} icon="users" label="Health equity" title={healthEquityLevel} />
+      <SmallPanel description="Official severe-weather context" href={detailHref("weather-alerts")} icon="alert" label="Weather alerts" title={alertRisk} />
       <SmallPanel description="Recent local health articles" href={getDashboardUrl(zipCode, "news")} icon="bell" label="Local news" title={`${localNews.length} articles`} />
     </div>
   );
@@ -1574,7 +1532,7 @@ function SmallPanel({
   title: string;
 }) {
   return (
-    <Link className="soft-shadow group rounded-2xl border border-[var(--border)] bg-white p-4 transition hover:-translate-y-0.5 hover:border-[var(--primary)]/35" href={href}>
+    <Link className="register-small-panel group p-4" href={href}>
       <div className="flex items-start justify-between">
         <div>
           <div className="text-xs font-medium uppercase tracking-wider text-[var(--muted-foreground)]">{label}</div>
@@ -1584,7 +1542,7 @@ function SmallPanel({
             Open details →
           </div>
         </div>
-        <div className={`grid h-10 w-10 place-items-center rounded-xl ${toneClass(title)}`}>
+        <div className={`grid h-10 w-10 place-items-center ${toneClass(title)}`}>
           <Icon name={icon} className="h-5 w-5" />
         </div>
       </div>
@@ -1597,7 +1555,7 @@ function NewsPanel({ localNews }: { localNews: ReturnType<typeof useDashboardDat
   if (items.length === 0) return null;
 
   return (
-    <section className="soft-shadow rounded-3xl border border-[var(--border)] bg-white p-6">
+    <section className="register-panel p-6">
       <div className="flex items-center gap-2">
         <Icon name="bell" className="h-5 w-5 text-[var(--muted-foreground)]" />
         <h2 className="font-heading text-xl font-semibold text-[var(--primary-ink)]">Local health news</h2>
@@ -1692,7 +1650,7 @@ function SignalsView({
 
   return (
     <section className="space-y-6">
-      <div className="rounded-[1.75rem] border border-[var(--border)] bg-white p-6 shadow-[0_18px_42px_-34px_rgba(19,41,75,0.5)]">
+      <div className="register-panel p-6">
         <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--primary)]">
           Health signals
         </p>
@@ -1709,11 +1667,11 @@ function SignalsView({
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         {signals.map((signal) => (
           <article
-            className="rounded-2xl border border-[var(--border)] bg-white p-5 shadow-[0_12px_34px_-28px_rgba(19,41,75,0.45)]"
+            className="register-small-panel p-5"
             key={signal.label}
           >
             <div className="flex items-start justify-between gap-4">
-              <span className="grid h-10 w-10 place-items-center rounded-xl bg-[var(--primary-soft)] text-[var(--primary)]">
+              <span className="grid h-10 w-10 place-items-center border border-[var(--border)] bg-[var(--paper-deep)] text-[var(--primary)]">
                 <Icon name={signal.icon} className="h-5 w-5" />
               </span>
               <span className={`rounded-full px-3 py-1 text-xs font-semibold ${toneClass(signal.value)}`}>
@@ -1745,6 +1703,9 @@ export default function Home() {
     aqi,
     fluActivity,
     covidActivity,
+    covidData,
+    environmentData,
+    weatherAlerts,
     heatRisk,
     uvRisk,
     alertRisk,
@@ -1780,6 +1741,64 @@ export default function Home() {
   const goHome = () => {
     resetSearch();
     router.push("/");
+  };
+
+  // Builds a /details/[topic] link with the full signal context that page
+  // reads from query params (it doesn't re-fetch on its own -- see
+  // src/app/details/[topic]/page.tsx). Every "Open details" link must go
+  // through this, not a bare `/details/${topic}?zipCode=${zipCode}` --
+  // that was the previous bug, which left every field on the details page
+  // reading as "Unavailable".
+  const detailHref = (topic: string) => {
+    const params = new URLSearchParams({
+      zipCode,
+      city,
+      state,
+      stateAbbreviation: state,
+      aqi: aqi?.toString() ?? "",
+      airQuality: airQualityLabel,
+      fluActivity,
+      covidActivity,
+      covidValue: covidData?.value?.toString() ?? "",
+      covidSites: covidData?.numberOfSites.toString() ?? "",
+      covidCoverage: covidData?.coverage ?? "",
+      covidTimePeriod: covidData?.timePeriod ?? "",
+      covidUpdatedAt: covidData?.updatedAt ?? "",
+      heatRisk,
+      uvRisk,
+      alertRisk,
+      pollutantRisk,
+      dominantPollutant,
+      temperature: environmentData?.temperature?.toString() ?? "",
+      apparentTemperature:
+        environmentData?.apparentTemperature?.toString() ?? "",
+      humidity: environmentData?.humidity?.toString() ?? "",
+      uvIndexMax: environmentData?.uvIndexMax?.toString() ?? "",
+      temperatureMax: environmentData?.temperatureMax?.toString() ?? "",
+      apparentTemperatureMax:
+        environmentData?.apparentTemperatureMax?.toString() ?? "",
+      activeAlerts: weatherAlerts.map((alert) => alert.event).join("|"),
+      allergyPeakWindow:
+        healthForecastData?.allergyPeakWindow?.displayTime ?? "",
+      allergyPeakScore:
+        healthForecastData?.allergyPeakScore?.toString() ?? "",
+      pollenRisk:
+        healthForecastData?.allergyPeakWindow?.pollenRisk ?? "",
+      equityScore: healthEquityData?.equityScore.toString() ?? "",
+      equityLevel: healthEquityData?.equityLevel ?? "",
+      placesChronicBurdenScore:
+        healthEquityData?.cdcPlaces?.chronicBurdenScore?.toString() ?? "",
+      placesAsthma: healthEquityData?.cdcPlaces?.asthma?.toString() ?? "",
+      placesCopd: healthEquityData?.cdcPlaces?.copd?.toString() ?? "",
+      placesSmoking: healthEquityData?.cdcPlaces?.smoking?.toString() ?? "",
+      placesObesity: healthEquityData?.cdcPlaces?.obesity?.toString() ?? "",
+      placesDiabetes:
+        healthEquityData?.cdcPlaces?.diabetes?.toString() ?? "",
+      healthRisk,
+      respiratoryRisk,
+    });
+
+    return `/details/${topic}?${params.toString()}`;
   };
 
   useEffect(() => {
@@ -1823,7 +1842,7 @@ export default function Home() {
   }
 
   return (
-    <div className="flex min-h-screen bg-[var(--primary-soft)]/30">
+    <div className="register-shell flex min-h-screen">
       <DashboardSidebar
         activeView={dashboardView}
         city={city}
@@ -1832,10 +1851,10 @@ export default function Home() {
         state={state}
         zipCode={zipCode}
       />
-      <div className="flex min-w-0 flex-1 flex-col">
-        <header className="sticky top-0 z-20 flex min-h-16 items-center gap-4 border-b border-[var(--border)] bg-white/85 px-6 py-3 backdrop-blur lg:px-10">
+      <div className="register-document flex min-w-0 flex-1 flex-col">
+        <header className="register-topbar">
           <button
-            className="flex shrink-0 items-center gap-2 lg:hidden"
+            className="flex shrink-0 items-center gap-2 sm:hidden"
             onClick={goHome}
             type="button"
           >
@@ -1844,16 +1863,18 @@ export default function Home() {
               MyLocalHealth
             </span>
           </button>
-          <div>
-            <div className="text-[11px] font-semibold uppercase tracking-widest text-[var(--muted-foreground)]">
-              Local health · live snapshot
+          <button className="register-menu-button hidden sm:inline-flex" type="button" aria-label="Menu">
+            <span />
+            <span />
+            <span />
+          </button>
+          <div className="hidden sm:block">
+            <div className="register-mono text-[var(--muted-foreground)]">
+              Updated live
             </div>
-            <h1 className="font-heading text-lg font-semibold text-[var(--primary-ink)]">
-              {dashboardTitle} · ZIP {zipCode}
-            </h1>
           </div>
           <form
-            className="ml-auto hidden items-center gap-2 rounded-full border border-[var(--border)] bg-white px-4 py-2 md:flex"
+            className="register-zip-form ml-auto hidden md:flex"
             onSubmit={(event) => {
               event.preventDefault();
               void searchZipCode(zipCode);
@@ -1868,13 +1889,35 @@ export default function Home() {
               value={zipCode}
             />
           </form>
-          <button className="rounded-full bg-[var(--primary-ink)] px-4 py-2 text-sm font-medium text-white hover:bg-[var(--primary)]" onClick={goHome} type="button">
-            New search
+          <button
+            className="register-icon-button hidden sm:inline-flex"
+            onClick={() => navigateDashboardView("signals")}
+            title="View alerts and health signals"
+            type="button"
+            aria-label="View alerts and health signals"
+          >
+            <Icon name="bell" className="h-5 w-5" />
+            <span />
+          </button>
+          <button className="register-action-button" onClick={goHome} type="button">
+            + New search
           </button>
           <AccountActions user={user} />
         </header>
 
-        <main className="flex-1 space-y-6 px-6 py-6 lg:px-10">
+        <section className="register-masthead">
+          <div className="flex flex-wrap items-baseline gap-4">
+            <span className="register-mono text-[var(--muted-foreground)]">MyLocalHealth</span>
+            <h2>Local health snapshot</h2>
+          </div>
+          <div className="register-masthead-meta">
+            <span>{dashboardTitle}</span>
+            <span>ZIP · {zipCode}</span>
+            <span>Live · data-linked</span>
+          </div>
+        </section>
+
+        <main className="lovable-dashboard-shell flex-1 px-5 py-6 md:px-8 lg:px-10">
           <div className="flex gap-2 overflow-x-auto pb-1 lg:hidden">
             {visibleDashboardViews.map((viewId) => {
               const view = getDashboardView(viewId);
@@ -1898,10 +1941,33 @@ export default function Home() {
 
           {dashboardView === "overview" && (
             <>
+              <section className="register-page-intro">
+                <span className="spec-tab">Today&apos;s summary</span>
+                <h1>Today in {zipCode}.</h1>
+                <p>
+                  {healthRisk.toLowerCase() === "moderate"
+                    ? "A moderate day: outdoor irritants and weather conditions are the main signals to watch."
+                    : `A ${healthRisk.toLowerCase()} local health day based on the current air, heat, respiratory, equity, and forecast signals.`}
+                  {" "}Use the sections below to inspect the forecast, exposure model, and data behind the score.
+                </p>
+                <button
+                  className="register-action-button mt-6"
+                  onClick={() => navigateDashboardView("forecast")}
+                  type="button"
+                >
+                  Open forecast ↗
+                </button>
+              </section>
+              <div className="register-section-kicker">
+                <span>Snapshot</span>
+                <em>Key signals</em>
+                <strong>Live · updated now</strong>
+              </div>
               <SummaryRow
                 airQualityLabel={airQualityLabel}
                 aqi={aqi}
                 covidActivity={covidActivity}
+                detailHref={detailHref}
                 healthRisk={healthRisk}
                 heatRisk={heatRisk}
                 zipCode={zipCode}
@@ -1929,6 +1995,7 @@ export default function Home() {
                   />
                   <SecondaryPanels
                     alertRisk={alertRisk}
+                    detailHref={detailHref}
                     fluActivity={fluActivity}
                     healthEquityLevel={healthEquityData?.equityLevel ?? "Unknown"}
                     localNews={localNews}

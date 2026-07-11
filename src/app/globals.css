@@ -77,7 +77,7 @@ body {
   align-items: baseline;
   gap: 0;
   color: var(--foreground);
-  font-family: "Iowan Old Style", Georgia, var(--font-display);
+  font-family: var(--font-display);
   font-weight: 650;
   line-height: 0.98;
   letter-spacing: -0.018em;
@@ -2210,7 +2210,7 @@ textarea {
 }
 
 .twin-gauge-value strong {
-  font-family: var(--font-display);
+  font-family: var(--font-stat);
   font-weight: 700;
   line-height: 1;
   color: var(--foreground);
@@ -3946,7 +3946,7 @@ body {
   align-items: baseline;
   gap: 0;
   color: var(--foreground);
-  font-family: "Iowan Old Style", Georgia, var(--font-display);
+  font-family: var(--font-display);
   font-weight: 650;
   line-height: 0.98;
   letter-spacing: -0.018em;
@@ -4231,7 +4231,6 @@ body {
 
 .hand-note {
   font-family: var(--font-display);
-  font-style: italic;
   color: var(--foreground-muted);
 }
 
@@ -5116,4 +5115,1275 @@ body {
   .twin3d-node-popover {
     width: min(13rem, 78vw);
   }
+}
+
+/* ================================================================
+ * Local Health Register theme
+ * ----------------------------------------------------------------
+ * Final theme layer from the latest Lovable export. This sits last on
+ * purpose so older blue/dark experiments do not override the product
+ * direction. It keeps all existing app logic and panel classes intact.
+ * ================================================================ */
+
+:root {
+  --background: #f7f3ea;
+  --background-deep: #ede6d6;
+  --surface: #ffffff;
+  --surface-muted: #f1ebdd;
+  --foreground: #14161a;
+  --foreground-muted: #4b4e56;
+  --foreground-faint: #83848c;
+  --rule: #ded6c2;
+  --rule-strong: #b7ac91;
+  --rule-on-dark: rgba(255, 255, 255, 0.16);
+  --line: var(--rule);
+  --line-strong: var(--rule-strong);
+  --border: var(--rule);
+  --input: var(--rule-strong);
+  --ring: #a83224;
+  --accent: #a83224;
+  --accent-soft: #f3ded8;
+  --accent-ink: #6c2018;
+  --primary: var(--accent);
+  --primary-foreground: #ffffff;
+  --primary-soft: var(--accent-soft);
+  --primary-ink: #14161a;
+  --secondary: #2e5339;
+  --secondary-soft: #e1e9dd;
+  --success: #2e5339;
+  --warning: #a06b00;
+  --danger: #b42318;
+  --info: var(--accent);
+  --muted: var(--foreground-muted);
+  --muted-foreground: var(--foreground-muted);
+  --sidebar-foreground: var(--foreground-muted);
+  --card: var(--surface);
+  --card-foreground: var(--foreground);
+  --radius-sm: 0.35rem;
+  --radius-md: 0.55rem;
+  --radius-lg: 0.85rem;
+  --font-app: var(--font-app-injected), "Söhne", "Inter", "Helvetica Neue",
+    Helvetica, "Segoe UI", system-ui, -apple-system, BlinkMacSystemFont, Arial,
+    sans-serif;
+  --font-display: var(--font-display-injected), "Iowan Old Style",
+    "Source Serif Pro", Georgia, serif;
+  --font-code: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, Courier,
+    monospace;
+  --shadow-soft:
+    0 1px 2px rgba(20, 22, 26, 0.04),
+    0 16px 36px -28px rgba(20, 22, 26, 0.35);
+}
+
+body {
+  background:
+    radial-gradient(circle at 12% -8%, rgba(168, 50, 36, 0.08), transparent 26rem),
+    radial-gradient(circle at 94% 0%, rgba(46, 83, 57, 0.07), transparent 24rem),
+    var(--background);
+  color: var(--foreground);
+}
+
+.font-heading {
+  font-family: var(--font-display);
+}
+
+.public-health-bg {
+  background:
+    radial-gradient(circle at 9% -8%, rgba(168, 50, 36, 0.09), transparent 28rem),
+    radial-gradient(circle at 95% 4%, rgba(46, 83, 57, 0.08), transparent 26rem),
+    linear-gradient(180deg, #fbf7ee 0%, #f7f3ea 46%, #efe8d9 100%);
+  color: var(--foreground);
+}
+
+.public-health-bg::before {
+  opacity: 0.28;
+  background-image:
+    linear-gradient(to right, rgba(20, 22, 26, 0.045) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(20, 22, 26, 0.035) 1px, transparent 1px);
+  background-size: 72px 72px;
+  mask-image: linear-gradient(180deg, rgba(0, 0, 0, 0.62), transparent 68%);
+}
+
+.brand-wordmark,
+.landing-brand .brand-wordmark,
+.dashboard-mode .brand-wordmark {
+  color: var(--foreground);
+  font-family: var(--font-display);
+}
+
+.brand-wordmark-health,
+.landing-brand .brand-wordmark-health,
+.dashboard-mode .brand-wordmark-health {
+  color: var(--accent-ink);
+}
+
+.brand-wordmark-health::after,
+.landing-brand .brand-wordmark-health::after {
+  background: var(--accent);
+  opacity: 0.72;
+}
+
+.landing-header,
+.public-health-bg header,
+.details-shell header {
+  border-color: var(--rule);
+}
+
+.landing-header {
+  background: rgba(255, 255, 255, 0.86);
+}
+
+.landing-search {
+  border-radius: 0.95rem 0.4rem 0.95rem 0.4rem;
+  background: rgba(255, 255, 255, 0.92);
+  box-shadow: var(--shadow-soft);
+}
+
+.landing-search:focus-within {
+  border-color: var(--accent);
+  box-shadow:
+    0 0 0 4px rgba(168, 50, 36, 0.12),
+    var(--shadow-soft);
+}
+
+.soft-shadow,
+.lifted-shadow,
+.quiet-surface,
+.editorial-surface,
+.inset-surface,
+.action-panel,
+.main-feature-panel,
+.model-data-feature,
+.today-brief-shell,
+.field-report,
+.health-signal-card,
+.health-zone-card,
+.community-hero-card,
+.presearch-visual-card,
+.lovable-dashboard-shell .quiet-surface,
+.lovable-dashboard-shell .editorial-surface,
+.lovable-dashboard-shell .inset-surface,
+.lovable-dashboard-shell .action-panel,
+.lovable-dashboard-shell .main-feature-panel,
+.lovable-dashboard-shell .model-data-feature,
+.lovable-dashboard-shell .today-brief-shell,
+.lovable-dashboard-shell .field-report {
+  border-color: var(--rule);
+  background: rgba(255, 255, 255, 0.94);
+  color: var(--foreground);
+  box-shadow: var(--shadow-soft);
+}
+
+.soft-shadow,
+.quiet-surface,
+.editorial-surface,
+.inset-surface,
+.action-panel,
+.main-feature-panel,
+.model-data-feature,
+.today-brief-shell,
+.field-report {
+  border-radius: 1.05rem 0.5rem 1.05rem 0.5rem;
+}
+
+.lifted-shadow {
+  border-radius: 1.25rem 0.55rem 1.25rem 0.55rem;
+  box-shadow:
+    0 2px 4px rgba(20, 22, 26, 0.04),
+    0 26px 54px -34px rgba(20, 22, 26, 0.42);
+}
+
+.hero-grid-bg {
+  background-image:
+    linear-gradient(to right, rgba(20, 22, 26, 0.045) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(20, 22, 26, 0.035) 1px, transparent 1px);
+  background-size: 56px 56px;
+}
+
+.dashboard-sidebar {
+  background: rgba(255, 255, 255, 0.9);
+  color: var(--foreground);
+  box-shadow: 1px 0 0 var(--rule);
+}
+
+.sidebar-nav-item {
+  border-radius: 0.75rem 0.3rem 0.75rem 0.3rem;
+  color: var(--foreground-muted);
+}
+
+.sidebar-nav-item:hover,
+.sidebar-nav-item:focus-visible {
+  background: var(--surface-muted);
+  color: var(--foreground);
+}
+
+.sidebar-nav-item-active,
+.sidebar-nav-item-active:hover {
+  border-color: var(--rule-strong);
+  background: var(--surface-muted);
+  color: var(--foreground);
+  box-shadow: inset 3px 0 0 var(--accent);
+}
+
+.bespoke-button,
+.public-health-bg button[type="submit"],
+.lovable-dashboard-shell .bespoke-button {
+  border: 1px solid var(--foreground);
+  border-radius: 0.65rem 0.25rem 0.65rem 0.25rem;
+  background: var(--foreground);
+  color: var(--background);
+  font-weight: 700;
+  box-shadow: none;
+}
+
+.bespoke-button:hover:not(:disabled),
+.bespoke-button:focus-visible:not(:disabled),
+.public-health-bg button[type="submit"]:hover:not(:disabled),
+.lovable-dashboard-shell .bespoke-button:hover:not(:disabled) {
+  border-color: var(--accent-ink);
+  background: var(--accent-ink);
+  color: #fff;
+}
+
+.bespoke-control,
+.public-health-bg a[class*="rounded"],
+.public-health-bg button[class*="rounded"],
+.lovable-dashboard-shell .bespoke-control {
+  border-color: var(--rule);
+  border-radius: 0.65rem 0.25rem 0.65rem 0.25rem;
+}
+
+.bespoke-control {
+  background: var(--surface);
+  color: var(--foreground);
+}
+
+.bespoke-control:hover,
+.bespoke-control:focus-visible {
+  border-color: var(--accent);
+  background: var(--surface-muted);
+  color: var(--foreground);
+}
+
+.register-cta-panel {
+  border-radius: 1.35rem 0.55rem 1.35rem 0.55rem;
+  background:
+    radial-gradient(circle at 86% 18%, rgba(255, 255, 255, 0.12), transparent 20rem),
+    linear-gradient(135deg, #14161a 0%, #2e5339 100%);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.08),
+    0 26px 60px -42px rgba(20, 22, 26, 0.58);
+}
+
+.lovable-dashboard-shell h1,
+.lovable-dashboard-shell h2,
+.lovable-dashboard-shell h3,
+.public-health-bg h1,
+.public-health-bg h2,
+.public-health-bg h3 {
+  color: var(--foreground);
+  font-family: var(--font-display);
+  letter-spacing: -0.015em;
+}
+
+.lovable-dashboard-shell [class*="uppercase"],
+.public-health-bg [class*="uppercase"] {
+  letter-spacing: 0.12em;
+}
+
+.auth-page-shell {
+  background:
+    radial-gradient(circle at 18% 8%, rgba(168, 50, 36, 0.11), transparent 25rem),
+    radial-gradient(circle at 92% 14%, rgba(46, 83, 57, 0.09), transparent 23rem),
+    linear-gradient(180deg, #fbf7ee 0%, var(--background) 100%);
+}
+
+.auth-header,
+.auth-card {
+  border-color: var(--rule);
+  border-radius: 1.15rem 0.55rem 1.15rem 0.55rem;
+  background: rgba(255, 255, 255, 0.94);
+  box-shadow: var(--shadow-soft);
+}
+
+/* ================================================================
+ * Local Health Register — actual Lovable export direction
+ * ================================================================ */
+
+:root {
+  --paper: #f5f1e6;
+  --paper-deep: #ede7d6;
+  --ink: #0e1a2b;
+  --background: #f5f1e6;
+  --background-deep: #ede7d6;
+  --foreground: #0e1a2b;
+  --foreground-muted: #5b6b80;
+  --foreground-faint: #7a8798;
+  --surface: #fbf8f0;
+  --surface-muted: #eef4fa;
+  --card: #fbf8f0;
+  --card-foreground: #0e1a2b;
+  --primary: #2e6fb5;
+  --primary-foreground: #fbf8f0;
+  --primary-soft: #e7f1f9;
+  --primary-ink: #13294b;
+  --accent: #4b9cd3;
+  --accent-soft: #e7f1f9;
+  --accent-ink: #13294b;
+  --secondary: #eef4fa;
+  --secondary-soft: #eef4fa;
+  --muted: #f1f5f9;
+  --muted-foreground: #5b6b80;
+  --border: #d9cfb6;
+  --rule: #d9cfb6;
+  --rule-strong: #c5b892;
+  --input: #d9cfb6;
+  --ring: #4b9cd3;
+  --success: #1f9d6e;
+  --warning: #c88700;
+  --danger: #c43148;
+  --sidebar-foreground: #34455c;
+  --font-app: var(--font-app-injected), "Rubik", "Inter", system-ui, sans-serif;
+  --font-display: var(--font-display-injected), "Space Mono", ui-monospace,
+    SFMono-Regular, Menlo, monospace;
+  --font-editorial: var(--font-display);
+  --font-stat: var(--font-mono-injected), "Space Mono", ui-monospace,
+    SFMono-Regular, Menlo, monospace;
+  --shadow-soft:
+    0 1px 0 rgba(19, 41, 75, 0.05),
+    0 12px 28px -18px rgba(19, 41, 75, 0.12);
+}
+
+body {
+  background: var(--paper);
+  color: var(--foreground);
+}
+
+.register-shell {
+  background: var(--paper-deep);
+  color: var(--foreground);
+}
+
+.register-document {
+  background:
+    radial-gradient(rgba(19, 41, 75, 0.08) 0.55px, transparent 0.55px),
+    radial-gradient(rgba(19, 41, 75, 0.05) 0.35px, transparent 0.35px),
+    var(--background);
+  background-position:
+    0 0,
+    1px 2px;
+  background-size:
+    3px 3px,
+    7px 7px;
+}
+
+@media (min-width: 640px) {
+  .register-document {
+    margin: 0.75rem 0.75rem 0.75rem 0;
+    border: 1px solid var(--border);
+    box-shadow:
+      0 1px 0 rgba(19, 41, 75, 0.06),
+      0 20px 40px -24px rgba(19, 41, 75, 0.18);
+  }
+}
+
+.register-sidebar {
+  width: 4.75rem;
+  background: transparent;
+  padding: 1.1rem 0.7rem;
+}
+
+@media (min-width: 1180px) {
+  .register-sidebar {
+    width: 15rem;
+  }
+}
+
+.register-rail-logo {
+  display: grid;
+  width: 3.5rem;
+  height: 3.5rem;
+  place-items: center;
+  border-radius: 0.3rem;
+  background: var(--primary-ink);
+  color: var(--primary-foreground);
+  font-family: var(--font-display);
+  font-size: 0.82rem;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+}
+
+.register-brand-button {
+  display: inline-flex;
+  width: 3.5rem;
+  min-height: 3.5rem;
+  align-items: center;
+  justify-content: center;
+  gap: 0.7rem;
+  border: 1px solid rgba(19, 41, 75, 0.12);
+  background: var(--card);
+  color: var(--primary-ink);
+  box-shadow: 0 8px 18px -16px rgba(19, 41, 75, 0.35);
+  transition:
+    border-color 160ms ease,
+    background 160ms ease,
+    transform 160ms ease;
+}
+
+.register-brand-button:hover,
+.register-brand-button:focus-visible {
+  border-color: var(--primary-ink);
+  background: var(--paper);
+  transform: translateX(1px);
+}
+
+.register-brand-button .brand-wordmark-sidebar {
+  display: none;
+  color: var(--primary-ink);
+  font-size: 1.02rem;
+  white-space: nowrap;
+}
+
+.register-brand-button .brand-wordmark-health {
+  color: var(--primary);
+}
+
+.register-brand-button img {
+  filter: brightness(0) saturate(100%) invert(16%) sepia(30%) saturate(1659%) hue-rotate(180deg) brightness(89%) contrast(93%) !important;
+  opacity: 0.96;
+}
+
+@media (min-width: 1180px) {
+  .register-brand-button {
+    width: 100%;
+    justify-content: flex-start;
+    padding: 0.55rem 0.65rem;
+  }
+
+  .register-brand-button .brand-wordmark-sidebar {
+    display: inline-flex;
+  }
+}
+
+.register-rail-nav {
+  display: grid;
+  gap: 0.45rem;
+  margin-top: 4rem;
+}
+
+.register-rail-button {
+  display: flex;
+  min-height: 3.5rem;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  border: 1px solid transparent;
+  border-radius: 0.35rem;
+  color: var(--sidebar-foreground);
+  transition:
+    background 160ms ease,
+    color 160ms ease,
+    border-color 160ms ease,
+    transform 160ms ease;
+}
+
+.register-rail-button:hover,
+.register-rail-button:focus-visible {
+  background: var(--card);
+  color: var(--primary-ink);
+  transform: translateX(2px);
+}
+
+.register-rail-button-active,
+.register-rail-button-active:hover {
+  background: var(--primary-ink);
+  color: var(--primary-foreground);
+}
+
+.register-rail-number,
+.register-rail-label {
+  display: none;
+}
+
+@media (min-width: 1180px) {
+  .register-rail-button {
+    justify-content: flex-start;
+    padding: 0 0.9rem;
+  }
+
+  .register-rail-number,
+  .register-rail-label {
+    display: inline;
+  }
+
+  .register-rail-number {
+    font-family: var(--font-display);
+    font-size: 0.62rem;
+    opacity: 0.62;
+  }
+
+  .register-rail-label {
+    font-size: 0.88rem;
+    font-weight: 600;
+  }
+}
+
+.register-rail-note {
+  display: none;
+}
+
+@media (min-width: 1180px) {
+  .register-rail-note {
+    display: block;
+    margin-top: auto;
+    border-top: 1px solid var(--border);
+    padding-top: 1rem;
+  }
+
+  .register-rail-note p {
+    margin-top: 0.5rem;
+    border-left: 2px solid rgba(46, 111, 181, 0.35);
+    padding-left: 0.75rem;
+    color: var(--primary-ink);
+    font-family: var(--font-editorial);
+    font-size: 0.96rem;
+    line-height: 1.25;
+  }
+}
+
+.register-topbar {
+  position: sticky;
+  top: 0;
+  z-index: 30;
+  display: flex;
+  flex-wrap: wrap;
+  min-height: 5rem;
+  align-items: center;
+  gap: 1rem;
+  border-bottom: 1px solid var(--border);
+  background: rgba(245, 241, 230, 0.9);
+  padding: 0.9rem clamp(1rem, 3vw, 2.5rem);
+  backdrop-filter: blur(16px);
+}
+
+.register-mono {
+  font-family: var(--font-display);
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+}
+
+.register-menu-button {
+  flex-direction: column;
+  gap: 0.3rem;
+  border: 0;
+  background: transparent;
+  padding: 0.5rem;
+}
+
+.register-menu-button span {
+  display: block;
+  width: 1.35rem;
+  height: 2px;
+  background: var(--muted-foreground);
+}
+
+.register-zip-form,
+.register-icon-button {
+  align-items: center;
+  gap: 0.5rem;
+  border: 1px solid var(--border);
+  background: var(--card);
+  padding: 0.55rem 0.7rem;
+}
+
+.register-zip-form input {
+  width: 10rem;
+  background: transparent;
+  font-family: var(--font-display);
+  font-size: 0.78rem;
+  outline: none;
+}
+
+.register-icon-button {
+  position: relative;
+  color: var(--muted-foreground);
+}
+
+.register-icon-button span {
+  position: absolute;
+  right: 0.55rem;
+  top: 0.55rem;
+  width: 0.4rem;
+  height: 0.4rem;
+  border-radius: 999px;
+  background: var(--danger);
+}
+
+.register-action-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  border: 1px solid var(--primary-ink);
+  background: var(--primary-ink);
+  padding: 0.95rem 1.35rem;
+  color: var(--primary-foreground);
+  font-family: var(--font-display);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+}
+
+.register-action-button:hover,
+.register-action-button:focus-visible {
+  background: var(--primary);
+}
+
+.register-masthead {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+  border-bottom: 1px solid var(--border);
+  background: rgba(245, 241, 230, 0.76);
+  padding: 1.1rem clamp(1.25rem, 3vw, 2.5rem);
+}
+
+.register-masthead h2 {
+  color: var(--primary-ink);
+  font-family: var(--font-editorial);
+  font-size: clamp(1.8rem, 3.2vw, 2.45rem);
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  line-height: 1;
+}
+
+.register-masthead-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.15rem;
+  color: var(--muted-foreground);
+  font-family: var(--font-display);
+  font-size: 0.72rem;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+}
+
+.register-masthead-meta span:last-child {
+  color: var(--primary);
+}
+
+.register-page-intro {
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 2.5rem;
+}
+
+.spec-tab {
+  display: inline-flex;
+  align-items: center;
+  border: 1px solid var(--border);
+  background: var(--paper-deep);
+  padding: 0.35rem 0.75rem;
+  color: var(--primary-ink);
+  font-family: var(--font-display);
+  font-size: 0.72rem;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+}
+
+.register-page-intro h1 {
+  margin-top: 1.65rem;
+  color: var(--primary-ink);
+  font-family: var(--font-editorial);
+  font-size: clamp(3.6rem, 8vw, 5.6rem);
+  font-weight: 600;
+  letter-spacing: -0.04em;
+  line-height: 0.95;
+}
+
+.register-page-intro p {
+  margin-top: 1.25rem;
+  max-width: 52rem;
+  color: var(--muted-foreground);
+  font-size: clamp(1.05rem, 2.2vw, 1.45rem);
+  line-height: 1.35;
+}
+
+.register-section-kicker {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-top: 2.4rem;
+  margin-bottom: 1.25rem;
+  border-bottom: 1px dashed var(--border);
+  padding-bottom: 0.65rem;
+}
+
+.register-section-kicker span,
+.register-section-kicker strong {
+  color: var(--primary);
+  font-family: var(--font-display);
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+}
+
+.register-section-kicker em {
+  color: var(--primary-ink);
+  font-family: var(--font-editorial);
+  font-size: 1.25rem;
+  font-style: normal;
+  font-weight: 600;
+}
+
+.register-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1.25rem;
+}
+
+@media (min-width: 1180px) {
+  .register-summary-grid {
+    grid-template-columns: 1.25fr repeat(3, minmax(0, 1fr));
+  }
+}
+
+.register-tile {
+  position: relative;
+  min-height: 13rem;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  background:
+    radial-gradient(rgba(19, 41, 75, 0.08) 0.55px, transparent 0.55px),
+    var(--card);
+  background-size: 3px 3px;
+  padding: 1.6rem;
+  color: var(--foreground);
+  text-decoration: none;
+}
+
+.register-tile:hover {
+  border-color: var(--primary-ink);
+  box-shadow: 0 10px 24px -18px rgba(19, 41, 75, 0.35);
+}
+
+.register-tile-featured {
+  grid-column: span 2;
+}
+
+@media (min-width: 1180px) {
+  .register-tile-featured {
+    grid-column: span 1;
+    grid-row: span 2;
+    min-height: 20rem;
+  }
+}
+
+.register-fig {
+  position: absolute;
+  right: 1rem;
+  top: 0.85rem;
+  color: var(--muted-foreground);
+  font-family: var(--font-display);
+  font-size: 0.64rem;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+}
+
+.register-tile-label {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  color: var(--muted-foreground);
+  font-family: var(--font-display);
+  font-size: 0.75rem;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+}
+
+.register-tile-label svg {
+  color: var(--warning);
+}
+
+.register-tile-value {
+  color: var(--primary-ink);
+  font-family: var(--font-stat);
+  font-size: clamp(2.4rem, 5.6vw, 4rem);
+  font-weight: 700;
+  line-height: 0.9;
+}
+
+.register-tile:not(.register-tile-featured) .register-tile-value {
+  font-family: var(--font-stat);
+  font-size: 1.6rem;
+  font-style: normal;
+  font-weight: 700;
+}
+
+.register-tile-delta {
+  color: var(--warning);
+  font-family: var(--font-display);
+  font-size: 1rem;
+}
+
+.register-open-link {
+  display: inline-flex;
+  margin-top: 1.2rem;
+  color: var(--primary);
+  font-family: var(--font-display);
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  opacity: 0;
+  text-transform: uppercase;
+  transition: opacity 160ms ease;
+}
+
+.register-tile:hover .register-open-link {
+  opacity: 1;
+}
+
+.lovable-dashboard-shell {
+  color: var(--foreground);
+}
+
+.lovable-dashboard-shell .soft-shadow,
+.lovable-dashboard-shell section,
+.lovable-dashboard-shell .quiet-surface,
+.lovable-dashboard-shell .editorial-surface,
+.lovable-dashboard-shell .inset-surface {
+  border-radius: 0;
+}
+
+/* ============================================================
+ * Register continuity pass
+ * Pulls the post-search dashboard panels into the same newspaper
+ * surface as the masthead and front-page summary.
+ * ============================================================ */
+
+.lovable-dashboard-shell {
+  background:
+    linear-gradient(90deg, rgba(217, 207, 182, 0.16) 1px, transparent 1px),
+    linear-gradient(180deg, rgba(217, 207, 182, 0.18) 1px, transparent 1px),
+    var(--paper);
+  background-size: 52px 52px;
+}
+
+.lovable-dashboard-shell .soft-shadow,
+.lovable-dashboard-shell .lifted-shadow,
+.lovable-dashboard-shell [class*="shadow-"] {
+  box-shadow: none !important;
+}
+
+.lovable-dashboard-shell .bg-white,
+.lovable-dashboard-shell [class*="bg-white"] {
+  background-color: var(--card) !important;
+}
+
+.lovable-dashboard-shell [class*="primary-soft"] {
+  background-color: rgba(237, 231, 214, 0.62) !important;
+}
+
+.lovable-dashboard-shell [class*="rounded-"] {
+  border-radius: 0 !important;
+}
+
+.register-panel,
+.register-small-panel,
+.register-inset-panel,
+.register-callout,
+.register-metric-pill {
+  position: relative;
+  border: 1px solid var(--border);
+  background:
+    radial-gradient(rgba(19, 41, 75, 0.075) 0.55px, transparent 0.55px),
+    var(--card);
+  background-size: 3px 3px;
+  color: var(--foreground);
+  box-shadow: none;
+}
+
+.register-panel {
+  overflow: hidden;
+}
+
+.register-panel::before {
+  content: "";
+  pointer-events: none;
+  position: absolute;
+  inset: 0;
+  border-top: 1px solid rgba(255, 255, 255, 0.64);
+}
+
+.register-panel h2,
+.register-panel h3,
+.register-small-panel h3,
+.register-small-panel .font-heading {
+  color: var(--primary-ink);
+  font-family: var(--font-editorial);
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+
+.register-panel .text-xs.uppercase,
+.register-panel [class*="tracking-widest"],
+.register-small-panel [class*="tracking-wider"] {
+  font-family: var(--font-display);
+  letter-spacing: 0.22em;
+}
+
+.register-inset-panel {
+  background:
+    radial-gradient(rgba(19, 41, 75, 0.05) 0.5px, transparent 0.5px),
+    rgba(237, 231, 214, 0.52);
+  background-size: 3px 3px;
+}
+
+.register-callout {
+  background:
+    linear-gradient(135deg, rgba(237, 231, 214, 0.82), rgba(251, 248, 240, 0.92)),
+    var(--card);
+}
+
+.register-mini-button,
+.register-factor-button,
+.register-small-panel {
+  text-decoration: none;
+  transition:
+    border-color 160ms ease,
+    background-color 160ms ease,
+    color 160ms ease,
+    transform 160ms ease;
+}
+
+.register-mini-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--border);
+  background: var(--paper-deep);
+  padding: 0.45rem 0.7rem;
+  color: var(--primary-ink);
+  font-family: var(--font-display);
+  font-size: 0.66rem;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  line-height: 1;
+  text-transform: uppercase;
+}
+
+.register-mini-button:hover,
+.register-small-panel:hover,
+.register-factor-button:hover,
+.register-factor-row:hover {
+  border-color: var(--primary-ink);
+}
+
+.register-chart-frame {
+  border-left: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+  background:
+    repeating-linear-gradient(
+      to top,
+      transparent 0,
+      transparent 53px,
+      rgba(217, 207, 182, 0.5) 54px
+    );
+}
+
+.register-bar {
+  border: 1px solid rgba(19, 41, 75, 0.16);
+  border-bottom: 0;
+  background:
+    linear-gradient(180deg, rgba(75, 156, 211, 0.9), rgba(46, 111, 181, 0.96));
+}
+
+.register-tooltip {
+  border: 1px solid var(--primary-ink);
+  background: var(--primary-ink);
+  color: var(--primary-foreground);
+  font-family: var(--font-display);
+  letter-spacing: 0.08em;
+}
+
+.register-factor-button {
+  border-color: var(--border);
+  background: var(--paper-deep);
+  color: var(--primary-ink);
+  font-family: var(--font-display);
+  font-size: 0.72rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.register-factor-button-active {
+  border-color: var(--primary-ink);
+  background: var(--primary-ink);
+  color: var(--primary-foreground);
+}
+
+.register-factor-row {
+  border-color: var(--border);
+  background: rgba(251, 248, 240, 0.72);
+}
+
+.register-factor-row-active {
+  border-color: var(--primary-ink);
+  background: rgba(237, 231, 214, 0.9);
+}
+
+.register-metric-pill {
+  background: rgba(237, 231, 214, 0.62);
+}
+
+.register-small-panel {
+  display: block;
+  min-height: 12rem;
+  overflow: hidden;
+  background:
+    radial-gradient(rgba(19, 41, 75, 0.06) 0.55px, transparent 0.55px),
+    var(--card);
+  background-size: 3px 3px;
+}
+
+.register-small-panel:hover {
+  transform: translateY(-2px);
+}
+
+.lovable-dashboard-shell input[type="range"] {
+  accent-color: var(--primary-ink);
+}
+
+.lovable-dashboard-shell svg text {
+  font-family: var(--font-display);
+  letter-spacing: 0.04em;
+}
+
+.lovable-dashboard-shell footer,
+.lovable-dashboard-shell .text-\[var\(--primary\)\] {
+  color: var(--primary) !important;
+}
+
+.font-editorial {
+  font-family: var(--font-editorial);
+}
+
+.font-stat {
+  font-family: var(--font-stat);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02em;
+}
+
+.font-display {
+  font-family: var(--font-display);
+}
+
+.landing-register-page {
+  background:
+    radial-gradient(rgba(19, 41, 75, 0.07) 0.55px, transparent 0.55px),
+    var(--paper-deep);
+  background-size: 3px 3px;
+  color: var(--foreground);
+}
+
+.landing-register-paper {
+  background:
+    radial-gradient(rgba(19, 41, 75, 0.08) 0.55px, transparent 0.55px),
+    radial-gradient(rgba(19, 41, 75, 0.05) 0.35px, transparent 0.35px),
+    var(--background);
+  background-position:
+    0 0,
+    1px 2px;
+  background-size:
+    3px 3px,
+    7px 7px;
+}
+
+.landing-register-topline {
+  background: rgba(245, 241, 230, 0.86);
+}
+
+.landing-register-title {
+  font-family: var(--font-editorial);
+  font-weight: 600;
+  letter-spacing: -0.045em;
+}
+
+.landing-register-zip:focus-within {
+  box-shadow:
+    0 0 0 3px rgba(75, 156, 211, 0.16),
+    0 12px 26px -24px rgba(19, 41, 75, 0.28);
+}
+
+.landing-column-card {
+  min-height: 21rem;
+  background: rgba(251, 248, 240, 0.56);
+}
+
+.landing-column-card:hover {
+  background: rgba(251, 248, 240, 0.9);
+}
+
+@media (max-width: 900px) {
+  .lovable-dashboard-shell {
+    background-size: 36px 36px;
+  }
+
+  .register-small-panel {
+    min-height: auto;
+  }
+}
+
+/* ================================================================
+ * Register polish pass
+ * ================================================================ */
+
+.register-brand-button {
+  min-width: 3.5rem;
+}
+
+.register-brand-button img,
+.auth-page-shell header img,
+.details-register-shell nav img {
+  filter: brightness(0) saturate(100%) invert(14%) sepia(28%) saturate(1723%)
+    hue-rotate(181deg) brightness(93%) contrast(95%) !important;
+  opacity: 1;
+}
+
+.register-brand-button .brand-wordmark-sidebar {
+  font-family: var(--font-editorial);
+  font-size: 1.18rem;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+
+.register-icon-button {
+  min-height: 3.5rem;
+  min-width: 3.5rem;
+  justify-content: center;
+  transition:
+    border-color 160ms ease,
+    background-color 160ms ease,
+    color 160ms ease,
+    transform 160ms ease;
+}
+
+.register-icon-button:hover,
+.register-icon-button:focus-visible {
+  border-color: var(--primary-ink);
+  background: var(--paper-deep);
+  color: var(--primary-ink);
+  transform: translateY(-1px);
+}
+
+.auth-page-shell,
+.details-register-shell {
+  background:
+    radial-gradient(rgba(19, 41, 75, 0.07) 0.55px, transparent 0.55px),
+    var(--paper-deep) !important;
+  background-size: 3px 3px;
+}
+
+.auth-page-shell header,
+.auth-page-shell .auth-card,
+.details-register-shell header,
+.details-register-shell article,
+.details-register-shell section > article,
+.details-register-shell [class*="bg-\\[\\#0c2238\\]"],
+.details-register-shell [class*="bg-\\[\\#080d22\\]"],
+.details-register-shell [class*="bg-white\\/5"] {
+  border-color: var(--border) !important;
+  background:
+    radial-gradient(rgba(19, 41, 75, 0.055) 0.55px, transparent 0.55px),
+    rgba(251, 248, 240, 0.92) !important;
+  background-size: 3px 3px !important;
+  color: var(--foreground) !important;
+  box-shadow: var(--shadow-soft) !important;
+}
+
+.auth-page-shell header,
+.auth-page-shell .auth-card {
+  border-radius: 0 !important;
+}
+
+.details-register-shell header,
+.details-register-shell article {
+  border-radius: 0 !important;
+}
+
+.auth-page-shell h1,
+.auth-page-shell h2,
+.details-register-shell h1,
+.details-register-shell h2,
+.details-register-shell h3,
+.details-register-shell .font-heading {
+  color: var(--primary-ink) !important;
+  font-family: var(--font-editorial) !important;
+  font-weight: 600 !important;
+  letter-spacing: -0.025em;
+}
+
+.auth-page-shell p[class*="uppercase"],
+.auth-page-shell label,
+.details-register-shell p[class*="uppercase"],
+.details-register-shell h2[class*="uppercase"],
+.details-register-shell [class*="tracking-wide"] {
+  font-family: var(--font-display);
+  letter-spacing: 0.18em;
+}
+
+.auth-page-shell input,
+.auth-page-shell select,
+.auth-page-shell textarea,
+.details-register-shell input,
+.details-register-shell select,
+.details-register-shell textarea {
+  border-radius: 0 !important;
+  border-color: var(--border) !important;
+  background: var(--surface) !important;
+  color: var(--foreground) !important;
+}
+
+.auth-page-shell button,
+.auth-page-shell a[class*="rounded"],
+.details-register-shell button,
+.details-register-shell a[class*="rounded"] {
+  border-radius: 0 !important;
+}
+
+.details-register-shell .text-white,
+.details-register-shell .text-slate-200,
+.details-register-shell .text-slate-300 {
+  color: var(--foreground) !important;
+}
+
+.details-register-shell .text-slate-400,
+.details-register-shell .text-slate-500,
+.details-register-shell .text-slate-600 {
+  color: var(--muted-foreground) !important;
+}
+
+.details-register-shell .divide-white\/10 > :not([hidden]) ~ :not([hidden]),
+.details-register-shell .border-white\/10 {
+  border-color: var(--border) !important;
+}
+
+.details-register-shell .bg-white,
+.details-register-shell .bg-white\/80 {
+  background: var(--card) !important;
+}
+
+.details-register-shell .bg-\[var\(--primary\)\],
+.auth-page-shell .bg-\[var\(--primary\)\] {
+  background: var(--primary-ink) !important;
+}
+
+.details-register-shell .text-\[var\(--primary\)\],
+.auth-page-shell .text-\[var\(--primary\)\] {
+  color: var(--primary) !important;
 }

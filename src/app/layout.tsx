@@ -1,11 +1,18 @@
 import type { Metadata } from "next";
-import { Newsreader, Public_Sans } from "next/font/google";
+import { Space_Grotesk, Space_Mono, Public_Sans } from "next/font/google";
 import "./globals.css";
 
-const newsreader = Newsreader({
+const spaceGrotesk = Space_Grotesk({
   subsets: ["latin"],
-  style: ["normal", "italic"],
+  weight: ["500", "600", "700"],
   variable: "--font-display-injected",
+  display: "swap",
+});
+
+const spaceMono = Space_Mono({
+  subsets: ["latin"],
+  weight: ["400", "700"],
+  variable: "--font-mono-injected",
   display: "swap",
 });
 
@@ -41,7 +48,10 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={`${newsreader.variable} ${publicSans.variable}`}>
+    <html
+      lang="en"
+      className={`${spaceGrotesk.variable} ${spaceMono.variable} ${publicSans.variable}`}
+    >
       <body>{children}</body>
     </html>
   );

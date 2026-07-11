@@ -100,6 +100,25 @@ async function fetchWithRetry(
   throw lastError;
 }
 
+/**
+ * Public entry point to the same retry-with-backoff behavior as
+ * cachedJson(), for callers that need the raw Response (e.g. to read text
+ * instead of JSON, or to do their own per-source error handling) rather
+ * than cachedJson()'s "parse as JSON and cache the result" behavior.
+ */
+export function fetchWithRetries(
+  url: string,
+  options: RequestInit & { maxRetries?: number; retryBaseDelayMs?: number } = {}
+): Promise<Response> {
+  const {
+    maxRetries = defaultMaxRetries,
+    retryBaseDelayMs = defaultRetryBaseDelayMs,
+    ...fetchOptions
+  } = options;
+
+  return fetchWithRetry(url, fetchOptions, maxRetries, retryBaseDelayMs);
+}
+
 export async function cachedJson<T>(
   url: string,
   options: CachedJsonOptions = {}

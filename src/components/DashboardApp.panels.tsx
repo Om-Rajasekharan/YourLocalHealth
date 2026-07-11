@@ -3775,7 +3775,7 @@ export function ForecastPanel({
 
   return (
     <section className="grid gap-5">
-      <article className="rounded-[1.75rem] border border-[var(--border)] bg-white p-6 shadow-[0_18px_55px_-38px_rgba(19,41,75,0.5)] sm:p-8">
+      <article className="min-w-0 rounded-[1.75rem] border border-[var(--border)] bg-white p-6 shadow-[0_18px_55px_-38px_rgba(19,41,75,0.5)] sm:p-8">
         <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[var(--primary)]">
@@ -3808,7 +3808,7 @@ export function ForecastPanel({
 
         {forecastData && (
           <>
-            <div className="mt-7 grid gap-3 md:grid-cols-3">
+            <div className="mt-7 grid grid-cols-1 gap-3 md:grid-cols-3">
               <ForecastInsightCard
                 label="Average"
                 value={`${forecastData.averageScore}/100`}
@@ -4070,7 +4070,7 @@ function ForecastInsightCard({
         </p>
         <span className={`h-2.5 w-2.5 rounded-full ${forecastToneDot(tone)}`} />
       </div>
-      <p className="mt-3 font-heading text-xl font-semibold leading-tight text-[var(--primary-ink)]">
+      <p className="font-stat mt-3 text-xl font-bold leading-tight text-[var(--primary-ink)]">
         {value}
       </p>
       <p className="mt-2 text-xs leading-5 text-[var(--muted-foreground)]">

@@ -1053,7 +1053,7 @@ function DetailsContent() {
     };
 
   return (
-    <main className="min-h-screen public-health-bg text-[var(--foreground)]">
+    <main className="details-register-shell min-h-screen public-health-bg text-[var(--foreground)]">
       <section className="mx-auto w-full max-w-5xl px-5 py-8 sm:px-8 lg:px-10">
         <nav className="flex flex-col gap-4 border-b border-[var(--border)] pb-5 sm:flex-row sm:items-center sm:justify-between">
           <button
@@ -1212,7 +1212,7 @@ export default function DetailPage() {
   return (
     <Suspense
       fallback={
-        <main className="grid min-h-screen place-items-center bg-[#061826] text-slate-300">
+        <main className="grid min-h-screen place-items-center public-health-bg text-[var(--foreground-muted)]">
           Loading details...
         </main>
       }
