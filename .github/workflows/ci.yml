@@ -46,6 +46,9 @@ jobs:
         with:
           python-version: "3.11"
 
+      - name: Install XGBoost's OpenMP runtime dependency
+        run: sudo apt-get update && sudo apt-get install -y libgomp1
+
       - name: Install ML dependencies
         run: pip install -r ml/requirements.txt
 
@@ -92,7 +95,13 @@ jobs:
               assert Path(result['calibrator_path']).exists(), f'{target} calibrator artifact was not written'
               assert Path(result['permutation_importance_path']).exists(), f'{target} permutation importance CSV was not written'
 
-          print('All 9 targets report baseline, raw+calibrated calibration, bootstrap CIs, and permutation importance.')
+              candidate_names = {c['model_name'] for c in result['cross_validation']}
+              assert candidate_names == {'logistic_regression', 'random_forest', 'extra_trees', 'gradient_boosting', 'xgboost'}, (
+                  f'{target} did not race all 5 candidate models -- got {candidate_names}. '
+                  'If xgboost is missing, its native OpenMP dependency likely failed to load.'
+              )
+
+          print('All 9 targets report baseline, raw+calibrated calibration, bootstrap CIs, permutation importance, and raced all 5 candidate models including XGBoost.')
           "
 
       - name: Generate model report

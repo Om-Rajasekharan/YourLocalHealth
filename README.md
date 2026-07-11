@@ -132,6 +132,12 @@ python3 ml/generate_synthetic_checkins.py --rows 1500 --output data/synthetic_ch
 .venv/bin/python ml/train_symptom_model.py data/synthetic_checkins.csv --all-targets
 ```
 
+Five candidate model types are raced against each other per target:
+logistic regression, random forest, extra trees, gradient boosting, and
+XGBoost (XGBoost needs an OpenMP runtime -- `brew install libomp` on macOS,
+`apt-get install libgomp1` on Linux; it degrades gracefully to the other
+four candidates if that's not available rather than failing training).
+
 Training outputs are written to:
 
 ```bash
@@ -139,6 +145,24 @@ ml/models/
 ```
 
 Generated datasets and model artifacts are ignored by git.
+
+### Tuning Hyperparameters
+
+The hyperparameters in `candidate_models()` aren't hand-guessed -- they're
+the consensus from an offline `RandomizedSearchCV` sweep, scored on ROC AUC,
+run separately against three targets spanning the dataset's range of class
+balance. Re-run it if you change the feature set or want to re-tune:
+
+```bash
+.venv/bin/python ml/train_symptom_model.py data/synthetic_checkins.csv \
+  --target felt_impact --tune --tune-iterations 15
+```
+
+This is a manual/offline tool, not something that runs as part of normal
+training -- a full hyperparameter search on every push would make CI (which
+retrains from scratch every time) far too slow. Run it, review the printed
+best parameters, and hand-update `candidate_models()`'s defaults if they
+look better than the current ones.
 
 ### Generate a Model Report
 
@@ -407,6 +431,18 @@ call fails or is slow, `/api/health-chat` falls back to answering from
 dashboard context alone -- exactly as it did before this existed. The
 knowledge base content itself lives in `scripts/knowledge-base-content.mjs`
 for easy review and editing.
+
+## External API Resilience
+
+`src/lib/apiCache.ts` -- the shared wrapper nearly every external call in
+the app goes through (OpenWeather, Open-Meteo, NWS alerts, CDC wastewater,
+the forecast engine) -- retries a failed request with exponential backoff
+and jitter (default: 2 retries, 200ms base delay) before giving up. Only
+retries what's actually worth retrying: a network error, a 429, or a 5xx --
+never a 4xx client error, which will just fail identically every time.
+Every retry attempt is recorded as an `api_cache.retry` trace event, so a
+flaky upstream shows up in observability instead of only surfacing as an
+occasional user-facing error.
 
 ## Cross-Instance Rate Limiting
 

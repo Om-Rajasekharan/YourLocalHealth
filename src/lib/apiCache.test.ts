@@ -55,7 +55,7 @@ describe("cachedJson", () => {
     vi.useRealTimers();
   });
 
-  it("throws on unsuccessful responses", async () => {
+  it("throws on unsuccessful responses once retries are exhausted", async () => {
     vi.stubGlobal(
       "fetch",
       vi.fn().mockResolvedValue({
@@ -64,8 +64,61 @@ describe("cachedJson", () => {
       })
     );
 
-    await expect(cachedJson("https://example.com/b")).rejects.toThrow(
-      "Request failed with status 500."
-    );
+    await expect(
+      cachedJson("https://example.com/b", { maxRetries: 0 })
+    ).rejects.toThrow("Request failed with status 500.");
+  });
+
+  it("retries a 500 response and succeeds on the second attempt", async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce({ ok: false, status: 500 })
+      .mockResolvedValueOnce({ ok: true, json: async () => ({ value: 7 }) });
+    vi.stubGlobal("fetch", fetchMock);
+
+    const result = await cachedJson<{ value: number }>("https://example.com/c", {
+      maxRetries: 1,
+      retryBaseDelayMs: 1,
+    });
+
+    expect(result.value).toBe(7);
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+  });
+
+  it("retries a rejected fetch (network error) and succeeds on the second attempt", async () => {
+    const fetchMock = vi
+      .fn()
+      .mockRejectedValueOnce(new Error("network down"))
+      .mockResolvedValueOnce({ ok: true, json: async () => ({ value: 9 }) });
+    vi.stubGlobal("fetch", fetchMock);
+
+    const result = await cachedJson<{ value: number }>("https://example.com/d", {
+      maxRetries: 1,
+      retryBaseDelayMs: 1,
+    });
+
+    expect(result.value).toBe(9);
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+  });
+
+  it("does not retry a non-retriable client error status", async () => {
+    const fetchMock = vi.fn().mockResolvedValue({ ok: false, status: 404 });
+    vi.stubGlobal("fetch", fetchMock);
+
+    await expect(
+      cachedJson("https://example.com/e", { maxRetries: 2, retryBaseDelayMs: 1 })
+    ).rejects.toThrow("Request failed with status 404.");
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  it("does not retry an intentionally aborted request", async () => {
+    const abortError = new DOMException("aborted", "AbortError");
+    const fetchMock = vi.fn().mockRejectedValue(abortError);
+    vi.stubGlobal("fetch", fetchMock);
+
+    await expect(
+      cachedJson("https://example.com/f", { maxRetries: 2, retryBaseDelayMs: 1 })
+    ).rejects.toThrow("aborted");
+    expect(fetchMock).toHaveBeenCalledTimes(1);
   });
 });

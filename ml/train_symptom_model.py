@@ -95,7 +95,12 @@ try:
         recall_score,
         roc_auc_score,
     )
-    from sklearn.model_selection import StratifiedKFold, cross_val_predict, train_test_split
+    from sklearn.model_selection import (
+        RandomizedSearchCV,
+        StratifiedKFold,
+        cross_val_predict,
+        train_test_split,
+    )
     from sklearn.pipeline import Pipeline
     from sklearn.preprocessing import OneHotEncoder, StandardScaler
 except ModuleNotFoundError as import_error:
@@ -110,6 +115,7 @@ except ModuleNotFoundError as import_error:
     SimpleImputer = None
     permutation_importance = None
     LogisticRegression = None
+    RandomizedSearchCV = None
     StratifiedKFold = None
     Pipeline = Any
     OneHotEncoder = None
@@ -117,6 +123,22 @@ except ModuleNotFoundError as import_error:
     MISSING_DEPENDENCY = import_error.name
 else:
     MISSING_DEPENDENCY = ""
+
+# XGBoost is optional and imported separately: it depends on a native
+# OpenMP library (libomp on macOS, libgomp on Linux) that isn't guaranteed
+# to be present everywhere sklearn is, so a missing/broken XGBoost install
+# degrades to training with the other four candidates instead of failing
+# the whole script.
+try:
+    from xgboost import XGBClassifier
+
+    XGBOOST_AVAILABLE = True
+except Exception:  # noqa: BLE001 -- xgboost can fail at import time with a
+    # native-library load error (e.g. missing libomp/libgomp), not just
+    # ModuleNotFoundError, so this needs to catch broadly to actually
+    # degrade gracefully rather than crash the whole training run.
+    XGBClassifier = None
+    XGBOOST_AVAILABLE = False
 
 
 TARGETS = [
@@ -221,6 +243,24 @@ def parse_args() -> argparse.Namespace:
         default=42,
         help="Random seed for reproducible training.",
     )
+    parser.add_argument(
+        "--tune",
+        action="store_true",
+        help=(
+            "Run a RandomizedSearchCV hyperparameter search for each "
+            "tree-based candidate instead of normal training, and print "
+            "the best-found parameters. This is an offline/manual tool for "
+            "deciding what to hardcode into candidate_models() -- it does "
+            "not run on every training call (including CI), since a full "
+            "search on every push would make training far too slow."
+        ),
+    )
+    parser.add_argument(
+        "--tune-iterations",
+        type=int,
+        default=15,
+        help="RandomizedSearchCV iterations per candidate model when --tune is set.",
+    )
     return parser.parse_args()
 
 
@@ -313,32 +353,69 @@ def build_preprocessor(
     )
 
 
-def candidate_models(random_state: int) -> dict[str, Any]:
-    return {
+def candidate_models(
+    random_state: int, scale_pos_weight: float = 1.0
+) -> dict[str, Any]:
+    # Hyperparameters below aren't hand-guessed -- they're the consensus
+    # from running --tune (RandomizedSearchCV, scored on ROC AUC) against
+    # three targets spanning the dataset's range of class balance
+    # (felt_impact ~80% positive, allergy_symptoms ~35%,
+    # missed_work_school_activity ~5%). gradient_boosting's max_depth=2 was
+    # the single strongest, most consistent signal across all three --
+    # shallow trees clearly outperformed deeper ones on this feature set.
+    models: dict[str, Any] = {
         "logistic_regression": LogisticRegression(
             max_iter=1000,
             class_weight="balanced",
             solver="liblinear",
+            C=0.5,
             random_state=random_state,
         ),
         "random_forest": RandomForestClassifier(
-            n_estimators=500,
-            min_samples_leaf=3,
+            n_estimators=450,
+            max_depth=10,
+            min_samples_leaf=4,
             max_features="sqrt",
             class_weight="balanced_subsample",
             random_state=random_state,
             n_jobs=-1,
         ),
         "extra_trees": ExtraTreesClassifier(
-            n_estimators=500,
-            min_samples_leaf=3,
+            n_estimators=450,
+            max_depth=10,
+            min_samples_leaf=4,
             max_features="sqrt",
             class_weight="balanced",
             random_state=random_state,
             n_jobs=-1,
         ),
-        "gradient_boosting": GradientBoostingClassifier(random_state=random_state),
+        "gradient_boosting": GradientBoostingClassifier(
+            n_estimators=220,
+            max_depth=2,
+            learning_rate=0.03,
+            subsample=0.85,
+            random_state=random_state,
+        ),
     }
+
+    # XGBoost doesn't take a class_weight= like the sklearn ensembles above;
+    # scale_pos_weight (~= negative_count / positive_count) is its standard
+    # equivalent for binary imbalanced classification.
+    if XGBOOST_AVAILABLE:
+        models["xgboost"] = XGBClassifier(
+            n_estimators=600,
+            max_depth=4,
+            learning_rate=0.02,
+            subsample=1.0,
+            colsample_bytree=0.9,
+            reg_lambda=2.0,
+            scale_pos_weight=scale_pos_weight,
+            eval_metric="logloss",
+            random_state=random_state,
+            n_jobs=-1,
+        )
+
+    return models
 
 
 def build_pipeline(
@@ -352,6 +429,90 @@ def build_pipeline(
             ("classifier", classifier),
         ]
     )
+
+
+TUNING_PARAM_DISTRIBUTIONS = {
+    "random_forest": {
+        "classifier__n_estimators": [300, 400, 500, 600, 800],
+        "classifier__max_depth": [None, 6, 8, 12, 16, 20],
+        "classifier__min_samples_leaf": [1, 2, 3, 4, 6, 8],
+        "classifier__max_features": ["sqrt", "log2", 0.5],
+    },
+    "extra_trees": {
+        "classifier__n_estimators": [300, 400, 500, 600, 800],
+        "classifier__max_depth": [None, 6, 8, 12, 16, 20],
+        "classifier__min_samples_leaf": [1, 2, 3, 4, 6, 8],
+        "classifier__max_features": ["sqrt", "log2", 0.5],
+    },
+    "gradient_boosting": {
+        "classifier__n_estimators": [100, 150, 200, 250, 350],
+        "classifier__max_depth": [2, 3, 4, 5],
+        "classifier__learning_rate": [0.02, 0.05, 0.08, 0.1, 0.15],
+        "classifier__subsample": [0.6, 0.8, 0.9, 1.0],
+    },
+    "xgboost": {
+        "classifier__n_estimators": [150, 200, 300, 400, 600],
+        "classifier__max_depth": [3, 4, 5, 6, 8],
+        "classifier__learning_rate": [0.02, 0.05, 0.08, 0.1, 0.15],
+        "classifier__subsample": [0.6, 0.8, 0.9, 1.0],
+        "classifier__colsample_bytree": [0.6, 0.8, 0.9, 1.0],
+        "classifier__reg_lambda": [0.5, 1.0, 2.0, 5.0, 10.0],
+    },
+}
+
+
+def tune_hyperparameters(
+    target: str,
+    x_train: pd.DataFrame,
+    y_train: pd.Series,
+    numeric_features: list[str],
+    categorical_features: list[str],
+    random_state: int,
+    n_iter: int,
+) -> dict[str, Any]:
+    """Offline hyperparameter search: for each tunable candidate, run
+    RandomizedSearchCV (scored on ROC AUC, cross-validated on the training
+    split only -- the holdout stays untouched) and report the best
+    parameters found. This is a manual tool for deciding what to hardcode
+    into candidate_models()'s defaults, not something that runs as part of
+    normal training -- a full search on every push would make CI, which
+    retrains from scratch every time, far too slow."""
+    class_counts = y_train.value_counts()
+    scale_pos_weight = class_counts[False] / class_counts[True]
+    n_splits = min(3, int(class_counts.min()))
+    cv = StratifiedKFold(n_splits=n_splits, shuffle=True, random_state=random_state)
+    candidates = candidate_models(random_state, scale_pos_weight)
+
+    results: dict[str, Any] = {}
+    for model_name, param_distributions in TUNING_PARAM_DISTRIBUTIONS.items():
+        if model_name not in candidates:
+            continue
+
+        pipeline = build_pipeline(
+            candidates[model_name], numeric_features, categorical_features
+        )
+        search = RandomizedSearchCV(
+            pipeline,
+            param_distributions=param_distributions,
+            n_iter=n_iter,
+            scoring="roc_auc",
+            cv=cv,
+            random_state=random_state,
+            n_jobs=-1,
+            error_score="raise",
+        )
+        search.fit(x_train, y_train)
+        results[model_name] = {
+            "best_score": round(float(search.best_score_), 4),
+            "best_params": search.best_params_,
+        }
+        print(
+            f"[{target}] {model_name}: best CV ROC AUC="
+            f"{results[model_name]['best_score']} "
+            f"params={results[model_name]['best_params']}"
+        )
+
+    return results
 
 
 def probability_scores(model: Pipeline, features: pd.DataFrame) -> pd.Series:
@@ -609,8 +770,11 @@ def train_target(
     model_scores = []
     n_splits = min(5, int(train_class_counts.min()))
     cv_probabilities_by_model: dict[str, pd.Series] = {}
+    train_scale_pos_weight = train_class_counts[False] / train_class_counts[True]
 
-    for model_name, classifier in candidate_models(random_state).items():
+    for model_name, classifier in candidate_models(
+        random_state, train_scale_pos_weight
+    ).items():
         model = build_pipeline(classifier, numeric_features, categorical_features)
         cv = StratifiedKFold(
             n_splits=n_splits, shuffle=True, random_state=random_state
@@ -641,7 +805,7 @@ def train_target(
     best_model_name = ranked_models[0]["model_name"]
 
     final_model = build_pipeline(
-        candidate_models(random_state)[best_model_name],
+        candidate_models(random_state, train_scale_pos_weight)[best_model_name],
         numeric_features,
         categorical_features,
     )
@@ -707,6 +871,14 @@ def train_target(
         4,
     )
 
+    final_full_scale_pos_weight = (
+        (~labels).sum() / labels.sum()
+    )
+    final_model = build_pipeline(
+        candidate_models(random_state, final_full_scale_pos_weight)[best_model_name],
+        numeric_features,
+        categorical_features,
+    )
     final_model.fit(features, labels)
 
     # Refit the calibrator for the production model using out-of-fold
@@ -715,7 +887,7 @@ def train_target(
     full_cv = StratifiedKFold(n_splits=n_splits, shuffle=True, random_state=random_state)
     full_cv_probabilities = cross_val_predict(
         build_pipeline(
-            candidate_models(random_state)[best_model_name],
+            candidate_models(random_state, final_full_scale_pos_weight)[best_model_name],
             numeric_features,
             categorical_features,
         ),
@@ -820,6 +992,46 @@ def main() -> int:
     data = pd.read_csv(args.csv_path)
     prepared_data = add_engineered_features(data)
     targets = TARGETS if args.all_targets else [args.target]
+
+    if args.tune:
+        for target in targets:
+            if target not in prepared_data.columns:
+                print(f"[{target}] skipped: missing target column")
+                continue
+
+            target_data = prepared_data.dropna(subset=[target]).copy()
+            if len(target_data) < args.min_rows:
+                print(f"[{target}] skipped: fewer than {args.min_rows} labeled rows")
+                continue
+
+            labels = coerce_bool(target_data[target])
+            target_data = target_data.loc[labels.index]
+            if labels.nunique() < 2 or labels.value_counts().min() < 3:
+                print(f"[{target}] skipped: not enough examples in each class")
+                continue
+
+            numeric_features, categorical_features = available_features(target_data)
+            features = target_data[numeric_features + categorical_features]
+            x_train, _, y_train, _ = train_test_split(
+                features,
+                labels,
+                test_size=args.test_size,
+                random_state=args.random_state,
+                stratify=labels,
+            )
+
+            tune_hyperparameters(
+                target,
+                x_train,
+                y_train,
+                numeric_features,
+                categorical_features,
+                args.random_state,
+                args.tune_iterations,
+            )
+
+        return 0
+
     results = [
         train_target(
             data=prepared_data,

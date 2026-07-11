@@ -4,3 +4,4 @@ joblib
 fastapi
 uvicorn[standard]
 shap
+xgboost

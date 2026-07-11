@@ -40,6 +40,7 @@ MODEL_NAMES = {
     "gradient_boosting": "Gradient Boosting",
     "logistic_regression": "Logistic Regression",
     "random_forest": "Random Forest",
+    "xgboost": "XGBoost",
 }
 
 FEATURE_LABELS = {

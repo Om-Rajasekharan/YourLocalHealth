@@ -52,6 +52,17 @@ self-reported symptoms or behavior changes.
 
 The Python training script uses:
 
+- five candidate model types raced against each other per target: logistic
+  regression, random forest, extra trees, gradient boosting, and XGBoost
+  (XGBoost degrades gracefully if its native OpenMP dependency isn't
+  available, rather than failing training entirely)
+- hyperparameters for the four tree/boosting candidates aren't hand-guessed
+  -- they're the consensus from running `--tune` (RandomizedSearchCV,
+  scored on ROC AUC) against three targets spanning the dataset's range of
+  class balance (~80%, ~35%, ~5% positive). `--tune` is a manual/offline
+  tool (see `train_symptom_model.py --help`), not something that runs on
+  every training call, since a full search on every push would make CI --
+  which retrains from scratch every time -- far too slow
 - stratified train/test splitting
 - model selection by cross-validation on the training split only
 - untouched holdout metrics
@@ -86,7 +97,7 @@ The Python training script uses:
   models, coefficient magnitude for logistic regression) is known to be
   biased toward high-cardinality one-hot-encoded categorical features;
   permutation importance instead measures the actual holdout ROC AUC drop
-  when a feature is shuffled, and is comparable across all four candidate
+  when a feature is shuffled, and is comparable across all five candidate
   model types.
 
 `ml/generate_model_report.py` surfaces all of this in its "Trained Targets",
