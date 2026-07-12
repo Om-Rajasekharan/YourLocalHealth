@@ -3520,7 +3520,7 @@ export function ExposureTwinPanel({
       value: profileLoaded ? `+${modifier}` : "None",
       detail: profileLoaded
         ? `${profile?.respiratory_sensitivity} breathing sensitivity, ${profile?.outdoor_exposure} outdoor exposure`
-        : "Sign in and add a profile to personalize this estimate.",
+        : "You're seeing the ZIP-level estimate. Sign in and check in daily to unlock your personal score.",
     },
   ];
   const recommendedAction = forecastLoaded

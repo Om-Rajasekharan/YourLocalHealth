@@ -6191,6 +6191,230 @@ body {
   color: var(--foreground);
 }
 
+.landing-video-page {
+  background:
+    radial-gradient(rgba(19, 41, 75, 0.07) 0.55px, transparent 0.55px),
+    var(--paper-deep);
+  background-size: 3px 3px;
+  color: var(--foreground);
+}
+
+.landing-video-hero video {
+  opacity: 0;
+  animation: landing-video-reveal 900ms ease-out 350ms forwards;
+}
+
+.landing-video-fallback {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  background:
+    linear-gradient(120deg, rgba(19, 41, 75, 0.95), rgba(46, 111, 181, 0.58)),
+    radial-gradient(circle at 72% 28%, rgba(75, 156, 211, 0.36), transparent 28%),
+    radial-gradient(circle at 18% 78%, rgba(31, 157, 110, 0.22), transparent 30%);
+}
+
+.landing-video-fallback::before {
+  content: "";
+  position: absolute;
+  inset: -20%;
+  background-image:
+    linear-gradient(to right, rgba(255, 255, 255, 0.12) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(255, 255, 255, 0.1) 1px, transparent 1px);
+  background-size: 4.6rem 4.6rem;
+  transform: rotate(-6deg);
+  animation: landing-grid-drift 34s linear infinite;
+}
+
+.landing-video-fallback::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(90deg, transparent 0 10%, rgba(255, 255, 255, 0.18) 10.3%, transparent 10.7% 100%),
+    linear-gradient(0deg, transparent 0 64%, rgba(255, 255, 255, 0.13) 64.2%, transparent 64.7% 100%);
+  opacity: 0.34;
+}
+
+.landing-video-orb,
+.landing-video-route {
+  position: absolute;
+  display: block;
+  pointer-events: none;
+}
+
+.landing-video-orb {
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.18);
+  box-shadow: 0 0 42px rgba(255, 255, 255, 0.18);
+  animation: landing-orb-float 14s ease-in-out infinite alternate;
+}
+
+.landing-video-orb-one {
+  right: 12%;
+  top: 18%;
+  height: 13rem;
+  width: 13rem;
+}
+
+.landing-video-orb-two {
+  right: 28%;
+  bottom: 16%;
+  height: 8rem;
+  width: 8rem;
+  animation-delay: -5s;
+}
+
+.landing-video-orb-three {
+  left: 10%;
+  bottom: 10%;
+  height: 10rem;
+  width: 10rem;
+  animation-delay: -8s;
+}
+
+.landing-video-route {
+  height: 0.45rem;
+  width: 34rem;
+  border-radius: 999px;
+  background-image: linear-gradient(90deg, transparent, rgba(255,255,255,0.72), transparent);
+  opacity: 0.42;
+  filter: blur(0.2px);
+  animation: landing-route-move 8s linear infinite;
+}
+
+.landing-video-route-one {
+  right: -12rem;
+  top: 38%;
+  transform: rotate(-10deg);
+}
+
+.landing-video-route-two {
+  left: -16rem;
+  bottom: 27%;
+  transform: rotate(8deg);
+  animation-delay: -3.5s;
+}
+
+.landing-video-shade {
+  background:
+    linear-gradient(90deg, rgba(6, 17, 31, 0.86) 0%, rgba(13, 35, 59, 0.54) 48%, rgba(13, 35, 59, 0.68) 100%),
+    linear-gradient(180deg, rgba(8, 18, 30, 0.12) 0%, rgba(8, 18, 30, 0.84) 100%);
+}
+
+.landing-video-grain {
+  pointer-events: none;
+  background-image:
+    radial-gradient(rgba(255, 255, 255, 0.18) 0.55px, transparent 0.55px),
+    radial-gradient(rgba(255, 255, 255, 0.12) 0.35px, transparent 0.35px);
+  background-position:
+    0 0,
+    1px 2px;
+  background-size:
+    3px 3px,
+    7px 7px;
+  mix-blend-mode: overlay;
+  opacity: 0.28;
+}
+
+.landing-video-brand .brand-wordmark-health::after {
+  background: rgba(255, 255, 255, 0.76);
+}
+
+.landing-video-brand {
+  border: 1px solid rgba(255, 255, 255, 0.24);
+  background:
+    linear-gradient(135deg, rgba(3, 10, 18, 0.7), rgba(19, 41, 75, 0.46));
+  box-shadow:
+    0 16px 40px -28px rgba(0, 0, 0, 0.86),
+    inset 0 1px 0 rgba(255, 255, 255, 0.16);
+  padding: 0.65rem 0.85rem;
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+}
+
+.landing-video-brand img {
+  filter: none !important;
+}
+
+.landing-video-brand .brand-wordmark {
+  color: #ffffff !important;
+  text-shadow: 0 2px 18px rgba(0, 0, 0, 0.5);
+}
+
+.landing-video-brand-health {
+  color: #d9ecff !important;
+}
+
+.landing-video-search {
+  box-shadow:
+    0 0 0 1px rgba(255, 255, 255, 0.12),
+    0 22px 48px -28px rgba(0, 0, 0, 0.56);
+}
+
+.landing-video-search:focus-within {
+  box-shadow:
+    0 0 0 4px rgba(255, 255, 255, 0.18),
+    0 22px 48px -28px rgba(0, 0, 0, 0.56);
+}
+
+.landing-video-card .register-mono,
+.landing-video-card .font-display,
+.landing-video-card .font-editorial {
+  color: inherit !important;
+}
+
+.landing-video-card .text-\[var\(--muted-foreground\)\],
+.landing-video-card .text-\[var\(--primary\)\],
+.landing-video-card .text-\[var\(--primary-ink\)\] {
+  color: rgba(255, 255, 255, 0.76) !important;
+}
+
+.landing-video-card .bg-\[var\(--card\)\] {
+  background: rgba(255, 255, 255, 0.12) !important;
+}
+
+.landing-video-card .bg-\[var\(--primary-ink\)\] {
+  background: rgba(255, 255, 255, 0.82) !important;
+}
+
+.landing-video-card .border-\[var\(--border\)\] {
+  border-color: rgba(255, 255, 255, 0.22) !important;
+}
+
+@keyframes landing-video-reveal {
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes landing-grid-drift {
+  from {
+    transform: translate3d(0, 0, 0) rotate(-6deg);
+  }
+  to {
+    transform: translate3d(4.6rem, 4.6rem, 0) rotate(-6deg);
+  }
+}
+
+@keyframes landing-orb-float {
+  from {
+    transform: translate3d(-1rem, 0.5rem, 0) scale(0.98);
+  }
+  to {
+    transform: translate3d(1rem, -1rem, 0) scale(1.04);
+  }
+}
+
+@keyframes landing-route-move {
+  from {
+    translate: -20vw 0;
+  }
+  to {
+    translate: 120vw 0;
+  }
+}
+
 .landing-register-paper {
   background:
     radial-gradient(rgba(19, 41, 75, 0.08) 0.55px, transparent 0.55px),
@@ -6386,4 +6610,222 @@ body {
 .details-register-shell .text-\[var\(--primary\)\],
 .auth-page-shell .text-\[var\(--primary\)\] {
   color: var(--primary) !important;
+}
+
+/* ================================================================
+ * Blue-paper bridge
+ * Carries the landing-video tint into the rest of the app while
+ * keeping the warm paper/editorial structure.
+ * ================================================================ */
+
+:root {
+  --paper: #f3efe2;
+  --paper-deep: #e7dfc9;
+  --background: #f7f2e6;
+  --background-deep: #e9e0cc;
+  --surface: #fffaf0;
+  --surface-muted: #f1ead9;
+  --card: #fffaf0;
+  --card-foreground: #0e1a2b;
+  --foreground: #0e1a2b;
+  --foreground-muted: #53677f;
+  --foreground-faint: #7e8ea0;
+  --muted-foreground: #53677f;
+  --border: #d8cdb4;
+  --input: #d8cdb4;
+  --rule: #d8cdb4;
+  --rule-strong: #bba98b;
+  --primary: #2e6fb5;
+  --primary-ink: #13294b;
+  --primary-soft: #e4f0f8;
+  --accent: #4b9cd3;
+  --accent-soft: #dceefa;
+  --accent-ink: #1c5f93;
+  --shadow-soft:
+    0 1px 0 rgba(19, 41, 75, 0.04),
+    0 20px 48px -34px rgba(19, 41, 75, 0.24);
+}
+
+body,
+.public-health-bg,
+.landing-register-page,
+.landing-video-page,
+.auth-page-shell,
+.details-register-shell {
+  background:
+    radial-gradient(920px 520px at 8% -10%, rgba(75, 156, 211, 0.22), transparent 58%),
+    radial-gradient(760px 420px at 102% 0%, rgba(19, 41, 75, 0.12), transparent 54%),
+    linear-gradient(180deg, rgba(255, 250, 240, 0.78), rgba(237, 229, 211, 0.84)),
+    radial-gradient(rgba(19, 41, 75, 0.045) 0.55px, transparent 0.55px),
+    var(--paper) !important;
+  background-size:
+    auto,
+    auto,
+    auto,
+    3px 3px,
+    auto !important;
+}
+
+.lovable-dashboard-shell {
+  background:
+    radial-gradient(760px 420px at 8% 0%, rgba(75, 156, 211, 0.15), transparent 58%),
+    linear-gradient(180deg, rgba(255, 250, 240, 0.82), rgba(235, 227, 210, 0.88)),
+    linear-gradient(to right, rgba(19, 41, 75, 0.06) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(19, 41, 75, 0.052) 1px, transparent 1px),
+    var(--paper) !important;
+  background-size:
+    auto,
+    auto,
+    52px 52px,
+    52px 52px,
+    auto !important;
+}
+
+.register-sidebar {
+  background:
+    linear-gradient(180deg, rgba(255, 250, 240, 0.94), rgba(231, 223, 201, 0.9)),
+    var(--paper-deep) !important;
+  box-shadow:
+    inset -1px 0 0 rgba(19, 41, 75, 0.1),
+    18px 0 60px -54px rgba(19, 41, 75, 0.42);
+}
+
+.register-topbar {
+  background:
+    linear-gradient(90deg, rgba(255, 250, 240, 0.94), rgba(241, 234, 217, 0.9)),
+    var(--surface) !important;
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+}
+
+.register-page-intro {
+  background:
+    linear-gradient(135deg, rgba(255, 250, 240, 0.96), rgba(232, 240, 247, 0.54)),
+    var(--surface) !important;
+}
+
+.lovable-dashboard-shell .quiet-surface,
+.lovable-dashboard-shell .editorial-surface,
+.lovable-dashboard-shell .inset-surface,
+.lovable-dashboard-shell .action-panel,
+.lovable-dashboard-shell .main-feature-panel,
+.lovable-dashboard-shell .model-data-feature,
+.lovable-dashboard-shell .today-brief-shell,
+.lovable-dashboard-shell .field-report,
+.lovable-dashboard-shell section,
+.auth-page-shell header,
+.auth-page-shell .auth-card,
+.details-register-shell header,
+.details-register-shell article,
+.details-register-shell section > article {
+  border-color: rgba(151, 131, 95, 0.38) !important;
+  background:
+    linear-gradient(180deg, rgba(255, 250, 240, 0.94), rgba(246, 239, 224, 0.86)),
+    radial-gradient(rgba(19, 41, 75, 0.052) 0.55px, transparent 0.55px),
+    var(--surface) !important;
+  background-size:
+    auto,
+    3px 3px,
+    auto !important;
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.86) inset,
+    0 18px 42px -34px rgba(19, 41, 75, 0.3) !important;
+}
+
+.register-small-panel,
+.register-factor-row,
+.register-metric-pill {
+  background:
+    linear-gradient(180deg, rgba(255, 250, 240, 0.92), rgba(239, 231, 213, 0.76)),
+    var(--card) !important;
+  border-color: rgba(151, 131, 95, 0.34) !important;
+}
+
+.register-rail-button-active,
+.register-factor-button-active,
+.bespoke-button,
+.lovable-dashboard-shell .bespoke-button {
+  background:
+    linear-gradient(135deg, #13294b, #205f97) !important;
+  border-color: #13294b !important;
+  color: #ffffff !important;
+}
+
+.register-rail-button:hover,
+.register-icon-button:hover,
+.register-icon-button:focus-visible,
+.bespoke-control:hover,
+.lovable-dashboard-shell .bespoke-control:hover {
+  background: rgba(228, 240, 248, 0.92) !important;
+  border-color: rgba(75, 156, 211, 0.52) !important;
+  color: var(--primary-ink) !important;
+}
+
+.brand-wordmark-health::after {
+  background: rgba(75, 156, 211, 0.88) !important;
+}
+
+/* Keep navigation geometry consistent: rectangular, never pill/circle. */
+.register-brand-button,
+.register-rail-button,
+.register-rail-button:hover,
+.register-rail-button:focus-visible,
+.register-rail-button-active,
+.register-rail-button-active:hover,
+.register-icon-button,
+.register-icon-button:hover,
+.register-icon-button:focus-visible {
+  border-radius: 0.35rem !important;
+}
+
+.register-brand-button {
+  width: 3.5rem !important;
+  min-width: 3.5rem !important;
+  min-height: 3.5rem !important;
+  background:
+    linear-gradient(180deg, rgba(255, 250, 240, 0.96), rgba(241, 234, 217, 0.92)) !important;
+  border-color: rgba(19, 41, 75, 0.16) !important;
+}
+
+@media (min-width: 1180px) {
+  .register-brand-button {
+    width: 100% !important;
+    min-width: 0 !important;
+  }
+}
+
+.register-brand-button:hover,
+.register-brand-button:focus-visible {
+  background:
+    linear-gradient(180deg, rgba(255, 250, 240, 1), rgba(228, 240, 248, 0.8)) !important;
+  border-color: rgba(75, 156, 211, 0.56) !important;
+}
+
+.register-rail-button {
+  background: transparent !important;
+  border-color: transparent !important;
+}
+
+.register-rail-button:hover,
+.register-rail-button:focus-visible {
+  background:
+    linear-gradient(90deg, rgba(255, 250, 240, 0.92), rgba(228, 240, 248, 0.72)) !important;
+  border-color: rgba(75, 156, 211, 0.44) !important;
+  transform: translateX(2px);
+}
+
+.register-rail-button-active,
+.register-rail-button-active:hover,
+.register-rail-button-active:focus-visible {
+  background:
+    linear-gradient(90deg, #13294b, #205f97) !important;
+  border-color: #13294b !important;
+  color: #fffaf0 !important;
+  transform: none !important;
+}
+
+.register-rail-button-active svg,
+.register-rail-button-active .register-rail-number,
+.register-rail-button-active .register-rail-label {
+  color: #fffaf0 !important;
 }

@@ -258,65 +258,74 @@ function LandingHero({
   };
 
   return (
-    <main className="landing-register-page min-h-screen">
-      <div className="mx-auto max-w-6xl px-5 py-3 md:px-8 md:py-6">
-        <div className="landing-register-paper border border-[var(--border)] bg-[var(--background)] shadow-[0_1px_0_0_rgba(19,41,75,0.06),0_20px_40px_-24px_rgba(19,41,75,0.18)]">
-          <div className="landing-register-topline border-b border-[var(--border)]">
-            <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-2 px-5 py-2.5 md:px-8">
-              <span className="register-mono text-[10px] text-[var(--muted-foreground)]">
-                Live local snapshot
-              </span>
-              <span className="register-mono text-[10px] text-[var(--muted-foreground)]">
-                Public health · neighborhood context
-              </span>
-              <span className="register-mono text-[10px] text-[var(--primary)]">
-                ● Data-linked · confidence shown
-              </span>
-            </div>
-          </div>
+    <main className="landing-video-page min-h-screen">
+      <section className="landing-video-hero relative min-h-[100svh] overflow-hidden bg-[var(--primary-ink)]">
+        <div className="landing-video-fallback" aria-hidden="true">
+          <span className="landing-video-orb landing-video-orb-one" />
+          <span className="landing-video-orb landing-video-orb-two" />
+          <span className="landing-video-orb landing-video-orb-three" />
+          <span className="landing-video-route landing-video-route-one" />
+          <span className="landing-video-route landing-video-route-two" />
+        </div>
+        <video
+          aria-hidden="true"
+          autoPlay
+          className="absolute inset-0 h-full w-full object-cover"
+          loop
+          muted
+          playsInline
+          src="/neighborhood.mp4"
+        />
+        <div className="landing-video-shade absolute inset-0" />
+        <div className="landing-video-grain absolute inset-0" />
 
-          <header className="border-b border-[var(--border)] px-5 py-8 text-center md:px-8 md:py-12">
-            <div className="mx-auto flex max-w-3xl items-center justify-center gap-3">
+        <div className="relative z-10 flex min-h-[100svh] flex-col px-5 py-5 text-white md:px-10 md:py-7">
+          <header className="flex flex-wrap items-center justify-between gap-4">
+            <Link
+              aria-label="MyLocalHealth home"
+              className="landing-video-brand inline-flex items-center gap-3"
+              href="/"
+            >
               <BrandMark small />
-              <span className="brand-wordmark brand-wordmark-compact">
+              <span className="brand-wordmark brand-wordmark-compact text-white">
                 <span className="brand-wordmark-my">My</span>
                 <span className="brand-wordmark-local">Local</span>
-                <span className="brand-wordmark-health">Health</span>
+                <span className="brand-wordmark-health landing-video-brand-health">Health</span>
               </span>
-            </div>
-            <h1 className="landing-register-title mx-auto mt-5 max-w-4xl text-5xl leading-[0.95] text-[var(--primary-ink)] md:text-7xl">
-              Health signals around you.
-            </h1>
-            <div className="mx-auto mt-5 flex max-w-xl items-center justify-center gap-4 register-mono text-[10px] text-[var(--muted-foreground)]">
-              <span className="h-px flex-1 bg-[var(--border)]" />
-              <span>Forecast · exposure · model transparency</span>
-              <span className="h-px flex-1 bg-[var(--border)]" />
-            </div>
-            <div className="mt-5 flex flex-wrap justify-center gap-2">
+            </Link>
+            <div className="flex items-center gap-2">
+              <a
+                className="landing-video-link hidden border border-white/35 px-4 py-2 register-mono text-[10px] text-white/85 transition hover:bg-white/10 sm:inline-flex"
+                href="#landing-features"
+              >
+                Learn more
+              </a>
               <AccountActions user={user} />
             </div>
           </header>
 
-          <section className="grid grid-cols-1 border-b border-[var(--border)] md:grid-cols-12">
-            <div className="border-b border-[var(--border)] p-6 md:col-span-7 md:border-b-0 md:border-r md:p-10">
-              <span className="spec-tab">Local snapshot</span>
-              <h2 className="mt-4 font-editorial text-3xl font-semibold leading-[1.08] text-[var(--primary-ink)] md:text-[2.6rem]">
-                Your neighborhood&apos;s health forecast, built for the place you actually live.
-              </h2>
-              <p className="mt-5 max-w-xl text-[15px] leading-relaxed text-[var(--muted-foreground)]">
-                Air quality, heat, pollen, flu, COVID wastewater, equity context, and personal exposure — combined into one local risk forecast. No black box. No hype. Just sources, uncertainty, and plain-language context.
+          <div className="grid flex-1 items-center gap-8 pb-6 pt-10 lg:grid-cols-[minmax(0,1.1fr)_minmax(22rem,0.72fr)] lg:gap-10 lg:pb-8 lg:pt-8">
+            <div className="max-w-5xl">
+              <span className="landing-video-kicker inline-flex border border-white/35 bg-white/10 px-3 py-2 register-mono text-[10px] text-white/85 backdrop-blur">
+                Live local public-health forecast
+              </span>
+              <h1 className="mt-4 max-w-4xl font-editorial text-[clamp(3.35rem,8.2vw,7.4rem)] font-semibold italic leading-[0.87] tracking-[-0.055em] text-white">
+                Health signals around you.
+              </h1>
+              <p className="mt-5 max-w-2xl text-base leading-7 text-white/84 md:text-lg">
+                Search any US ZIP code to translate air quality, heat, pollen, flu, COVID wastewater, local context, and personal exposure into a clear daily snapshot.
               </p>
 
               <form
                 id="zip-search"
-                className="landing-register-zip mt-8 flex max-w-lg items-center gap-0 border border-[var(--primary-ink)] bg-[var(--card)]"
+                className="landing-video-search mt-6 flex max-w-xl items-center border border-white/70 bg-white/12 backdrop-blur-md"
                 onSubmit={handleSubmit}
               >
-                <div className="flex flex-1 items-center gap-2 px-3">
-                  <Icon name="map" className="h-4 w-4 text-[var(--primary)]" />
+                <div className="flex min-w-0 flex-1 items-center gap-3 px-4">
+                  <Icon name="map" className="h-4 w-4 shrink-0 text-white" />
                   <input
                     aria-label="ZIP code"
-                    className="w-full bg-transparent py-3 register-mono text-sm text-[var(--primary-ink)] placeholder:text-[var(--muted-foreground)]/70 focus:outline-none"
+                    className="w-full bg-transparent py-4 register-mono text-sm text-white placeholder:text-white/60 focus:outline-none"
                     inputMode="numeric"
                     onChange={(event) => {
                       setZip(event.target.value.replace(/[^0-9]/g, "").slice(0, 5));
@@ -327,7 +336,7 @@ function LandingHero({
                   />
                 </div>
                 <button
-                  className="inline-flex self-stretch items-center gap-2 border-l border-[var(--primary-ink)] bg-[var(--primary-ink)] px-5 register-mono text-[11px] text-[var(--primary-foreground)] transition hover:bg-[var(--primary)] disabled:opacity-60"
+                  className="inline-flex self-stretch items-center gap-2 border-l border-white/70 bg-white px-5 register-mono text-[11px] text-[var(--primary-ink)] transition hover:bg-white/90 disabled:opacity-60"
                   disabled={loading}
                   type="submit"
                 >
@@ -335,11 +344,12 @@ function LandingHero({
                   {loading ? "Loading" : "View forecast"}
                 </button>
               </form>
-              <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1 register-mono text-[10px] text-[var(--muted-foreground)]">
-                <span>Try example ZIPs:</span>
+
+              <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1 register-mono text-[10px] text-white/70">
+                <span>Try:</span>
                 {["27514", "10025", "94110", "60614"].map((sample) => (
                   <button
-                    className="border border-[var(--border)] bg-[var(--card)] px-2 py-0.5 text-[var(--primary)] hover:border-[var(--primary-ink)] hover:text-[var(--primary-ink)]"
+                    className="border border-white/35 bg-white/5 px-2 py-0.5 text-white transition hover:border-white hover:bg-white/15"
                     key={sample}
                     onClick={() => {
                       setZip(sample);
@@ -351,50 +361,55 @@ function LandingHero({
                   </button>
                 ))}
               </div>
-              {loading && (
-                <p className="mt-4 register-mono text-xs text-[var(--primary)]">
-                  Building your local health snapshot…
+
+              {!user && (
+                <p className="mt-5 max-w-xl text-sm leading-6 text-white/74">
+                  Searching is free.{" "}
+                  <Link className="font-semibold text-white underline underline-offset-4" href="/signup">
+                    Create an account
+                  </Link>{" "}
+                  to save places and help your Exposure Twin learn from check-ins.
                 </p>
               )}
-              {zipError && <p className="mt-4 text-sm font-medium text-[var(--danger)]">{zipError}</p>}
-              {error && <p className="mt-4 text-sm font-medium text-[var(--danger)]">{error}</p>}
+              {loading && <p className="mt-4 register-mono text-xs text-white/80">Building your local health snapshot…</p>}
+              {zipError && <p className="mt-4 text-sm font-medium text-white">{zipError}</p>}
+              {error && <p className="mt-4 text-sm font-medium text-white">{error}</p>}
             </div>
 
-            <aside className="p-6 md:col-span-5 md:p-10">
-              <span className="register-mono text-[10px] text-[var(--primary)]">
-                Sample preview
-              </span>
-              <div className="mt-4 border-l-2 border-[var(--primary-ink)] pl-4">
-                <div className="register-mono text-[10px] text-[var(--muted-foreground)]">
-                  Chapel Hill · 27514 · sample snapshot
+            <aside className="landing-video-card border border-white/24 bg-white/12 p-5 text-white shadow-2xl backdrop-blur-md md:p-6">
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <p className="register-mono text-[10px] text-white/62">Sample live read</p>
+                  <h2 className="mt-2 font-editorial text-2xl font-semibold italic leading-tight">
+                    Moderate day. Ozone climbs by Friday.
+                  </h2>
                 </div>
-                <div className="mt-1 font-editorial text-2xl font-semibold leading-tight text-[var(--primary-ink)]">
-                  Moderate day. Ozone climbs by Friday.
-                </div>
+                <span className="rounded-full border border-white/30 px-3 py-1 register-mono text-[9px] text-white/75">
+                  92% conf.
+                </span>
               </div>
 
-              <div className="mt-6 grid grid-cols-3 border border-[var(--border)]">
+              <div className="mt-6 grid grid-cols-3 border border-white/20">
                 <LandingMiniStat icon="wind" label="Air" value="AQI 72" />
                 <LandingMiniStat divider icon="spark" label="Pollen" value="High" />
                 <LandingMiniStat divider icon="droplet" label="Wastewater" value="↓ 12%" />
               </div>
 
               <div className="mt-6">
-                <div className="register-mono text-[10px] text-[var(--muted-foreground)]">
-                  Seven-day exposure index
-                </div>
+                <div className="register-mono text-[10px] text-white/62">Seven-day exposure index</div>
                 <LandingMiniForecast />
               </div>
 
-              <p className="mt-5 border-t border-dashed border-[var(--border)] pt-3 font-editorial text-sm text-[var(--primary-ink)]">
-                &quot;Wednesday risk climbs — driven by ozone and oak pollen. Run before 9am.&quot;
+              <p className="mt-5 border-t border-dashed border-white/25 pt-3 font-editorial text-sm italic text-white/84">
+                &quot;Risk climbs late week — driven by ozone and pollen. Morning outdoor windows look best.&quot;
               </p>
-              <div className="mt-1 register-mono text-[9px] text-[var(--muted-foreground)]">
-                Based on sample forecast signals
-              </div>
             </aside>
-          </section>
+          </div>
+        </div>
+      </section>
 
+      <div className="mx-auto max-w-6xl px-5 py-10 md:px-8 md:py-14">
+        <div className="landing-register-paper border border-[var(--border)] bg-[var(--background)] shadow-[0_1px_0_0_rgba(19,41,75,0.06),0_20px_40px_-24px_rgba(19,41,75,0.18)]">
           <section className="border-b border-[var(--border)] bg-[var(--background)]/60">
             <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-1 px-5 py-3 register-mono text-[10px] text-[var(--muted-foreground)] md:px-8">
               <span className="text-[var(--primary-ink)]">Signals included —</span>
@@ -407,7 +422,7 @@ function LandingHero({
             </div>
           </section>
 
-          <section className="grid grid-cols-1 md:grid-cols-3">
+          <section className="grid grid-cols-1 md:grid-cols-3" id="landing-features">
             <LandingColumnCard
               body="A calibrated health-risk score for your ZIP, decomposed into the drivers that matter — air, heat, pollen, flu, and wastewater."
               eyebrow="The Forecast"
@@ -417,7 +432,9 @@ function LandingHero({
               title="A local exposure outlook."
             />
             <LandingColumnCard
-              body="A private simulation turns routine, profile factors, and symptom check-ins into a personalized exposure score you can understand."
+              body="A private simulation turns routine, profile factors, and symptom check-ins into a personalized exposure score — one that gets sharper every time you check in. Free account required."
+              ctaHref="/signup"
+              ctaLabel="Sign up"
               divider
               eyebrow="The Exposure Twin"
               icon="heart"
@@ -538,6 +555,8 @@ function LandingMiniForecast() {
 
 function LandingColumnCard({
   body,
+  ctaHref = "#zip-search",
+  ctaLabel = "Try it",
   divider,
   eyebrow,
   icon,
@@ -546,6 +565,8 @@ function LandingColumnCard({
   title,
 }: {
   body: string;
+  ctaHref?: string;
+  ctaLabel?: string;
   divider?: boolean;
   eyebrow: string;
   icon: IconName;
@@ -574,8 +595,8 @@ function LandingColumnCard({
             {stat.value}
           </div>
         </div>
-        <a className="inline-flex items-center gap-1 register-mono text-[10px] text-[var(--primary)] hover:text-[var(--primary-ink)]" href="#zip-search">
-          Try it <span aria-hidden>↗</span>
+        <a className="inline-flex items-center gap-1 register-mono text-[10px] text-[var(--primary)] hover:text-[var(--primary-ink)]" href={ctaHref}>
+          {ctaLabel} <span aria-hidden>↗</span>
         </a>
       </div>
     </article>
@@ -1480,6 +1501,76 @@ function adviceForContributor(label: string) {
   return "Open the methodology view to see the source and weight for this contributor.";
 }
 
+type TopDriver = ReturnType<typeof useDashboardData>["scoreBreakdown"]["topDrivers"][number];
+
+// Turns the highest-weighted risk factor into one plain-language, actionable
+// sentence for the average user -- the technical driver breakdown (radar
+// chart, per-category scores) stays available below via ContributorsPanel,
+// but most people just want "what's elevated and what should I do."
+function driverAdviceSentence(driver: TopDriver) {
+  const detail = driver.detail.toLowerCase();
+  const isTopFactor = driver.points / driver.maxPoints >= 0.75;
+  const lead = isTopFactor ? " — the biggest factor" : "";
+
+  switch (driver.label) {
+    case "Air quality":
+      return `Air quality is ${detail} right now${lead}. Limit outdoor exertion if you have asthma or another respiratory condition.`;
+    case "Pollutant signal":
+      return `A specific pollutant is elevated today${lead}. Sensitive groups should limit time outdoors.`;
+    case "Heat":
+      return `Heat risk is ${detail} today${lead}. Stay hydrated and avoid strenuous activity during peak afternoon heat.`;
+    case "UV":
+      return `UV levels are ${detail} today${lead}. Wear sunscreen and sun protection if you'll be outside for more than a few minutes.`;
+    case "Official alerts":
+      return `There's an active local alert${lead}. Check official guidance before heading out.`;
+    case "Flu activity":
+      return `Flu activity is ${detail} in your area${lead}. Consider extra precautions in crowded indoor spaces.`;
+    case "COVID wastewater":
+      return `COVID wastewater signal is ${detail} in your area${lead}. Consider extra precautions if you're at higher risk.`;
+    case "Profile factors":
+      return `Your profile adds some risk today (${driver.detail}). Keep your check-ins current for a more personalized picture.`;
+    default:
+      return "See the sections below for what's driving today's score.";
+  }
+}
+
+function buildTodayVerdict(healthRisk: string, topDrivers: TopDriver[]) {
+  const leadDriver = topDrivers[0];
+
+  if (!leadDriver || leadDriver.points === 0) {
+    return {
+      headline: "No major risk factors today.",
+      sentence:
+        "Conditions look close to normal — a good day for typical outdoor activity.",
+      tone: "low" as const,
+    };
+  }
+
+  const tone =
+    healthRisk.toLowerCase() === "high"
+      ? ("high" as const)
+      : healthRisk.toLowerCase() === "moderate"
+      ? ("moderate" as const)
+      : ("low" as const);
+
+  return {
+    headline: `${healthRisk} risk today.`,
+    sentence: driverAdviceSentence(leadDriver),
+    tone,
+  };
+}
+
+function riskToneClass(tone: "low" | "moderate" | "high") {
+  switch (tone) {
+    case "low":
+      return "border-[var(--secondary)] bg-[var(--secondary-soft)] text-[var(--secondary)]";
+    case "moderate":
+      return "border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--accent-ink)]";
+    case "high":
+      return "border-[var(--accent-ink)] bg-[var(--accent)]/18 text-[var(--accent-ink)]";
+  }
+}
+
 function MetricPill({ label, value }: { label: string; value: string }) {
   return (
     <div className="register-metric-pill p-3">
@@ -1734,6 +1825,11 @@ export default function Home() {
   } = useDashboardData();
   const [dashboardView, setDashboardView] = useState<DashboardView>("overview");
 
+  useEffect(() => {
+    if (!searched || typeof window === "undefined") return;
+    window.scrollTo({ top: 0, left: 0, behavior: "instant" });
+  }, [searched, zipCode]);
+
   const navigateDashboardView = (view: DashboardView) => {
     setDashboardView(view);
     router.push(getDashboardUrl(zipCode, view));
@@ -1800,6 +1896,11 @@ export default function Home() {
 
     return `/details/${topic}?${params.toString()}`;
   };
+
+  const todayVerdict = useMemo(
+    () => buildTodayVerdict(healthRisk, scoreBreakdown.topDrivers),
+    [healthRisk, scoreBreakdown.topDrivers]
+  );
 
   useEffect(() => {
     const syncViewFromUrl = () => {
@@ -1944,12 +2045,14 @@ export default function Home() {
               <section className="register-page-intro">
                 <span className="spec-tab">Today&apos;s summary</span>
                 <h1>Today in {zipCode}.</h1>
-                <p>
-                  {healthRisk.toLowerCase() === "moderate"
-                    ? "A moderate day: outdoor irritants and weather conditions are the main signals to watch."
-                    : `A ${healthRisk.toLowerCase()} local health day based on the current air, heat, respiratory, equity, and forecast signals.`}
-                  {" "}Use the sections below to inspect the forecast, exposure model, and data behind the score.
-                </p>
+                <div
+                  className={`mt-4 inline-flex w-fit items-center gap-2 rounded-full border px-3 py-1 text-xs font-bold uppercase tracking-wide ${riskToneClass(
+                    todayVerdict.tone
+                  )}`}
+                >
+                  {todayVerdict.headline}
+                </div>
+                <p className="mt-3">{todayVerdict.sentence}</p>
                 <button
                   className="register-action-button mt-6"
                   onClick={() => navigateDashboardView("forecast")}
@@ -1958,6 +2061,37 @@ export default function Home() {
                   Open forecast ↗
                 </button>
               </section>
+              {user ? (
+                <button
+                  className="mt-6 flex w-full flex-wrap items-center justify-between gap-3 rounded-xl border border-[var(--border)] bg-[var(--card)] px-4 py-3 text-left transition hover:border-[var(--primary-ink)]"
+                  onClick={() => navigateDashboardView("checkin")}
+                  type="button"
+                >
+                  <p className="text-sm text-[var(--primary-ink)]">
+                    {checkinStreak.checkedInToday
+                      ? `Checked in today — ${checkinStreak.currentStreak}-day streak. Nice work.`
+                      : checkinStreak.currentStreak > 0
+                      ? `${checkinStreak.currentStreak}-day check-in streak. Keep it going today.`
+                      : "Check in today to start your streak and sharpen your personal exposure score."}
+                  </p>
+                  <span className="register-mono text-[10px] text-[var(--primary)]">
+                    {checkinStreak.checkedInToday ? "View check-in" : "Check in"} →
+                  </span>
+                </button>
+              ) : (
+                <div className="mt-6 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-dashed border-[var(--border)] bg-[var(--card)] px-4 py-3">
+                  <p className="text-sm text-[var(--muted-foreground)]">
+                    This is the ZIP-level snapshot.{" "}
+                    <strong className="text-[var(--primary-ink)]">
+                      Sign in and check in daily
+                    </strong>{" "}
+                    to unlock your personal Exposure Twin score.
+                  </p>
+                  <Link className="register-mini-button" href="/signup">
+                    Create free account
+                  </Link>
+                </div>
+              )}
               <div className="register-section-kicker">
                 <span>Snapshot</span>
                 <em>Key signals</em>
