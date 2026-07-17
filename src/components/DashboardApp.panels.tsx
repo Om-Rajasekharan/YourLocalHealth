@@ -1578,8 +1578,6 @@ function DeterminantRadarChart({
           <svg
             viewBox="0 0 360 360"
             className="h-full w-full overflow-visible"
-            role="img"
-            aria-label="Spider chart showing risk determinants"
           >
             {[25, 50, 75, 100].map((ring) => {
               const ringPoints = chartItems
@@ -1709,6 +1707,7 @@ function DeterminantRadarChart({
                     fill={active ? "var(--foreground)" : "var(--foreground-faint)"}
                     fontSize="10"
                     fontWeight={active ? 700 : 600}
+                    pointerEvents="none"
                   >
                     {item.label}
                   </text>
@@ -1722,6 +1721,7 @@ function DeterminantRadarChart({
               r="26"
               fill="var(--surface)"
               stroke="var(--rule-strong)"
+              pointerEvents="none"
             />
             <text
               x={center}
@@ -1730,6 +1730,7 @@ function DeterminantRadarChart({
               fill="var(--foreground)"
               fontSize="16"
               fontWeight="800"
+              pointerEvents="none"
             >
               {overallScore}
             </text>
@@ -1740,6 +1741,7 @@ function DeterminantRadarChart({
               fill="var(--foreground-faint)"
               fontSize="9"
               fontWeight="700"
+              pointerEvents="none"
             >
               INDEX
             </text>
@@ -1814,9 +1816,9 @@ export function RiskTransparencyPanel({
             <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[var(--primary)]">
               Model & Data
             </p>
-            <h3 className="display-heading mt-2 max-w-3xl text-3xl leading-tight text-[var(--foreground)] sm:text-5xl">
+            <h2 className="display-heading mt-2 max-w-3xl text-3xl leading-tight text-[var(--foreground)] sm:text-5xl">
               See why the score changed.
-            </h3>
+            </h2>
             <p className="mt-3 max-w-2xl text-sm leading-6 text-[var(--foreground-muted)]">
               The radar chart turns the model into plain visual contributors:
               environment, illness, forecast, equity, and chronic-disease
@@ -1842,9 +1844,9 @@ export function RiskTransparencyPanel({
               <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--primary)]">
                 Plain-English model explorer
               </p>
-              <h4 className="mt-1 font-heading text-2xl font-semibold text-[var(--primary-ink)]">
+              <h3 className="mt-1 font-heading text-2xl font-semibold text-[var(--primary-ink)]">
                 {activeCategory?.label ?? "Risk category"}
-              </h4>
+              </h3>
               <p className="mt-2 max-w-3xl text-sm leading-6 text-[var(--muted-foreground)]">
                 {activeCategory?.detail ?? "Select a category to inspect how the model is reading this ZIP code."}
               </p>
@@ -1982,7 +1984,7 @@ export function RiskTransparencyPanel({
                   style={{ width: `${category.score}%` }}
                 />
               </div>
-              <p className="mt-2 text-[11px] font-semibold text-[var(--primary)]">
+              <p className="mt-2 text-[11px] font-semibold text-[var(--primary-ink)]">
                 Inspect →
               </p>
             </button>
@@ -3553,9 +3555,9 @@ export function ExposureTwinPanel({
       <article className="grid gap-5 rounded-[1.75rem] border border-[var(--border)] bg-white p-6 shadow-[0_18px_55px_-38px_rgba(19,41,75,0.5)] lg:grid-cols-[1fr_auto] lg:items-center">
         <div>
           <p className="eyebrow-text">Exposure Twin</p>
-          <h3 className="display-heading mt-2 max-w-3xl text-3xl leading-tight text-[var(--foreground)] sm:text-5xl">
+          <h2 className="display-heading mt-2 max-w-3xl text-3xl leading-tight text-[var(--foreground)] sm:text-5xl">
             Your local exposure, simplified.
-          </h3>
+          </h2>
           <p className="mt-4 max-w-2xl text-sm leading-6 text-[var(--foreground-muted)]">
             The Twin combines ZIP {zipCode} in {city}, {state}, forecast
             conditions, respiratory context, profile factors, and check-ins
@@ -3599,9 +3601,9 @@ export function ExposureTwinPanel({
       <section className="grid gap-5 lg:grid-cols-[0.9fr_1.1fr]">
         <article className="rounded-[1.5rem] border border-[var(--border)] bg-white p-5 shadow-[0_12px_34px_-26px_rgba(19,41,75,0.45)]">
           <p className="eyebrow-text">Inspect layers</p>
-          <h4 className="display-heading mt-2 text-3xl leading-tight text-[var(--foreground)]">
+          <h3 className="display-heading mt-2 text-3xl leading-tight text-[var(--foreground)]">
             Click a layer to see what it means.
-          </h4>
+          </h3>
           <p className="mt-3 text-sm leading-6 text-[var(--foreground-muted)]">
             This is not a clinical body model. It is a visual way to show which
             local signals are contributing to the exposure estimate.
@@ -3611,9 +3613,9 @@ export function ExposureTwinPanel({
             <p className="text-xs font-bold uppercase tracking-wide text-[var(--foreground-muted)]">
               Selected layer
             </p>
-            <h5 className="mt-2 text-xl font-bold text-[var(--foreground)]">
+            <h4 className="mt-2 text-xl font-bold text-[var(--foreground)]">
               {selectedLayer.label}: {selectedLayer.value}
-            </h5>
+            </h4>
             <p className="mt-2 text-sm leading-6 text-[var(--foreground)]">
               {selectedLayer.detail}
             </p>
@@ -3631,7 +3633,7 @@ export function ExposureTwinPanel({
                     : "border-[var(--border)] bg-white text-[var(--primary-ink)] hover:border-[var(--primary)] hover:bg-[var(--primary-soft)]"
                 }`}
               >
-                <span className="text-xs font-semibold uppercase tracking-wide opacity-75">
+                <span className="text-xs font-semibold uppercase tracking-wide">
                   {layer.label}
                 </span>
                 <strong className="mt-1 block text-lg">{layer.value}</strong>
@@ -3652,9 +3654,9 @@ export function ExposureTwinPanel({
           <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
             <div>
               <p className="eyebrow-text">Try a change</p>
-              <h4 className="display-heading mt-2 text-3xl text-[var(--foreground)]">
+              <h3 className="display-heading mt-2 text-3xl text-[var(--foreground)]">
                 What lowers today&apos;s score?
-              </h4>
+              </h3>
             </div>
             {onOpenForecast && (
               <button
@@ -3710,10 +3712,10 @@ export function ExposureTwinPanel({
           <SymptomProbabilityPanel compact prediction={symptomPrediction} />
           <article className="rounded-[1.5rem] border border-[var(--border)] bg-white p-5 shadow-[0_12px_34px_-26px_rgba(19,41,75,0.45)]">
             <p className="eyebrow-text">Keep it learning</p>
-            <h4 className="display-heading mt-2 text-3xl text-[var(--foreground)]">
+            <h3 className="display-heading mt-2 text-3xl text-[var(--foreground)]">
               {checkinStreak.currentStreak} day
               {checkinStreak.currentStreak === 1 ? "" : "s"}
-            </h4>
+            </h3>
             <p className="mt-3 text-sm leading-6 text-[var(--foreground-muted)]">
               {streakPrompt}
             </p>
@@ -3781,9 +3783,9 @@ export function ForecastPanel({
             <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[var(--primary)]">
               Health Risk Forecast
             </p>
-            <h3 className="mt-3 font-heading text-4xl font-semibold leading-[1.03] tracking-tight text-[var(--primary-ink)] sm:text-5xl">
+            <h2 className="mt-3 font-heading text-4xl font-semibold leading-[1.03] tracking-tight text-[var(--primary-ink)] sm:text-5xl">
               Pick the best time to be outside.
-            </h3>
+            </h2>
             <p className="mt-4 max-w-2xl text-sm leading-6 text-[var(--muted-foreground)] sm:text-base">
               A simple 24-hour risk pulse for {city}, {state}. Click any hour
               to see why the score changes.
@@ -3881,9 +3883,9 @@ export function ForecastPanel({
               Selected hour
             </p>
             <div className="mt-2 flex flex-wrap items-center gap-3">
-              <h4 className="font-heading text-3xl font-semibold text-[var(--primary-ink)]">
+              <h3 className="font-heading text-3xl font-semibold text-[var(--primary-ink)]">
                 {selectedHour?.displayTime ?? "Unavailable"}
-              </h4>
+              </h3>
               <RiskBadge value={selectedHour?.risk ?? "Unknown"} />
             </div>
             <p className="mt-3 text-sm leading-6 text-[var(--muted-foreground)]">
@@ -3933,9 +3935,9 @@ export function ForecastPanel({
               <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--primary)]">
                 Statistical read
               </p>
-              <h4 className="mt-2 font-heading text-2xl font-semibold text-[var(--primary-ink)]">
+              <h3 className="mt-2 font-heading text-2xl font-semibold text-[var(--primary-ink)]">
                 How stable is this forecast?
-              </h4>
+              </h3>
               <p className="mt-2 max-w-3xl text-sm leading-6 text-[var(--muted-foreground)]">
                 The app computes a distribution of the next 24 hourly risk
                 scores, then summarizes spread, peak intensity, data

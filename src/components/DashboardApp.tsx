@@ -376,7 +376,7 @@ function LandingHero({
               {error && <p className="mt-4 text-sm font-medium text-white">{error}</p>}
             </div>
 
-            <aside className="landing-video-card border border-white/24 bg-white/12 p-5 text-white shadow-2xl backdrop-blur-md md:p-6">
+            <div className="landing-video-card border border-white/24 bg-white/12 p-5 text-white shadow-2xl backdrop-blur-md md:p-6">
               <div className="flex items-start justify-between gap-4">
                 <div>
                   <p className="register-mono text-[10px] text-white/62">Sample live read</p>
@@ -403,7 +403,7 @@ function LandingHero({
               <p className="mt-5 border-t border-dashed border-white/25 pt-3 font-editorial text-sm italic text-white/84">
                 &quot;Risk climbs late week — driven by ozone and pollen. Morning outdoor windows look best.&quot;
               </p>
-            </aside>
+            </div>
           </div>
         </div>
       </section>
@@ -1384,6 +1384,7 @@ function ContributorsPanel({
                         ))}
                       </text>
                       <circle
+                        aria-label={`View ${row.factor} details`}
                         className="cursor-pointer transition"
                         cx={pointX}
                         cy={pointY}
@@ -1399,8 +1400,8 @@ function ContributorsPanel({
                     </g>
                   );
                 })}
-                <polygon fill="rgba(245,158,11,.08)" points={baselinePolygon} stroke="var(--warning)" strokeDasharray="5 5" strokeWidth="2" />
-                <polygon fill="rgba(75,156,211,.22)" points={currentPolygon} stroke="var(--primary)" strokeWidth="3" />
+                <polygon fill="rgba(245,158,11,.08)" points={baselinePolygon} stroke="var(--warning)" strokeDasharray="5 5" strokeWidth="2" pointerEvents="none" />
+                <polygon fill="rgba(75,156,211,.22)" points={currentPolygon} stroke="var(--primary)" strokeWidth="3" pointerEvents="none" />
               </svg>
             </div>
           </div>
@@ -1568,6 +1569,51 @@ function riskToneClass(tone: "low" | "moderate" | "high") {
       return "border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--accent-ink)]";
     case "high":
       return "border-[var(--accent-ink)] bg-[var(--accent)]/18 text-[var(--accent-ink)]";
+  }
+}
+
+// CDC NWSS wastewater data is published roughly weekly; if the freshest
+// record we got back is well past that cadence, showing it next to a "Live"
+// badge as if it were current would overstate how current the signal is.
+const STALE_THRESHOLD_DAYS = 21;
+
+function daysSince(dateString: string | undefined) {
+  if (!dateString) return null;
+  const parsed = new Date(dateString);
+  if (Number.isNaN(parsed.getTime())) return null;
+  return (Date.now() - parsed.getTime()) / (1000 * 60 * 60 * 24);
+}
+
+function buildFreshnessBadge(
+  dataConfidence: ReturnType<typeof useDashboardData>["dataConfidence"],
+  covidUpdatedAt: string | undefined
+) {
+  const covidAgeDays = daysSince(covidUpdatedAt);
+  const covidStale = covidAgeDays !== null && covidAgeDays > STALE_THRESHOLD_DAYS;
+
+  if (dataConfidence.label === "Low") {
+    return {
+      text: "Limited data · several sources unavailable",
+      tone: "warn" as const,
+    };
+  }
+  if (covidStale) {
+    return { text: "Live · some sources delayed", tone: "warn" as const };
+  }
+  if (dataConfidence.label === "Medium") {
+    return { text: "Live · partial data", tone: "info" as const };
+  }
+  return { text: "Live · data-linked", tone: "ok" as const };
+}
+
+function freshnessToneClass(tone: "ok" | "info" | "warn") {
+  switch (tone) {
+    case "ok":
+      return "text-[var(--primary)]";
+    case "info":
+      return "text-[var(--muted-foreground)]";
+    case "warn":
+      return "text-[var(--warning)]";
   }
 }
 
@@ -1812,6 +1858,7 @@ export default function Home() {
     equityError,
     healthForecastData,
     scoreBreakdown,
+    dataConfidence,
     symptomPrediction,
     userProfile,
     user,
@@ -1900,6 +1947,11 @@ export default function Home() {
   const todayVerdict = useMemo(
     () => buildTodayVerdict(healthRisk, scoreBreakdown.topDrivers),
     [healthRisk, scoreBreakdown.topDrivers]
+  );
+
+  const freshnessBadge = useMemo(
+    () => buildFreshnessBadge(dataConfidence, covidData?.updatedAt),
+    [dataConfidence, covidData?.updatedAt]
   );
 
   useEffect(() => {
@@ -2006,7 +2058,7 @@ export default function Home() {
           <AccountActions user={user} />
         </header>
 
-        <section className="register-masthead">
+        <section aria-label="Location and status" className="register-masthead">
           <div className="flex flex-wrap items-baseline gap-4">
             <span className="register-mono text-[var(--muted-foreground)]">MyLocalHealth</span>
             <h2>Local health snapshot</h2>
@@ -2014,7 +2066,9 @@ export default function Home() {
           <div className="register-masthead-meta">
             <span>{dashboardTitle}</span>
             <span>ZIP · {zipCode}</span>
-            <span>Live · data-linked</span>
+            <span className={freshnessToneClass(freshnessBadge.tone)}>
+              {freshnessBadge.text}
+            </span>
           </div>
         </section>
 
@@ -2090,6 +2144,18 @@ export default function Home() {
                   <Link className="register-mini-button" href="/signup">
                     Create free account
                   </Link>
+                </div>
+              )}
+              {dataConfidence.caveats.length > 0 && (
+                <div className="mt-4 rounded-xl border border-[var(--warning)]/40 bg-[var(--warning)]/10 px-4 py-3">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-[var(--warning)]">
+                    {dataConfidence.availableCount}/{dataConfidence.totalCount} data sources loaded
+                  </p>
+                  <ul className="mt-1 list-disc pl-4 text-sm text-[var(--foreground-muted)]">
+                    {dataConfidence.caveats.map((caveat) => (
+                      <li key={caveat}>{caveat}</li>
+                    ))}
+                  </ul>
                 </div>
               )}
               <div className="register-section-kicker">

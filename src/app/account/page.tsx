@@ -22,6 +22,7 @@ import {
   isSupabaseConfigured,
   supabase,
 } from "../../lib/supabaseClient";
+import { AuthDivider, AuthShell, GoogleSignInButton } from "../../components/AuthShell";
 
 const ageRanges: AgeRange[] = [
   "Under 18",
@@ -47,10 +48,8 @@ const carTypes = [
 ];
 
 function AuthPanel({
-  user,
   onAuthChange,
 }: {
-  user: User | null;
   onAuthChange: (user: User | null) => void;
 }) {
   const [email, setEmail] = useState("");
@@ -125,93 +124,99 @@ function AuthPanel({
     void handleSignIn();
   };
 
-  const handleSignOut = async () => {
-    if (!supabase) return;
-    await supabase.auth.signOut();
-    onAuthChange(null);
-    setAuthMessage("Signed out.");
+  const handleGoogleSignIn = async () => {
+    if (!supabase) {
+      setAuthMessage("Sign in is not available yet. Please try again later.");
+      return;
+    }
+
+    setAuthMessage("");
+    setAuthLoading(true);
+
+    const result = await supabase.auth.signInWithOAuth({
+      provider: "google",
+      options: { redirectTo: `${window.location.origin}/account` },
+    });
+
+    if (result.error) {
+      setAuthMessage(result.error.message);
+      setAuthLoading(false);
+    }
+    // On success the browser navigates to Google; the onAuthStateChange
+    // listener in AccountPage picks up the resulting session on return.
   };
 
-  if (user) {
-    return (
-      <section className="auth-card">
-        <p className="text-xs font-semibold uppercase tracking-wide text-[var(--foreground-muted)]">
-          Account
-        </p>
-        <p className="mt-2 text-sm text-[var(--foreground)]">{user.email}</p>
-        <button
-          type="button"
-          onClick={handleSignOut}
-          className="mt-4 rounded-lg border border-[var(--rule)] px-4 py-2 text-sm font-semibold text-[var(--foreground)] transition hover:border-[var(--accent)]/50 hover:bg-[var(--surface-muted)]"
-        >
-          Sign out
-        </button>
-        {authMessage && (
-          <p className="mt-3 text-xs leading-5 text-[var(--foreground-muted)]">
-            {authMessage}
-          </p>
-        )}
-      </section>
-    );
-  }
-
   return (
-    <form className="auth-card" onSubmit={handleSubmit}>
-      <p className="text-xs font-semibold uppercase tracking-wide text-[var(--foreground-muted)]">
-        Sign In
+    <form onSubmit={handleSubmit}>
+      <p className="font-stat text-xs uppercase tracking-[0.2em] text-[var(--primary)]">
+        Sign in
       </p>
-      <h2 className="mt-2 text-2xl font-semibold text-[var(--foreground)]">
+      <h1 className="mt-2 font-editorial text-3xl font-semibold text-[var(--foreground)]">
         Welcome back
-      </h2>
+      </h1>
       <p className="mt-2 text-sm leading-6 text-[var(--foreground-muted)]">
-        Sign in to manage your profile and saved places.
+        Sign in to see your personal Exposure Twin, saved places, and
+        check-in streak.
       </p>
       {!isSupabaseConfigured && (
-        <p className="mt-3 rounded-lg border border-amber-200 bg-amber-50 p-3 text-xs leading-5 text-amber-900">
+        <p className="mt-3 border border-amber-200 bg-amber-50 p-3 text-xs leading-5 text-amber-900">
           Sign in is not available yet. Please try again later.
         </p>
       )}
-      <div className="mt-4 grid gap-3">
-        <input
-          type="email"
-          placeholder="Email"
-          value={email}
-          onChange={(event) => setEmail(event.target.value)}
-          className="h-11 rounded-lg border border-[var(--rule)] bg-[var(--surface-muted)] px-3 text-sm text-[var(--foreground)] outline-none placeholder:text-slate-400 focus:border-[var(--accent)]"
-        />
-        <input
-          type="password"
-          placeholder="Password"
-          value={password}
-          onChange={(event) => setPassword(event.target.value)}
-          className="h-11 rounded-lg border border-[var(--rule)] bg-[var(--surface-muted)] px-3 text-sm text-[var(--foreground)] outline-none placeholder:text-slate-400 focus:border-[var(--accent)]"
-        />
+
+      <div className="mt-6">
+        <GoogleSignInButton onClick={handleGoogleSignIn} disabled={authLoading} />
+        <AuthDivider />
       </div>
-      <div className="mt-4 flex flex-wrap gap-2">
+
+      <div className="grid gap-3">
+        <label className="auth-shell-label">
+          Email
+          <input
+            type="email"
+            value={email}
+            onChange={(event) => setEmail(event.target.value)}
+            className="auth-shell-input"
+          />
+        </label>
+        <label className="auth-shell-label">
+          Password
+          <input
+            type="password"
+            value={password}
+            onChange={(event) => setPassword(event.target.value)}
+            className="auth-shell-input"
+          />
+        </label>
+      </div>
+
+      <div className="mt-5 grid gap-3">
         <button
           type="submit"
           disabled={authLoading}
-          className="rounded-lg bg-[var(--accent)] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[var(--accent-ink)] disabled:bg-slate-200 disabled:text-slate-500"
+          className="auth-shell-primary-button"
         >
           {authLoading ? "Signing in" : "Sign in"}
         </button>
-        <Link
-          href="/signup"
-          className="rounded-lg border border-[var(--rule)] px-4 py-2 text-sm font-semibold text-[var(--foreground)] transition hover:border-[var(--accent)]/50 hover:bg-[var(--surface-muted)]"
-        >
-          Create account
-        </Link>
-        <button
-          type="button"
-          onClick={() => void handleForgotPassword()}
-          disabled={resetLoading}
-          className="rounded-lg px-4 py-2 text-sm font-semibold text-[var(--foreground-muted)] underline-offset-2 transition hover:text-[var(--foreground)] hover:underline disabled:text-slate-400"
-        >
-          {resetLoading ? "Sending reset link" : "Forgot password?"}
-        </button>
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <Link
+            href="/signup"
+            className="text-sm font-semibold text-[var(--primary)] hover:text-[var(--primary-ink)]"
+          >
+            Create an account
+          </Link>
+          <button
+            type="button"
+            onClick={() => void handleForgotPassword()}
+            disabled={resetLoading}
+            className="text-sm font-semibold text-[var(--foreground-muted)] underline-offset-2 transition hover:text-[var(--foreground)] hover:underline disabled:text-slate-400"
+          >
+            {resetLoading ? "Sending reset link" : "Forgot password?"}
+          </button>
+        </div>
       </div>
       {authMessage && (
-        <p className="mt-3 text-xs leading-5 text-[var(--foreground-muted)]">
+        <p className="mt-4 text-sm leading-6 text-[var(--foreground-muted)]">
           {authMessage}
         </p>
       )}
@@ -619,6 +624,31 @@ export default function AccountPage() {
     };
   }, []);
 
+  if (!user) {
+    return (
+      <AuthShell
+        eyebrow="Welcome back"
+        title="Pick up where you left off."
+        subtitle="Sign in to see your personal Exposure Twin, saved places, and check-in streak instead of the generic ZIP-level estimate."
+        points={[
+          "Personal Exposure Twin score, not just your ZIP's",
+          "Your saved places and check-in streak",
+          "Profile factors that sharpen your estimate over time",
+        ]}
+      >
+        <div className="mb-6 flex items-center justify-between gap-3 lg:hidden">
+          <Link href="/" className="text-sm font-semibold text-[var(--primary-ink)]">
+            ← Home
+          </Link>
+          <Link href="/signup" className="text-sm font-semibold text-[var(--primary)]">
+            Create account
+          </Link>
+        </div>
+        <AuthPanel onAuthChange={handleAuthChange} />
+      </AuthShell>
+    );
+  }
+
   return (
     <main className="auth-page-shell min-h-screen public-health-bg text-[var(--foreground)]">
       <section className="mx-auto flex min-h-screen w-full max-w-7xl flex-col px-5 py-6 sm:px-8 lg:px-10">
@@ -647,14 +677,6 @@ export default function AccountPage() {
               >
                 Home
               </Link>
-              {!user && (
-                <Link
-                  href="/signup"
-                  className="w-fit rounded-full bg-[var(--primary)] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[var(--primary-ink)]"
-                >
-                  Sign up
-                </Link>
-              )}
             </div>
           </div>
           <div className="mt-8">
@@ -672,41 +694,38 @@ export default function AccountPage() {
         </header>
 
         <section className="auth-grid grid gap-5 py-8 lg:grid-cols-[0.8fr_1.2fr]">
-          <AuthPanel user={user} onAuthChange={handleAuthChange} />
-          {user ? (
-            <ProfilePanel
-              profile={userProfile}
-              userId={user.id}
-              message={profileMessage}
-              onSaved={(profile, message) => {
-                setUserProfile(profile);
-                setProfileMessage(message);
+          <section className="auth-card">
+            <p className="text-xs font-semibold uppercase tracking-wide text-[var(--foreground-muted)]">
+              Account
+            </p>
+            <p className="mt-2 text-sm text-[var(--foreground)]">{user.email}</p>
+            <button
+              type="button"
+              onClick={() => {
+                if (!supabase) return;
+                void supabase.auth.signOut().then(() => handleAuthChange(null));
               }}
-            />
-          ) : (
-            <section className="auth-card">
-              <p className="text-xs font-semibold uppercase tracking-wide text-[var(--foreground-muted)]">
-                Next
-              </p>
-              <h2 className="mt-2 text-2xl font-semibold text-[var(--foreground)]">
-                After signing in
-              </h2>
-              <p className="mt-3 text-sm leading-6 text-[var(--foreground-muted)]">
-                You will be able to enter profile details, manage saved
-                locations, and return to the dashboard for a personalized
-                health snapshot.
-              </p>
-            </section>
-          )}
+              className="mt-4 rounded-lg border border-[var(--rule)] px-4 py-2 text-sm font-semibold text-[var(--foreground)] transition hover:border-[var(--accent)]/50 hover:bg-[var(--surface-muted)]"
+            >
+              Sign out
+            </button>
+          </section>
+          <ProfilePanel
+            profile={userProfile}
+            userId={user.id}
+            message={profileMessage}
+            onSaved={(profile, message) => {
+              setUserProfile(profile);
+              setProfileMessage(message);
+            }}
+          />
         </section>
 
-        {user && (
-          <SavedLocationsPanel
-            locations={savedLocations}
-            message={savedLocationMessage}
-            onDelete={(id) => void handleDeleteLocation(id)}
-          />
-        )}
+        <SavedLocationsPanel
+          locations={savedLocations}
+          message={savedLocationMessage}
+          onDelete={(id) => void handleDeleteLocation(id)}
+        />
       </section>
     </main>
   );

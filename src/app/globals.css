@@ -5429,7 +5429,7 @@ body {
   --accent: #4b9cd3;
   --accent-soft: #e7f1f9;
   --accent-ink: #13294b;
-  --secondary: #eef4fa;
+  --secondary: #2e5339;
   --secondary-soft: #eef4fa;
   --muted: #f1f5f9;
   --muted-foreground: #5b6b80;
@@ -5438,7 +5438,7 @@ body {
   --rule-strong: #c5b892;
   --input: #d9cfb6;
   --ring: #4b9cd3;
-  --success: #1f9d6e;
+  --success: #147050;
   --warning: #c88700;
   --danger: #c43148;
   --sidebar-foreground: #34455c;
@@ -5772,9 +5772,8 @@ body {
   text-transform: uppercase;
 }
 
-.register-masthead-meta span:last-child {
-  color: var(--primary);
-}
+/* Freshness badge color is driven by freshnessToneClass() in DashboardApp.tsx
+   (ok/info/warn), not a fixed color -- see buildFreshnessBadge(). */
 
 .register-page-intro {
   border-bottom: 1px solid var(--border);
@@ -6586,6 +6585,15 @@ body {
   color: var(--foreground) !important;
 }
 
+/* The blanket .text-white override above assumes white text sat on the old
+   dark hero background. Elements that carry their own solid dark fill (the
+   Sign up button, the avatar badge) still need light text for contrast --
+   re-exempt anything on a --primary/--primary-ink background. */
+.details-register-shell .bg-\[var\(--primary\)\].text-white,
+.details-register-shell .bg-\[var\(--primary-ink\)\].text-white {
+  color: #fff !important;
+}
+
 .details-register-shell .text-slate-400,
 .details-register-shell .text-slate-500,
 .details-register-shell .text-slate-600 {
@@ -6629,7 +6637,7 @@ body {
   --card-foreground: #0e1a2b;
   --foreground: #0e1a2b;
   --foreground-muted: #53677f;
-  --foreground-faint: #7e8ea0;
+  --foreground-faint: #586878;
   --muted-foreground: #53677f;
   --border: #d8cdb4;
   --input: #d8cdb4;
@@ -6828,4 +6836,85 @@ body,
 .register-rail-button-active .register-rail-number,
 .register-rail-button-active .register-rail-label {
   color: #fffaf0 !important;
+}
+
+/* ================================================================
+ * Auth shell — shared split-screen layout for /signup and the
+ * signed-out state of /account (src/components/AuthShell.tsx).
+ * ================================================================ */
+
+.auth-shell-page {
+  background: var(--background);
+}
+
+.auth-shell-brand {
+  background:
+    radial-gradient(circle at 20% 15%, rgba(75, 156, 211, 0.35), transparent 45%),
+    radial-gradient(circle at 85% 85%, rgba(46, 111, 181, 0.3), transparent 45%),
+    linear-gradient(160deg, var(--primary-ink), #0a1830);
+}
+
+.auth-shell-grain {
+  background-image:
+    linear-gradient(to right, rgba(255, 255, 255, 0.06) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(255, 255, 255, 0.05) 1px, transparent 1px);
+  background-size: 3.2rem 3.2rem;
+  opacity: 0.5;
+}
+
+.auth-shell-card {
+  border: 1px solid var(--border);
+  background: var(--card);
+  padding: 2.25rem;
+}
+
+.auth-shell-google {
+  border-radius: 0;
+}
+
+.auth-shell-input {
+  height: 2.75rem;
+  width: 100%;
+  border: 1px solid var(--border);
+  background: var(--surface-muted);
+  padding: 0 0.85rem;
+  font-size: 0.875rem;
+  color: var(--foreground);
+  outline: none;
+  transition: border-color 150ms ease;
+}
+
+.auth-shell-input:focus {
+  border-color: var(--accent);
+}
+
+.auth-shell-label {
+  display: grid;
+  gap: 0.4rem;
+  font-family: var(--font-stat);
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--foreground-faint);
+}
+
+.auth-shell-primary-button {
+  height: 2.75rem;
+  width: 100%;
+  border: none;
+  background: var(--primary-ink);
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #fff;
+  transition: background 150ms ease;
+}
+
+.auth-shell-primary-button:hover:not(:disabled) {
+  background: var(--primary);
+}
+
+.auth-shell-primary-button:disabled {
+  background: var(--muted);
+  color: var(--muted-foreground);
 }
