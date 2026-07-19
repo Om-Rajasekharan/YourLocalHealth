@@ -1,3 +1,5 @@
+import fs from "fs";
+import path from "path";
 import { NextResponse } from "next/server";
 import type {
   HealthEquityData,
@@ -57,6 +59,33 @@ type CdcPlacesResponse = {
     attributes?: CdcPlacesAttributes;
   }[];
 };
+
+type SpatialTractEntry = {
+  smoothed_prevalence: number;
+  smoothed_ci_lower: number;
+  smoothed_ci_upper: number;
+};
+
+let spatialLookupCache: Record<string, SpatialTractEntry> | null = null;
+
+// Precomputed by ml/spatial_model.py (BYM2 spatial model over CDC PLACES
+// diabetes prevalence, pilot region only) -- read once and cached, since
+// the underlying file only changes when the model is re-fit offline.
+function getSpatialLookup(): Record<string, SpatialTractEntry> {
+  if (spatialLookupCache) return spatialLookupCache;
+
+  try {
+    const lookupPath = path.join(
+      process.cwd(),
+      "ml/models/spatial/tract_lookup.json"
+    );
+    spatialLookupCache = JSON.parse(fs.readFileSync(lookupPath, "utf-8"));
+  } catch {
+    spatialLookupCache = {};
+  }
+
+  return spatialLookupCache ?? {};
+}
 
 function parsePercent(value: string) {
   const parsed = Number(value);
@@ -279,6 +308,10 @@ function buildHealthEquityData(
       indicator.level === "Moderate" || indicator.level === "High"
   );
 
+  const spatialEntry = places?.tractfips
+    ? getSpatialLookup()[places.tractfips]
+    : undefined;
+
   return {
     zctaName: name,
     zcta,
@@ -294,6 +327,14 @@ function buildHealthEquityData(
           smoking: numberOrNull(places.csmoking_crudeprev_NUM),
           obesity: numberOrNull(places.obesity_crudeprev_NUM),
           diabetes: numberOrNull(places.diabetes_crudeprev_NUM),
+          ...(spatialEntry
+            ? {
+                isPilotRegion: true,
+                spatiallySmoothedDiabetes: spatialEntry.smoothed_prevalence,
+                spatiallySmoothedDiabetesCiLower: spatialEntry.smoothed_ci_lower,
+                spatiallySmoothedDiabetesCiUpper: spatialEntry.smoothed_ci_upper,
+              }
+            : {}),
         }
       : null,
     summary:

@@ -1,0 +1,127 @@
+{
+  "region": {
+    "state": "NC",
+    "counties": [
+      "Orange",
+      "Durham",
+      "Chatham"
+    ],
+    "tract_count": 128
+  },
+  "target_variable": "diabetes_crudeprev_NUM",
+  "adjacency": {
+    "edges_from_true_contiguity": 368,
+    "bridge_edges_added_for_connectivity": 0,
+    "scaling_factor": 0.3534872705603163
+  },
+  "bym2": {
+    "label": "bym2_spatial",
+    "r_hat_max": 1.0095,
+    "ess_bulk_min": 257.6259,
+    "divergences": 0,
+    "per_parameter": [
+      {
+        "index": "intercept",
+        "mean": -2.2057,
+        "sd": 0.0132,
+        "eti89_lb": -2.227,
+        "eti89_ub": -2.1851,
+        "ess_bulk": 11036.4846,
+        "ess_tail": 4742.3141,
+        "r_hat": 1.0011,
+        "mcse_mean": 0.0001,
+        "mcse_sd": 0.0001
+      },
+      {
+        "index": "sigma",
+        "mean": 0.3649,
+        "sd": 0.0269,
+        "eti89_lb": 0.3238,
+        "eti89_ub": 0.4094,
+        "ess_bulk": 1917.4283,
+        "ess_tail": 3156.576,
+        "r_hat": 1.0015,
+        "mcse_mean": 0.0006,
+        "mcse_sd": 0.0004
+      },
+      {
+        "index": "rho",
+        "mean": 0.8876,
+        "sd": 0.0913,
+        "eti89_lb": 0.7183,
+        "eti89_ub": 0.9924,
+        "ess_bulk": 257.6259,
+        "ess_tail": 513.1108,
+        "r_hat": 1.0095,
+        "mcse_mean": 0.0058,
+        "mcse_sd": 0.0057
+      }
+    ]
+  },
+  "non_spatial_baseline": {
+    "label": "non_spatial_baseline",
+    "r_hat_max": 1.0017,
+    "ess_bulk_min": 762.617,
+    "divergences": 0,
+    "per_parameter": [
+      {
+        "index": "intercept",
+        "mean": -2.2047,
+        "sd": 0.0356,
+        "eti89_lb": -2.2622,
+        "eti89_ub": -2.1463,
+        "ess_bulk": 762.617,
+        "ess_tail": 1391.5961,
+        "r_hat": 1.0015,
+        "mcse_mean": 0.0013,
+        "mcse_sd": 0.0009
+      },
+      {
+        "index": "sigma",
+        "mean": 0.3887,
+        "sd": 0.0257,
+        "eti89_lb": 0.3497,
+        "eti89_ub": 0.4326,
+        "ess_bulk": 1281.4399,
+        "ess_tail": 1709.1372,
+        "r_hat": 1.0017,
+        "mcse_mean": 0.0007,
+        "mcse_sd": 0.0005
+      }
+    ]
+  },
+  "model_comparison_loo": [
+    {
+      "index": "bym2_spatial",
+      "rank": 0,
+      "elpd_diff": 0.0,
+      "dse": 0.0,
+      "p_worse": null,
+      "diag_diff": "",
+      "diag_elpd": "114 k\u0302 > 0.70",
+      "p": 104.2,
+      "elpd": 50.0,
+      "se": 5.1,
+      "weight": 0.74
+    },
+    {
+      "index": "non_spatial_baseline",
+      "rank": 1,
+      "elpd_diff": -3.0,
+      "dse": 4.0,
+      "p_worse": 0.78,
+      "diag_diff": "|elpd_diff| < 4",
+      "diag_elpd": "114 k\u0302 > 0.70",
+      "p": 107.2,
+      "elpd": 42.0,
+      "se": 3.3,
+      "weight": 0.26
+    }
+  ],
+  "spatial_term_won_on_loo": true,
+  "caveats": [
+    "Informational only. Does not validate the model clinically.",
+    "CDC PLACES prevalence values are themselves modeled small-area estimates (BRFSS + county covariates), not raw counts -- this model's uncertainty is relative to CDC's already-modeled estimate, not to ground truth.",
+    "Adjacency is derived from true tract boundary contiguity (Census TIGERweb), not a distance-based approximation."
+  ]
+}

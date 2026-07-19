@@ -1,0 +1,1282 @@
+{
+  "37037020103": {
+    "county": "Chatham",
+    "population": 5520,
+    "raw_prevalence": 12.1,
+    "raw_ci_lower": 10.4,
+    "raw_ci_upper": 14.1,
+    "smoothed_prevalence": 11.83,
+    "smoothed_ci_lower": 10.21,
+    "smoothed_ci_upper": 13.65
+  },
+  "37037020104": {
+    "county": "Chatham",
+    "population": 6082,
+    "raw_prevalence": 11.7,
+    "raw_ci_lower": 9.9,
+    "raw_ci_upper": 13.7,
+    "smoothed_prevalence": 11.65,
+    "smoothed_ci_lower": 10.0,
+    "smoothed_ci_upper": 13.55
+  },
+  "37037020105": {
+    "county": "Chatham",
+    "population": 7944,
+    "raw_prevalence": 8.2,
+    "raw_ci_lower": 7.0,
+    "raw_ci_upper": 9.6,
+    "smoothed_prevalence": 8.37,
+    "smoothed_ci_lower": 7.23,
+    "smoothed_ci_upper": 9.71
+  },
+  "37037020107": {
+    "county": "Chatham",
+    "population": 2643,
+    "raw_prevalence": 11.8,
+    "raw_ci_lower": 9.9,
+    "raw_ci_upper": 13.8,
+    "smoothed_prevalence": 11.59,
+    "smoothed_ci_lower": 9.89,
+    "smoothed_ci_upper": 13.54
+  },
+  "37037020108": {
+    "county": "Chatham",
+    "population": 1949,
+    "raw_prevalence": 11.3,
+    "raw_ci_lower": 9.6,
+    "raw_ci_upper": 13.2,
+    "smoothed_prevalence": 11.27,
+    "smoothed_ci_lower": 9.72,
+    "smoothed_ci_upper": 13.04
+  },
+  "37037020201": {
+    "county": "Chatham",
+    "population": 3007,
+    "raw_prevalence": 13.9,
+    "raw_ci_lower": 11.9,
+    "raw_ci_upper": 16.1,
+    "smoothed_prevalence": 13.97,
+    "smoothed_ci_lower": 12.08,
+    "smoothed_ci_upper": 16.12
+  },
+  "37037020202": {
+    "county": "Chatham",
+    "population": 3382,
+    "raw_prevalence": 10.4,
+    "raw_ci_lower": 8.7,
+    "raw_ci_upper": 12.2,
+    "smoothed_prevalence": 10.61,
+    "smoothed_ci_lower": 9.06,
+    "smoothed_ci_upper": 12.37
+  },
+  "37037020203": {
+    "county": "Chatham",
+    "population": 2409,
+    "raw_prevalence": 13.2,
+    "raw_ci_lower": 11.3,
+    "raw_ci_upper": 15.3,
+    "smoothed_prevalence": 13.21,
+    "smoothed_ci_lower": 11.39,
+    "smoothed_ci_upper": 15.26
+  },
+  "37037020300": {
+    "county": "Chatham",
+    "population": 2742,
+    "raw_prevalence": 17.9,
+    "raw_ci_lower": 15.6,
+    "raw_ci_upper": 20.4,
+    "smoothed_prevalence": 17.61,
+    "smoothed_ci_lower": 15.49,
+    "smoothed_ci_upper": 20.02
+  },
+  "37037020401": {
+    "county": "Chatham",
+    "population": 5835,
+    "raw_prevalence": 19.2,
+    "raw_ci_lower": 16.9,
+    "raw_ci_upper": 21.8,
+    "smoothed_prevalence": 19.16,
+    "smoothed_ci_lower": 16.96,
+    "smoothed_ci_upper": 21.67
+  },
+  "37037020402": {
+    "county": "Chatham",
+    "population": 4610,
+    "raw_prevalence": 19.5,
+    "raw_ci_lower": 17.1,
+    "raw_ci_upper": 22.0,
+    "smoothed_prevalence": 19.35,
+    "smoothed_ci_lower": 17.09,
+    "smoothed_ci_upper": 21.84
+  },
+  "37037020500": {
+    "county": "Chatham",
+    "population": 3605,
+    "raw_prevalence": 12.9,
+    "raw_ci_lower": 11.1,
+    "raw_ci_upper": 14.8,
+    "smoothed_prevalence": 12.96,
+    "smoothed_ci_lower": 11.28,
+    "smoothed_ci_upper": 14.89
+  },
+  "37037020600": {
+    "county": "Chatham",
+    "population": 5199,
+    "raw_prevalence": 12.8,
+    "raw_ci_lower": 10.9,
+    "raw_ci_upper": 14.7,
+    "smoothed_prevalence": 12.83,
+    "smoothed_ci_lower": 11.08,
+    "smoothed_ci_upper": 14.77
+  },
+  "37037020702": {
+    "county": "Chatham",
+    "population": 4361,
+    "raw_prevalence": 12.0,
+    "raw_ci_lower": 10.3,
+    "raw_ci_upper": 13.8,
+    "smoothed_prevalence": 11.99,
+    "smoothed_ci_lower": 10.43,
+    "smoothed_ci_upper": 13.74
+  },
+  "37037020703": {
+    "county": "Chatham",
+    "population": 4549,
+    "raw_prevalence": 13.0,
+    "raw_ci_lower": 10.9,
+    "raw_ci_upper": 15.2,
+    "smoothed_prevalence": 12.68,
+    "smoothed_ci_lower": 10.77,
+    "smoothed_ci_upper": 14.85
+  },
+  "37037020704": {
+    "county": "Chatham",
+    "population": 2782,
+    "raw_prevalence": 13.2,
+    "raw_ci_lower": 11.1,
+    "raw_ci_upper": 15.5,
+    "smoothed_prevalence": 12.71,
+    "smoothed_ci_lower": 10.89,
+    "smoothed_ci_upper": 14.85
+  },
+  "37037020801": {
+    "county": "Chatham",
+    "population": 4513,
+    "raw_prevalence": 11.8,
+    "raw_ci_lower": 10.2,
+    "raw_ci_upper": 13.7,
+    "smoothed_prevalence": 11.83,
+    "smoothed_ci_lower": 10.25,
+    "smoothed_ci_upper": 13.61
+  },
+  "37037020802": {
+    "county": "Chatham",
+    "population": 2775,
+    "raw_prevalence": 12.9,
+    "raw_ci_lower": 11.0,
+    "raw_ci_upper": 14.9,
+    "smoothed_prevalence": 12.74,
+    "smoothed_ci_lower": 11.04,
+    "smoothed_ci_upper": 14.69
+  },
+  "37037020803": {
+    "county": "Chatham",
+    "population": 2378,
+    "raw_prevalence": 11.3,
+    "raw_ci_lower": 9.6,
+    "raw_ci_upper": 13.2,
+    "smoothed_prevalence": 11.4,
+    "smoothed_ci_lower": 9.74,
+    "smoothed_ci_upper": 13.22
+  },
+  "37063000101": {
+    "county": "Durham",
+    "population": 3282,
+    "raw_prevalence": 11.4,
+    "raw_ci_lower": 9.7,
+    "raw_ci_upper": 13.0,
+    "smoothed_prevalence": 11.49,
+    "smoothed_ci_lower": 9.94,
+    "smoothed_ci_upper": 13.24
+  },
+  "37063000102": {
+    "county": "Durham",
+    "population": 4430,
+    "raw_prevalence": 12.0,
+    "raw_ci_lower": 10.3,
+    "raw_ci_upper": 13.8,
+    "smoothed_prevalence": 11.8,
+    "smoothed_ci_lower": 10.27,
+    "smoothed_ci_upper": 13.5
+  },
+  "37063000200": {
+    "county": "Durham",
+    "population": 2893,
+    "raw_prevalence": 11.9,
+    "raw_ci_lower": 10.1,
+    "raw_ci_upper": 13.8,
+    "smoothed_prevalence": 11.83,
+    "smoothed_ci_lower": 10.17,
+    "smoothed_ci_upper": 13.67
+  },
+  "37063000301": {
+    "county": "Durham",
+    "population": 2644,
+    "raw_prevalence": 8.2,
+    "raw_ci_lower": 7.0,
+    "raw_ci_upper": 9.5,
+    "smoothed_prevalence": 8.11,
+    "smoothed_ci_lower": 7.0,
+    "smoothed_ci_upper": 9.38
+  },
+  "37063000302": {
+    "county": "Durham",
+    "population": 3672,
+    "raw_prevalence": 7.3,
+    "raw_ci_lower": 6.1,
+    "raw_ci_upper": 8.5,
+    "smoothed_prevalence": 7.33,
+    "smoothed_ci_lower": 6.25,
+    "smoothed_ci_upper": 8.56
+  },
+  "37063000401": {
+    "county": "Durham",
+    "population": 2564,
+    "raw_prevalence": 8.0,
+    "raw_ci_lower": 6.7,
+    "raw_ci_upper": 9.4,
+    "smoothed_prevalence": 8.08,
+    "smoothed_ci_lower": 6.91,
+    "smoothed_ci_upper": 9.46
+  },
+  "37063000402": {
+    "county": "Durham",
+    "population": 2966,
+    "raw_prevalence": 4.7,
+    "raw_ci_lower": 4.0,
+    "raw_ci_upper": 5.5,
+    "smoothed_prevalence": 4.86,
+    "smoothed_ci_lower": 4.16,
+    "smoothed_ci_upper": 5.66
+  },
+  "37063000500": {
+    "county": "Durham",
+    "population": 4192,
+    "raw_prevalence": 10.4,
+    "raw_ci_lower": 9.0,
+    "raw_ci_upper": 11.9,
+    "smoothed_prevalence": 9.95,
+    "smoothed_ci_lower": 8.73,
+    "smoothed_ci_upper": 11.32
+  },
+  "37063000600": {
+    "county": "Durham",
+    "population": 5507,
+    "raw_prevalence": 8.7,
+    "raw_ci_lower": 7.4,
+    "raw_ci_upper": 10.2,
+    "smoothed_prevalence": 8.68,
+    "smoothed_ci_lower": 7.46,
+    "smoothed_ci_upper": 10.1
+  },
+  "37063000700": {
+    "county": "Durham",
+    "population": 3701,
+    "raw_prevalence": 9.5,
+    "raw_ci_lower": 8.2,
+    "raw_ci_upper": 11.0,
+    "smoothed_prevalence": 9.55,
+    "smoothed_ci_lower": 8.29,
+    "smoothed_ci_upper": 10.97
+  },
+  "37063000900": {
+    "county": "Durham",
+    "population": 1783,
+    "raw_prevalence": 13.1,
+    "raw_ci_lower": 11.3,
+    "raw_ci_upper": 15.2,
+    "smoothed_prevalence": 13.05,
+    "smoothed_ci_lower": 11.29,
+    "smoothed_ci_upper": 15.02
+  },
+  "37063001001": {
+    "county": "Durham",
+    "population": 3879,
+    "raw_prevalence": 14.4,
+    "raw_ci_lower": 12.5,
+    "raw_ci_upper": 16.6,
+    "smoothed_prevalence": 14.37,
+    "smoothed_ci_lower": 12.54,
+    "smoothed_ci_upper": 16.42
+  },
+  "37063001002": {
+    "county": "Durham",
+    "population": 6140,
+    "raw_prevalence": 18.1,
+    "raw_ci_lower": 15.6,
+    "raw_ci_upper": 20.5,
+    "smoothed_prevalence": 17.69,
+    "smoothed_ci_lower": 15.48,
+    "smoothed_ci_upper": 20.2
+  },
+  "37063001100": {
+    "county": "Durham",
+    "population": 4151,
+    "raw_prevalence": 18.1,
+    "raw_ci_lower": 15.7,
+    "raw_ci_upper": 20.7,
+    "smoothed_prevalence": 17.46,
+    "smoothed_ci_lower": 15.19,
+    "smoothed_ci_upper": 19.97
+  },
+  "37063001301": {
+    "county": "Durham",
+    "population": 1432,
+    "raw_prevalence": 20.3,
+    "raw_ci_lower": 17.6,
+    "raw_ci_upper": 22.9,
+    "smoothed_prevalence": 19.49,
+    "smoothed_ci_lower": 17.15,
+    "smoothed_ci_upper": 22.04
+  },
+  "37063001303": {
+    "county": "Durham",
+    "population": 4052,
+    "raw_prevalence": 7.7,
+    "raw_ci_lower": 6.6,
+    "raw_ci_upper": 8.8,
+    "smoothed_prevalence": 8.09,
+    "smoothed_ci_lower": 7.06,
+    "smoothed_ci_upper": 9.28
+  },
+  "37063001304": {
+    "county": "Durham",
+    "population": 2781,
+    "raw_prevalence": 19.8,
+    "raw_ci_lower": 17.0,
+    "raw_ci_upper": 22.5,
+    "smoothed_prevalence": 18.95,
+    "smoothed_ci_lower": 16.47,
+    "smoothed_ci_upper": 21.67
+  },
+  "37063001400": {
+    "county": "Durham",
+    "population": 2746,
+    "raw_prevalence": 17.0,
+    "raw_ci_lower": 14.8,
+    "raw_ci_upper": 19.5,
+    "smoothed_prevalence": 16.5,
+    "smoothed_ci_lower": 14.39,
+    "smoothed_ci_upper": 18.83
+  },
+  "37063001501": {
+    "county": "Durham",
+    "population": 3430,
+    "raw_prevalence": 4.8,
+    "raw_ci_lower": 3.8,
+    "raw_ci_upper": 5.7,
+    "smoothed_prevalence": 5.12,
+    "smoothed_ci_lower": 4.22,
+    "smoothed_ci_upper": 6.2
+  },
+  "37063001503": {
+    "county": "Durham",
+    "population": 1861,
+    "raw_prevalence": 2.3,
+    "raw_ci_lower": 1.9,
+    "raw_ci_upper": 2.7,
+    "smoothed_prevalence": 2.62,
+    "smoothed_ci_lower": 2.22,
+    "smoothed_ci_upper": 3.08
+  },
+  "37063001504": {
+    "county": "Durham",
+    "population": 3033,
+    "raw_prevalence": 9.8,
+    "raw_ci_lower": 8.4,
+    "raw_ci_upper": 11.3,
+    "smoothed_prevalence": 9.61,
+    "smoothed_ci_lower": 8.37,
+    "smoothed_ci_upper": 11.03
+  },
+  "37063001505": {
+    "county": "Durham",
+    "population": 3951,
+    "raw_prevalence": 8.4,
+    "raw_ci_lower": 7.3,
+    "raw_ci_upper": 9.7,
+    "smoothed_prevalence": 8.31,
+    "smoothed_ci_lower": 7.24,
+    "smoothed_ci_upper": 9.54
+  },
+  "37063001601": {
+    "county": "Durham",
+    "population": 6117,
+    "raw_prevalence": 12.5,
+    "raw_ci_lower": 10.7,
+    "raw_ci_upper": 14.3,
+    "smoothed_prevalence": 12.55,
+    "smoothed_ci_lower": 10.92,
+    "smoothed_ci_upper": 14.4
+  },
+  "37063001603": {
+    "county": "Durham",
+    "population": 6846,
+    "raw_prevalence": 11.0,
+    "raw_ci_lower": 9.4,
+    "raw_ci_upper": 12.8,
+    "smoothed_prevalence": 11.14,
+    "smoothed_ci_lower": 9.63,
+    "smoothed_ci_upper": 12.89
+  },
+  "37063001604": {
+    "county": "Durham",
+    "population": 6655,
+    "raw_prevalence": 12.3,
+    "raw_ci_lower": 10.5,
+    "raw_ci_upper": 14.4,
+    "smoothed_prevalence": 12.17,
+    "smoothed_ci_lower": 10.41,
+    "smoothed_ci_upper": 14.12
+  },
+  "37063001705": {
+    "county": "Durham",
+    "population": 5794,
+    "raw_prevalence": 11.9,
+    "raw_ci_lower": 10.2,
+    "raw_ci_upper": 13.8,
+    "smoothed_prevalence": 11.76,
+    "smoothed_ci_lower": 10.2,
+    "smoothed_ci_upper": 13.47
+  },
+  "37063001706": {
+    "county": "Durham",
+    "population": 5252,
+    "raw_prevalence": 7.0,
+    "raw_ci_lower": 5.9,
+    "raw_ci_upper": 8.2,
+    "smoothed_prevalence": 7.2,
+    "smoothed_ci_lower": 6.18,
+    "smoothed_ci_upper": 8.39
+  },
+  "37063001708": {
+    "county": "Durham",
+    "population": 4895,
+    "raw_prevalence": 14.9,
+    "raw_ci_lower": 12.8,
+    "raw_ci_upper": 17.0,
+    "smoothed_prevalence": 14.73,
+    "smoothed_ci_lower": 12.77,
+    "smoothed_ci_upper": 16.87
+  },
+  "37063001709": {
+    "county": "Durham",
+    "population": 8149,
+    "raw_prevalence": 14.8,
+    "raw_ci_lower": 12.6,
+    "raw_ci_upper": 17.1,
+    "smoothed_prevalence": 14.51,
+    "smoothed_ci_lower": 12.57,
+    "smoothed_ci_upper": 16.7
+  },
+  "37063001710": {
+    "county": "Durham",
+    "population": 4646,
+    "raw_prevalence": 12.6,
+    "raw_ci_lower": 10.8,
+    "raw_ci_upper": 14.5,
+    "smoothed_prevalence": 12.63,
+    "smoothed_ci_lower": 10.98,
+    "smoothed_ci_upper": 14.46
+  },
+  "37063001711": {
+    "county": "Durham",
+    "population": 4748,
+    "raw_prevalence": 12.9,
+    "raw_ci_lower": 11.0,
+    "raw_ci_upper": 14.9,
+    "smoothed_prevalence": 12.78,
+    "smoothed_ci_lower": 11.09,
+    "smoothed_ci_upper": 14.74
+  },
+  "37063001712": {
+    "county": "Durham",
+    "population": 4150,
+    "raw_prevalence": 10.0,
+    "raw_ci_lower": 8.4,
+    "raw_ci_upper": 11.9,
+    "smoothed_prevalence": 10.17,
+    "smoothed_ci_lower": 8.62,
+    "smoothed_ci_upper": 11.89
+  },
+  "37063001713": {
+    "county": "Durham",
+    "population": 3407,
+    "raw_prevalence": 10.6,
+    "raw_ci_lower": 9.0,
+    "raw_ci_upper": 12.5,
+    "smoothed_prevalence": 10.51,
+    "smoothed_ci_lower": 9.02,
+    "smoothed_ci_upper": 12.21
+  },
+  "37063001801": {
+    "county": "Durham",
+    "population": 8293,
+    "raw_prevalence": 14.4,
+    "raw_ci_lower": 12.4,
+    "raw_ci_upper": 16.4,
+    "smoothed_prevalence": 14.27,
+    "smoothed_ci_lower": 12.53,
+    "smoothed_ci_upper": 16.2
+  },
+  "37063001802": {
+    "county": "Durham",
+    "population": 7548,
+    "raw_prevalence": 16.1,
+    "raw_ci_lower": 14.0,
+    "raw_ci_upper": 18.4,
+    "smoothed_prevalence": 15.6,
+    "smoothed_ci_lower": 13.66,
+    "smoothed_ci_upper": 17.71
+  },
+  "37063001806": {
+    "county": "Durham",
+    "population": 6760,
+    "raw_prevalence": 11.9,
+    "raw_ci_lower": 10.2,
+    "raw_ci_upper": 13.6,
+    "smoothed_prevalence": 11.92,
+    "smoothed_ci_lower": 10.38,
+    "smoothed_ci_upper": 13.65
+  },
+  "37063001808": {
+    "county": "Durham",
+    "population": 11498,
+    "raw_prevalence": 8.6,
+    "raw_ci_lower": 7.2,
+    "raw_ci_upper": 10.0,
+    "smoothed_prevalence": 8.8,
+    "smoothed_ci_lower": 7.53,
+    "smoothed_ci_upper": 10.21
+  },
+  "37063001809": {
+    "county": "Durham",
+    "population": 7316,
+    "raw_prevalence": 8.4,
+    "raw_ci_lower": 7.2,
+    "raw_ci_upper": 9.7,
+    "smoothed_prevalence": 8.56,
+    "smoothed_ci_lower": 7.41,
+    "smoothed_ci_upper": 9.86
+  },
+  "37063001810": {
+    "county": "Durham",
+    "population": 3550,
+    "raw_prevalence": 11.5,
+    "raw_ci_lower": 9.8,
+    "raw_ci_upper": 13.3,
+    "smoothed_prevalence": 11.46,
+    "smoothed_ci_lower": 9.9,
+    "smoothed_ci_upper": 13.25
+  },
+  "37063001811": {
+    "county": "Durham",
+    "population": 6378,
+    "raw_prevalence": 12.3,
+    "raw_ci_lower": 10.6,
+    "raw_ci_upper": 14.2,
+    "smoothed_prevalence": 12.25,
+    "smoothed_ci_lower": 10.59,
+    "smoothed_ci_upper": 14.12
+  },
+  "37063001900": {
+    "county": "Durham",
+    "population": 6201,
+    "raw_prevalence": 11.3,
+    "raw_ci_lower": 9.5,
+    "raw_ci_upper": 13.1,
+    "smoothed_prevalence": 11.22,
+    "smoothed_ci_lower": 9.61,
+    "smoothed_ci_upper": 13.07
+  },
+  "37063002007": {
+    "county": "Durham",
+    "population": 5080,
+    "raw_prevalence": 10.1,
+    "raw_ci_lower": 8.5,
+    "raw_ci_upper": 11.8,
+    "smoothed_prevalence": 9.97,
+    "smoothed_ci_lower": 8.56,
+    "smoothed_ci_upper": 11.6
+  },
+  "37063002008": {
+    "county": "Durham",
+    "population": 3178,
+    "raw_prevalence": 8.3,
+    "raw_ci_lower": 6.9,
+    "raw_ci_upper": 9.7,
+    "smoothed_prevalence": 8.36,
+    "smoothed_ci_lower": 7.12,
+    "smoothed_ci_upper": 9.8
+  },
+  "37063002009": {
+    "county": "Durham",
+    "population": 4800,
+    "raw_prevalence": 18.7,
+    "raw_ci_lower": 16.1,
+    "raw_ci_upper": 21.3,
+    "smoothed_prevalence": 17.43,
+    "smoothed_ci_lower": 15.21,
+    "smoothed_ci_upper": 19.97
+  },
+  "37063002013": {
+    "county": "Durham",
+    "population": 4805,
+    "raw_prevalence": 9.0,
+    "raw_ci_lower": 7.6,
+    "raw_ci_upper": 10.5,
+    "smoothed_prevalence": 8.93,
+    "smoothed_ci_lower": 7.63,
+    "smoothed_ci_upper": 10.45
+  },
+  "37063002015": {
+    "county": "Durham",
+    "population": 5328,
+    "raw_prevalence": 9.8,
+    "raw_ci_lower": 8.2,
+    "raw_ci_upper": 11.3,
+    "smoothed_prevalence": 9.7,
+    "smoothed_ci_lower": 8.37,
+    "smoothed_ci_upper": 11.21
+  },
+  "37063002019": {
+    "county": "Durham",
+    "population": 5134,
+    "raw_prevalence": 7.2,
+    "raw_ci_lower": 6.1,
+    "raw_ci_upper": 8.5,
+    "smoothed_prevalence": 7.38,
+    "smoothed_ci_lower": 6.3,
+    "smoothed_ci_upper": 8.64
+  },
+  "37063002020": {
+    "county": "Durham",
+    "population": 8403,
+    "raw_prevalence": 7.9,
+    "raw_ci_lower": 6.7,
+    "raw_ci_upper": 9.3,
+    "smoothed_prevalence": 8.03,
+    "smoothed_ci_lower": 6.84,
+    "smoothed_ci_upper": 9.4
+  },
+  "37063002021": {
+    "county": "Durham",
+    "population": 4604,
+    "raw_prevalence": 7.6,
+    "raw_ci_lower": 6.4,
+    "raw_ci_upper": 8.7,
+    "smoothed_prevalence": 7.69,
+    "smoothed_ci_lower": 6.64,
+    "smoothed_ci_upper": 8.88
+  },
+  "37063002022": {
+    "county": "Durham",
+    "population": 4524,
+    "raw_prevalence": 8.1,
+    "raw_ci_lower": 6.9,
+    "raw_ci_upper": 9.5,
+    "smoothed_prevalence": 8.13,
+    "smoothed_ci_lower": 6.97,
+    "smoothed_ci_upper": 9.42
+  },
+  "37063002023": {
+    "county": "Durham",
+    "population": 2837,
+    "raw_prevalence": 8.0,
+    "raw_ci_lower": 6.8,
+    "raw_ci_upper": 9.4,
+    "smoothed_prevalence": 8.02,
+    "smoothed_ci_lower": 6.85,
+    "smoothed_ci_upper": 9.38
+  },
+  "37063002024": {
+    "county": "Durham",
+    "population": 7058,
+    "raw_prevalence": 7.2,
+    "raw_ci_lower": 6.1,
+    "raw_ci_upper": 8.4,
+    "smoothed_prevalence": 7.42,
+    "smoothed_ci_lower": 6.35,
+    "smoothed_ci_upper": 8.68
+  },
+  "37063002025": {
+    "county": "Durham",
+    "population": 6410,
+    "raw_prevalence": 10.0,
+    "raw_ci_lower": 8.5,
+    "raw_ci_upper": 11.5,
+    "smoothed_prevalence": 10.02,
+    "smoothed_ci_lower": 8.68,
+    "smoothed_ci_upper": 11.53
+  },
+  "37063002026": {
+    "county": "Durham",
+    "population": 6831,
+    "raw_prevalence": 13.0,
+    "raw_ci_lower": 11.1,
+    "raw_ci_upper": 15.0,
+    "smoothed_prevalence": 12.89,
+    "smoothed_ci_lower": 11.1,
+    "smoothed_ci_upper": 14.95
+  },
+  "37063002029": {
+    "county": "Durham",
+    "population": 3774,
+    "raw_prevalence": 7.9,
+    "raw_ci_lower": 6.7,
+    "raw_ci_upper": 9.3,
+    "smoothed_prevalence": 8.01,
+    "smoothed_ci_lower": 6.88,
+    "smoothed_ci_upper": 9.31
+  },
+  "37063002030": {
+    "county": "Durham",
+    "population": 4354,
+    "raw_prevalence": 8.5,
+    "raw_ci_lower": 7.2,
+    "raw_ci_upper": 9.9,
+    "smoothed_prevalence": 8.55,
+    "smoothed_ci_lower": 7.37,
+    "smoothed_ci_upper": 9.88
+  },
+  "37063002031": {
+    "county": "Durham",
+    "population": 2201,
+    "raw_prevalence": 9.8,
+    "raw_ci_lower": 8.3,
+    "raw_ci_upper": 11.3,
+    "smoothed_prevalence": 9.69,
+    "smoothed_ci_lower": 8.36,
+    "smoothed_ci_upper": 11.2
+  },
+  "37063002032": {
+    "county": "Durham",
+    "population": 3320,
+    "raw_prevalence": 7.4,
+    "raw_ci_lower": 6.4,
+    "raw_ci_upper": 8.7,
+    "smoothed_prevalence": 7.46,
+    "smoothed_ci_lower": 6.41,
+    "smoothed_ci_upper": 8.69
+  },
+  "37063002033": {
+    "county": "Durham",
+    "population": 4293,
+    "raw_prevalence": 8.4,
+    "raw_ci_lower": 7.2,
+    "raw_ci_upper": 9.8,
+    "smoothed_prevalence": 8.39,
+    "smoothed_ci_lower": 7.26,
+    "smoothed_ci_upper": 9.66
+  },
+  "37063002034": {
+    "county": "Durham",
+    "population": 6052,
+    "raw_prevalence": 7.4,
+    "raw_ci_lower": 6.3,
+    "raw_ci_upper": 8.6,
+    "smoothed_prevalence": 7.49,
+    "smoothed_ci_lower": 6.45,
+    "smoothed_ci_upper": 8.7
+  },
+  "37063002035": {
+    "county": "Durham",
+    "population": 6682,
+    "raw_prevalence": 7.3,
+    "raw_ci_lower": 6.2,
+    "raw_ci_upper": 8.5,
+    "smoothed_prevalence": 7.75,
+    "smoothed_ci_lower": 6.68,
+    "smoothed_ci_upper": 8.94
+  },
+  "37063002036": {
+    "county": "Durham",
+    "population": 4307,
+    "raw_prevalence": 7.1,
+    "raw_ci_lower": 6.0,
+    "raw_ci_upper": 8.2,
+    "smoothed_prevalence": 7.26,
+    "smoothed_ci_lower": 6.27,
+    "smoothed_ci_upper": 8.37
+  },
+  "37063002037": {
+    "county": "Durham",
+    "population": 7165,
+    "raw_prevalence": 5.4,
+    "raw_ci_lower": 4.5,
+    "raw_ci_upper": 6.3,
+    "smoothed_prevalence": 5.46,
+    "smoothed_ci_lower": 4.59,
+    "smoothed_ci_upper": 6.45
+  },
+  "37063002038": {
+    "county": "Durham",
+    "population": 5724,
+    "raw_prevalence": 8.4,
+    "raw_ci_lower": 7.3,
+    "raw_ci_upper": 9.8,
+    "smoothed_prevalence": 8.35,
+    "smoothed_ci_lower": 7.19,
+    "smoothed_ci_upper": 9.64
+  },
+  "37063002100": {
+    "county": "Durham",
+    "population": 9056,
+    "raw_prevalence": 12.6,
+    "raw_ci_lower": 10.7,
+    "raw_ci_upper": 14.6,
+    "smoothed_prevalence": 12.57,
+    "smoothed_ci_lower": 10.83,
+    "smoothed_ci_upper": 14.57
+  },
+  "37063002200": {
+    "county": "Durham",
+    "population": 3177,
+    "raw_prevalence": 6.0,
+    "raw_ci_lower": 5.1,
+    "raw_ci_upper": 7.1,
+    "smoothed_prevalence": 6.34,
+    "smoothed_ci_lower": 5.42,
+    "smoothed_ci_upper": 7.41
+  },
+  "37063002300": {
+    "county": "Durham",
+    "population": 2434,
+    "raw_prevalence": 9.1,
+    "raw_ci_lower": 7.8,
+    "raw_ci_upper": 10.6,
+    "smoothed_prevalence": 9.36,
+    "smoothed_ci_lower": 8.06,
+    "smoothed_ci_upper": 10.82
+  },
+  "37135010701": {
+    "county": "Orange",
+    "population": 2198,
+    "raw_prevalence": 11.6,
+    "raw_ci_lower": 9.8,
+    "raw_ci_upper": 13.5,
+    "smoothed_prevalence": 11.2,
+    "smoothed_ci_lower": 9.64,
+    "smoothed_ci_upper": 13.02
+  },
+  "37135010705": {
+    "county": "Orange",
+    "population": 5036,
+    "raw_prevalence": 7.4,
+    "raw_ci_lower": 6.3,
+    "raw_ci_upper": 8.6,
+    "smoothed_prevalence": 7.47,
+    "smoothed_ci_lower": 6.46,
+    "smoothed_ci_upper": 8.66
+  },
+  "37135010706": {
+    "county": "Orange",
+    "population": 3668,
+    "raw_prevalence": 7.7,
+    "raw_ci_lower": 6.5,
+    "raw_ci_upper": 8.9,
+    "smoothed_prevalence": 7.84,
+    "smoothed_ci_lower": 6.73,
+    "smoothed_ci_upper": 9.06
+  },
+  "37135010707": {
+    "county": "Orange",
+    "population": 3363,
+    "raw_prevalence": 8.1,
+    "raw_ci_lower": 6.9,
+    "raw_ci_upper": 9.4,
+    "smoothed_prevalence": 8.11,
+    "smoothed_ci_lower": 7.01,
+    "smoothed_ci_upper": 9.4
+  },
+  "37135010708": {
+    "county": "Orange",
+    "population": 2603,
+    "raw_prevalence": 7.2,
+    "raw_ci_lower": 6.2,
+    "raw_ci_upper": 8.3,
+    "smoothed_prevalence": 7.21,
+    "smoothed_ci_lower": 6.26,
+    "smoothed_ci_upper": 8.29
+  },
+  "37135010709": {
+    "county": "Orange",
+    "population": 1955,
+    "raw_prevalence": 6.3,
+    "raw_ci_lower": 5.4,
+    "raw_ci_upper": 7.3,
+    "smoothed_prevalence": 6.34,
+    "smoothed_ci_lower": 5.47,
+    "smoothed_ci_upper": 7.36
+  },
+  "37135010710": {
+    "county": "Orange",
+    "population": 3335,
+    "raw_prevalence": 6.9,
+    "raw_ci_lower": 5.9,
+    "raw_ci_upper": 8.0,
+    "smoothed_prevalence": 7.11,
+    "smoothed_ci_lower": 6.17,
+    "smoothed_ci_upper": 8.16
+  },
+  "37135010802": {
+    "county": "Orange",
+    "population": 4820,
+    "raw_prevalence": 10.7,
+    "raw_ci_lower": 9.1,
+    "raw_ci_upper": 12.4,
+    "smoothed_prevalence": 10.83,
+    "smoothed_ci_lower": 9.36,
+    "smoothed_ci_upper": 12.52
+  },
+  "37135010803": {
+    "county": "Orange",
+    "population": 3118,
+    "raw_prevalence": 12.0,
+    "raw_ci_lower": 10.3,
+    "raw_ci_upper": 14.0,
+    "smoothed_prevalence": 11.96,
+    "smoothed_ci_lower": 10.27,
+    "smoothed_ci_upper": 13.89
+  },
+  "37135010804": {
+    "county": "Orange",
+    "population": 1930,
+    "raw_prevalence": 14.1,
+    "raw_ci_lower": 12.2,
+    "raw_ci_upper": 16.2,
+    "smoothed_prevalence": 13.99,
+    "smoothed_ci_lower": 12.13,
+    "smoothed_ci_upper": 16.12
+  },
+  "37135010902": {
+    "county": "Orange",
+    "population": 6584,
+    "raw_prevalence": 11.0,
+    "raw_ci_lower": 9.4,
+    "raw_ci_upper": 12.7,
+    "smoothed_prevalence": 10.84,
+    "smoothed_ci_lower": 9.41,
+    "smoothed_ci_upper": 12.47
+  },
+  "37135010903": {
+    "county": "Orange",
+    "population": 2589,
+    "raw_prevalence": 11.0,
+    "raw_ci_lower": 9.2,
+    "raw_ci_upper": 12.9,
+    "smoothed_prevalence": 10.99,
+    "smoothed_ci_lower": 9.36,
+    "smoothed_ci_upper": 12.84
+  },
+  "37135010904": {
+    "county": "Orange",
+    "population": 3673,
+    "raw_prevalence": 11.4,
+    "raw_ci_lower": 9.7,
+    "raw_ci_upper": 13.1,
+    "smoothed_prevalence": 11.32,
+    "smoothed_ci_lower": 9.82,
+    "smoothed_ci_upper": 13.03
+  },
+  "37135011001": {
+    "county": "Orange",
+    "population": 4733,
+    "raw_prevalence": 9.6,
+    "raw_ci_lower": 8.2,
+    "raw_ci_upper": 11.1,
+    "smoothed_prevalence": 9.71,
+    "smoothed_ci_lower": 8.35,
+    "smoothed_ci_upper": 11.22
+  },
+  "37135011002": {
+    "county": "Orange",
+    "population": 4291,
+    "raw_prevalence": 10.3,
+    "raw_ci_lower": 8.8,
+    "raw_ci_upper": 12.0,
+    "smoothed_prevalence": 10.36,
+    "smoothed_ci_lower": 8.94,
+    "smoothed_ci_upper": 12.0
+  },
+  "37135011103": {
+    "county": "Orange",
+    "population": 4104,
+    "raw_prevalence": 12.0,
+    "raw_ci_lower": 10.3,
+    "raw_ci_upper": 13.8,
+    "smoothed_prevalence": 11.89,
+    "smoothed_ci_lower": 10.33,
+    "smoothed_ci_upper": 13.63
+  },
+  "37135011104": {
+    "county": "Orange",
+    "population": 1499,
+    "raw_prevalence": 10.4,
+    "raw_ci_lower": 8.9,
+    "raw_ci_upper": 12.1,
+    "smoothed_prevalence": 10.49,
+    "smoothed_ci_lower": 9.02,
+    "smoothed_ci_upper": 12.12
+  },
+  "37135011105": {
+    "county": "Orange",
+    "population": 3399,
+    "raw_prevalence": 12.4,
+    "raw_ci_lower": 10.7,
+    "raw_ci_upper": 14.3,
+    "smoothed_prevalence": 12.36,
+    "smoothed_ci_lower": 10.71,
+    "smoothed_ci_upper": 14.24
+  },
+  "37135011106": {
+    "county": "Orange",
+    "population": 2471,
+    "raw_prevalence": 11.0,
+    "raw_ci_lower": 9.4,
+    "raw_ci_upper": 12.6,
+    "smoothed_prevalence": 10.98,
+    "smoothed_ci_lower": 9.56,
+    "smoothed_ci_upper": 12.6
+  },
+  "37135011107": {
+    "county": "Orange",
+    "population": 4257,
+    "raw_prevalence": 11.0,
+    "raw_ci_lower": 9.4,
+    "raw_ci_upper": 12.7,
+    "smoothed_prevalence": 11.0,
+    "smoothed_ci_lower": 9.52,
+    "smoothed_ci_upper": 12.66
+  },
+  "37135011204": {
+    "county": "Orange",
+    "population": 3545,
+    "raw_prevalence": 10.0,
+    "raw_ci_lower": 8.5,
+    "raw_ci_upper": 11.6,
+    "smoothed_prevalence": 9.89,
+    "smoothed_ci_lower": 8.51,
+    "smoothed_ci_upper": 11.47
+  },
+  "37135011206": {
+    "county": "Orange",
+    "population": 4184,
+    "raw_prevalence": 8.5,
+    "raw_ci_lower": 7.3,
+    "raw_ci_upper": 9.8,
+    "smoothed_prevalence": 8.53,
+    "smoothed_ci_lower": 7.4,
+    "smoothed_ci_upper": 9.81
+  },
+  "37135011207": {
+    "county": "Orange",
+    "population": 4599,
+    "raw_prevalence": 9.1,
+    "raw_ci_lower": 7.7,
+    "raw_ci_upper": 10.7,
+    "smoothed_prevalence": 9.06,
+    "smoothed_ci_lower": 7.78,
+    "smoothed_ci_upper": 10.51
+  },
+  "37135011208": {
+    "county": "Orange",
+    "population": 5245,
+    "raw_prevalence": 9.1,
+    "raw_ci_lower": 7.7,
+    "raw_ci_upper": 10.7,
+    "smoothed_prevalence": 9.14,
+    "smoothed_ci_lower": 7.86,
+    "smoothed_ci_upper": 10.64
+  },
+  "37135011209": {
+    "county": "Orange",
+    "population": 2971,
+    "raw_prevalence": 9.9,
+    "raw_ci_lower": 8.4,
+    "raw_ci_upper": 11.6,
+    "smoothed_prevalence": 9.93,
+    "smoothed_ci_lower": 8.51,
+    "smoothed_ci_upper": 11.54
+  },
+  "37135011210": {
+    "county": "Orange",
+    "population": 3459,
+    "raw_prevalence": 12.1,
+    "raw_ci_lower": 10.3,
+    "raw_ci_upper": 14.2,
+    "smoothed_prevalence": 11.89,
+    "smoothed_ci_lower": 10.2,
+    "smoothed_ci_upper": 13.8
+  },
+  "37135011211": {
+    "county": "Orange",
+    "population": 2336,
+    "raw_prevalence": 11.1,
+    "raw_ci_lower": 9.5,
+    "raw_ci_upper": 12.7,
+    "smoothed_prevalence": 11.1,
+    "smoothed_ci_lower": 9.6,
+    "smoothed_ci_upper": 12.78
+  },
+  "37135011300": {
+    "county": "Orange",
+    "population": 3132,
+    "raw_prevalence": 9.0,
+    "raw_ci_lower": 7.8,
+    "raw_ci_upper": 10.2,
+    "smoothed_prevalence": 8.91,
+    "smoothed_ci_lower": 7.81,
+    "smoothed_ci_upper": 10.13
+  },
+  "37135011400": {
+    "county": "Orange",
+    "population": 3893,
+    "raw_prevalence": 7.3,
+    "raw_ci_lower": 6.2,
+    "raw_ci_upper": 8.5,
+    "smoothed_prevalence": 7.31,
+    "smoothed_ci_lower": 6.3,
+    "smoothed_ci_upper": 8.44
+  },
+  "37135011500": {
+    "county": "Orange",
+    "population": 1849,
+    "raw_prevalence": 9.2,
+    "raw_ci_lower": 7.7,
+    "raw_ci_upper": 10.8,
+    "smoothed_prevalence": 8.79,
+    "smoothed_ci_lower": 7.5,
+    "smoothed_ci_upper": 10.27
+  },
+  "37135011601": {
+    "county": "Orange",
+    "population": 2114,
+    "raw_prevalence": 3.3,
+    "raw_ci_lower": 2.7,
+    "raw_ci_upper": 3.9,
+    "smoothed_prevalence": 3.46,
+    "smoothed_ci_lower": 2.9,
+    "smoothed_ci_upper": 4.13
+  },
+  "37135011602": {
+    "county": "Orange",
+    "population": 6498,
+    "raw_prevalence": 2.4,
+    "raw_ci_lower": 2.0,
+    "raw_ci_upper": 2.8,
+    "smoothed_prevalence": 2.57,
+    "smoothed_ci_lower": 2.19,
+    "smoothed_ci_upper": 3.01
+  },
+  "37135011700": {
+    "county": "Orange",
+    "population": 5791,
+    "raw_prevalence": 5.4,
+    "raw_ci_lower": 4.7,
+    "raw_ci_upper": 6.3,
+    "smoothed_prevalence": 5.5,
+    "smoothed_ci_lower": 4.78,
+    "smoothed_ci_upper": 6.33
+  },
+  "37135011800": {
+    "county": "Orange",
+    "population": 3076,
+    "raw_prevalence": 9.4,
+    "raw_ci_lower": 8.0,
+    "raw_ci_upper": 10.9,
+    "smoothed_prevalence": 9.27,
+    "smoothed_ci_lower": 7.99,
+    "smoothed_ci_upper": 10.73
+  },
+  "37135011902": {
+    "county": "Orange",
+    "population": 4367,
+    "raw_prevalence": 8.3,
+    "raw_ci_lower": 7.1,
+    "raw_ci_upper": 9.8,
+    "smoothed_prevalence": 8.31,
+    "smoothed_ci_lower": 7.11,
+    "smoothed_ci_upper": 9.69
+  },
+  "37135011903": {
+    "county": "Orange",
+    "population": 2162,
+    "raw_prevalence": 9.2,
+    "raw_ci_lower": 7.8,
+    "raw_ci_upper": 10.7,
+    "smoothed_prevalence": 9.17,
+    "smoothed_ci_lower": 7.87,
+    "smoothed_ci_upper": 10.63
+  },
+  "37135011904": {
+    "county": "Orange",
+    "population": 3096,
+    "raw_prevalence": 7.8,
+    "raw_ci_lower": 6.7,
+    "raw_ci_upper": 9.1,
+    "smoothed_prevalence": 7.87,
+    "smoothed_ci_lower": 6.79,
+    "smoothed_ci_upper": 9.1
+  },
+  "37135012101": {
+    "county": "Orange",
+    "population": 3913,
+    "raw_prevalence": 10.4,
+    "raw_ci_lower": 9.0,
+    "raw_ci_upper": 12.1,
+    "smoothed_prevalence": 10.12,
+    "smoothed_ci_lower": 8.8,
+    "smoothed_ci_upper": 11.61
+  },
+  "37135012102": {
+    "county": "Orange",
+    "population": 1543,
+    "raw_prevalence": 8.4,
+    "raw_ci_lower": 7.1,
+    "raw_ci_upper": 10.0,
+    "smoothed_prevalence": 8.42,
+    "smoothed_ci_lower": 7.1,
+    "smoothed_ci_upper": 9.97
+  },
+  "37135012103": {
+    "county": "Orange",
+    "population": 2764,
+    "raw_prevalence": 8.2,
+    "raw_ci_lower": 6.9,
+    "raw_ci_upper": 9.5,
+    "smoothed_prevalence": 8.22,
+    "smoothed_ci_lower": 7.09,
+    "smoothed_ci_upper": 9.53
+  },
+  "37135012201": {
+    "county": "Orange",
+    "population": 3084,
+    "raw_prevalence": 8.2,
+    "raw_ci_lower": 6.9,
+    "raw_ci_upper": 9.6,
+    "smoothed_prevalence": 8.1,
+    "smoothed_ci_lower": 6.94,
+    "smoothed_ci_upper": 9.38
+  },
+  "37135012202": {
+    "county": "Orange",
+    "population": 5449,
+    "raw_prevalence": 7.7,
+    "raw_ci_lower": 6.5,
+    "raw_ci_upper": 9.1,
+    "smoothed_prevalence": 7.63,
+    "smoothed_ci_lower": 6.45,
+    "smoothed_ci_upper": 8.99
+  }
+}

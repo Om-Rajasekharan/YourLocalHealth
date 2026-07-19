@@ -5,3 +5,5 @@ fastapi
 uvicorn[standard]
 shap
 xgboost
+pymc
+arviz

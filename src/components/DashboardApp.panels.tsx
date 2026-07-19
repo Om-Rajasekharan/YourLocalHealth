@@ -2706,6 +2706,26 @@ export function HealthEquityPanel({
                       : `${equityData.cdcPlaces.obesity.toFixed(1)}%`}
                   </span>
                 </p>
+                {equityData.cdcPlaces.isPilotRegion &&
+                  equityData.cdcPlaces.spatiallySmoothedDiabetes !==
+                    undefined && (
+                    <p className="mt-2 text-xs leading-5 text-[var(--foreground-muted)]/80">
+                      Neighboring-tract-adjusted:{" "}
+                      {equityData.cdcPlaces.spatiallySmoothedDiabetes.toFixed(
+                        1
+                      )}
+                      % (95% CI:{" "}
+                      {equityData.cdcPlaces.spatiallySmoothedDiabetesCiLower?.toFixed(
+                        1
+                      )}
+                      –
+                      {equityData.cdcPlaces.spatiallySmoothedDiabetesCiUpper?.toFixed(
+                        1
+                      )}
+                      %), from a Bayesian spatial model over neighboring
+                      census tracts.
+                    </p>
+                  )}
               </article>
             </div>
           )}

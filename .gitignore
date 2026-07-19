@@ -16,7 +16,10 @@
 
 # generated local ML artifacts
 /data
-/ml/models
+/ml/models/*
+# exception: precomputed static data the app reads at request time (small,
+# versioned, not a trained-model blob like the rest of ml/models)
+!/ml/models/spatial
 __pycache__/
 *.py[cod]
 

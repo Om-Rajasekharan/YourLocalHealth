@@ -21,6 +21,10 @@ export type HealthEquityData = {
     smoking: number | null;
     obesity: number | null;
     diabetes: number | null;
+    isPilotRegion?: boolean;
+    spatiallySmoothedDiabetes?: number;
+    spatiallySmoothedDiabetesCiLower?: number;
+    spatiallySmoothedDiabetesCiUpper?: number;
   } | null;
   summary: string;
   caveats: string[];
