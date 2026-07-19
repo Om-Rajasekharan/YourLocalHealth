@@ -9,10 +9,15 @@ import {
   HealthEquityPanel,
   SymptomProbabilityPanel,
   SymptomCheckinPanel,
+  AiHealthPlanPanel,
+  ExposureTimelinePanel,
+  AnalyticsEmbedPanel,
   getDashboardUrl,
   getDashboardView,
   isDashboardView,
   type DashboardView,
+  type HealthChatContext,
+  type HealthPlanContext,
 } from "./DashboardApp.panels";
 
 export {
@@ -1869,8 +1874,86 @@ export default function Home() {
     resetSearch,
     setZipCode,
     refreshCheckinStreak,
+    personalizationSummary,
+    personalizedRiskReasons,
+    modelVersion,
   } = useDashboardData();
   const [dashboardView, setDashboardView] = useState<DashboardView>("overview");
+  const analyticsEmbedUrl =
+    process.env.NEXT_PUBLIC_LOOKER_STUDIO_EMBED_URL ??
+    process.env.NEXT_PUBLIC_TABLEAU_EMBED_URL ??
+    "";
+  const analyticsProvider = process.env.NEXT_PUBLIC_LOOKER_STUDIO_EMBED_URL
+    ? "Looker Studio"
+    : process.env.NEXT_PUBLIC_TABLEAU_EMBED_URL
+    ? "Tableau"
+    : "Ready for Tableau or Looker";
+  const chatContext: HealthChatContext = {
+    zipCode,
+    city,
+    state,
+    aqi,
+    airQuality: airQualityLabel,
+    fluActivity,
+    covidActivity,
+    covidValue: covidData?.value ?? null,
+    covidSites: covidData?.numberOfSites ?? null,
+    covidCoverage: covidData?.coverage ?? "Unknown",
+    covidTimePeriod: covidData?.timePeriod ?? "Unknown",
+    covidUpdatedAt: covidData?.updatedAt ?? "Unknown",
+    healthRisk,
+    respiratoryRisk,
+    profileSummary: personalizationSummary,
+    profileReasons: personalizedRiskReasons,
+    heatRisk,
+    uvRisk,
+    alertRisk,
+    activeAlerts: weatherAlerts.map((alert) => alert.event),
+    dominantPollutant,
+    pollutantRisk,
+    news: localNews.map((article) => ({
+      title: article.title,
+      source: article.source,
+      publishedAt: article.publishedAt,
+      url: article.url,
+    })),
+  };
+  const healthPlanContext: HealthPlanContext = {
+    context: chatContext,
+    model: {
+      version: modelVersion,
+      score: scoreBreakdown.score,
+      topDrivers: scoreBreakdown.topDrivers,
+      categoryScores: scoreBreakdown.categoryScores,
+    },
+    forecast: healthForecastData
+      ? {
+          summary: healthForecastData.summary,
+          averageScore: healthForecastData.averageScore,
+          peakScore: healthForecastData.peakScore,
+          bestWindow:
+            healthForecastData.bestWindow?.displayTime ?? "Unavailable",
+          bestWindowScore: healthForecastData.bestWindow?.score ?? null,
+          worstWindow:
+            healthForecastData.worstWindow?.displayTime ?? "Unavailable",
+          worstWindowScore: healthForecastData.worstWindow?.score ?? null,
+          allergyPeakWindow:
+            healthForecastData.allergyPeakWindow?.displayTime ??
+            "Unavailable",
+          allergyPeakScore: healthForecastData.allergyPeakScore,
+          pollenRisk:
+            healthForecastData.allergyPeakWindow?.pollenRisk ?? "Unknown",
+          trends: healthForecastData.trends.map((trend) => ({
+            label: trend.label,
+            direction: trend.direction,
+            peakTime: trend.peakTime,
+            min: trend.min,
+            max: trend.max,
+            unit: trend.unit,
+          })),
+        }
+      : undefined,
+  };
 
   useEffect(() => {
     if (!searched || typeof window === "undefined") return;
@@ -2252,6 +2335,38 @@ export default function Home() {
           )}
 
           {dashboardView === "news" && <NewsPanel localNews={localNews} />}
+
+          {dashboardView === "plan" && (
+            <div className="lovable-dashboard-shell">
+              <AiHealthPlanPanel planContext={healthPlanContext} />
+            </div>
+          )}
+
+          {dashboardView === "timeline" && (
+            <div className="lovable-dashboard-shell">
+              <ExposureTimelinePanel
+                zipCode={zipCode}
+                city={city}
+                state={state}
+                baseScore={scoreBreakdown.score}
+                healthRisk={healthRisk}
+                respiratoryRisk={respiratoryRisk}
+                airQuality={airQualityLabel}
+                heatRisk={heatRisk}
+                uvRisk={uvRisk}
+                profile={userProfile}
+              />
+            </div>
+          )}
+
+          {dashboardView === "analytics" && (
+            <div className="lovable-dashboard-shell">
+              <AnalyticsEmbedPanel
+                embedUrl={analyticsEmbedUrl}
+                provider={analyticsProvider}
+              />
+            </div>
+          )}
 
           <p className="text-xs leading-5 text-[var(--muted-foreground)]">
             MyLocalHealth is informational only and does not provide medical advice,

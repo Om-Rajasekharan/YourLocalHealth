@@ -70,7 +70,7 @@ type ChatMessage = {
   content: string;
 };
 
-type HealthChatContext = {
+export type HealthChatContext = {
   zipCode: string;
   city: string;
   state: string;
@@ -110,7 +110,7 @@ type HealthPlan = {
   uncertainty: string;
 };
 
-type HealthPlanContext = {
+export type HealthPlanContext = {
   context: HealthChatContext;
   model: {
     version: string;
@@ -2433,7 +2433,7 @@ export function ModelDataSourcesPanel({
   );
 }
 
-function AnalyticsEmbedPanel({
+export function AnalyticsEmbedPanel({
   embedUrl,
   provider,
 }: {
@@ -4222,7 +4222,7 @@ function exposureClass(score: number) {
   return "border-[var(--secondary)]/40 bg-[var(--secondary)]/15 text-[var(--secondary)]";
 }
 
-function ExposureTimelinePanel({
+export function ExposureTimelinePanel({
   zipCode,
   city,
   state,
@@ -4702,7 +4702,7 @@ function ExposureTimelinePanel({
   );
 }
 
-function AiHealthPlanPanel({
+export function AiHealthPlanPanel({
   planContext,
 }: {
   planContext: HealthPlanContext;
