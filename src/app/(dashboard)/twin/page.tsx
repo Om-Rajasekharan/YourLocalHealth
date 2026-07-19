@@ -25,6 +25,8 @@ export default function TwinPage() {
     dataConfidence,
     symptomPrediction,
     checkinStreak,
+    symptomEnvironmentCorrelation,
+    personalRiskCalibration,
   } = useDashboardData();
 
   if (!zipCode || !searched) {
@@ -61,6 +63,8 @@ export default function TwinPage() {
         dataConfidence={dataConfidence}
         symptomPrediction={symptomPrediction}
         checkinStreak={checkinStreak}
+        symptomEnvironmentCorrelation={symptomEnvironmentCorrelation}
+        personalRiskCalibration={personalRiskCalibration}
         onOpenCheckin={() => router.push(getDashboardUrl(zipCode, "checkin"))}
         onOpenForecast={() => router.push(getDashboardUrl(zipCode, "forecast"))}
       />

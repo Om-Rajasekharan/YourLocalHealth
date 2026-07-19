@@ -49,6 +49,8 @@ import {
   type CheckinStreak,
   type SavedHealthSnapshot,
 } from "../services/mlTrainingData";
+import type { SymptomEnvironmentCorrelation } from "../services/symptomEnvironmentCorrelation";
+import type { PersonalRiskCalibration } from "../services/personalRiskCalibration";
 import type { TwinNode3D } from "./Twin3D";
 
 const Twin3D = dynamic(
@@ -3379,6 +3381,8 @@ export function ExposureTwinPanel({
   dataConfidence,
   symptomPrediction,
   checkinStreak,
+  symptomEnvironmentCorrelation,
+  personalRiskCalibration,
   onOpenCheckin,
   onOpenForecast,
 }: {
@@ -3395,6 +3399,8 @@ export function ExposureTwinPanel({
   dataConfidence: RiskModelConfidence;
   symptomPrediction: SymptomPrediction;
   checkinStreak: CheckinStreak;
+  symptomEnvironmentCorrelation: SymptomEnvironmentCorrelation;
+  personalRiskCalibration: PersonalRiskCalibration | null;
   onOpenCheckin: () => void;
   onOpenForecast?: () => void;
 }) {
@@ -3760,6 +3766,70 @@ export function ExposureTwinPanel({
           </article>
         </div>
       </section>
+
+      <article className="rounded-[1.5rem] border border-[var(--border)] bg-white p-5 shadow-[0_12px_34px_-26px_rgba(19,41,75,0.45)]">
+        <p className="eyebrow-text">Your personal pattern</p>
+        <h3 className="mt-2 text-lg font-semibold text-[var(--foreground)]">
+          Environment-symptom correlation
+        </h3>
+        <p className="mt-3 text-sm leading-6 text-[var(--foreground-muted)]">
+          {symptomEnvironmentCorrelation.status === "ready"
+            ? symptomEnvironmentCorrelation.summary
+            : `${symptomEnvironmentCorrelation.summary} You're at ${symptomEnvironmentCorrelation.totalCheckins}/${symptomEnvironmentCorrelation.minRequired}.`}
+        </p>
+        {symptomEnvironmentCorrelation.status === "ready" && (
+          <ul className="mt-4 grid gap-2 text-xs leading-5 text-[var(--foreground-faint)]">
+            {symptomEnvironmentCorrelation.caveats.map((caveat) => (
+              <li key={caveat}>· {caveat}</li>
+            ))}
+          </ul>
+        )}
+        {personalRiskCalibration && (
+          <div className="mt-5 border-t border-[var(--border)] pt-4">
+            <p className="eyebrow-text">Personal calibration</p>
+            {personalRiskCalibration.status === "ready" ? (
+              <>
+                <p className="mt-2 text-sm leading-6 text-[var(--foreground-muted)]">
+                  We&apos;re weighting your own check-in history at{" "}
+                  <span className="font-semibold text-[var(--foreground)]">
+                    {personalRiskCalibration.trustWeightPct}%
+                  </span>{" "}
+                  versus the general population baseline for{" "}
+                  {personalRiskCalibration.factorLabel}
+                  {personalRiskCalibration.populationSource ===
+                  "neutral_fallback"
+                    ? " (not enough pooled data across all users yet, so this starts from a neutral baseline and leans on your own evidence almost immediately)"
+                    : ` (based on ${personalRiskCalibration.populationN} pooled check-ins across all users)`}
+                  .
+                </p>
+                <ul className="mt-3 grid gap-2 text-xs leading-5 text-[var(--foreground-faint)]">
+                  <li>
+                    · This percentage is how much the estimate leans on your
+                    own data versus the population -- not a confidence or
+                    accuracy score.
+                  </li>
+                  <li>
+                    · {personalRiskCalibration.factorLabel} was picked as the
+                    strongest of several factors tested, which can overstate
+                    its true strength.
+                  </li>
+                  <li>
+                    · The population baseline is a simple pooled average
+                    across all users, not a personalized model for people
+                    like you specifically.
+                  </li>
+                </ul>
+              </>
+            ) : (
+              <p className="mt-2 text-sm leading-6 text-[var(--foreground-muted)]">
+                {personalRiskCalibration.factorLabel} hasn&apos;t varied enough
+                across your check-ins yet to calibrate a personal estimate --
+                keep checking in on days when it changes.
+              </p>
+            )}
+          </div>
+        )}
+      </article>
 
       <p className="rounded-2xl border border-[var(--border)] bg-white p-4 text-xs leading-5 text-[var(--foreground-muted)]">
         Informational only. The Twin estimates self-reported exposure context,

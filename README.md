@@ -33,6 +33,19 @@ vulnerability.
   confidence intervals), served via a FastAPI microservice with graceful
   fallback
 - Python model reporting for ML transparency
+- Bayesian hierarchical spatial model (BYM2) smoothing CDC PLACES diabetes
+  prevalence over a 128-census-tract pilot region, using true tract-boundary
+  adjacency, a measurement-error likelihood, and honest PSIS-LOO comparison
+  against a non-spatial baseline (PyMC, ArviZ) -- see
+  `docs/statistical_validation_notes.md`
+- Personalized environment-symptom correlation for signed-in users -- a
+  Spearman rank correlation between a user's own logged symptom severity and
+  the environmental conditions at each check-in, with significance from a
+  permutation test rather than an assumed threshold
+- Personal Bayesian risk calibration chaining the two features above -- a
+  real conjugate Normal-Normal update blending a population-pooled baseline
+  with a user's own regression slope, with a visible "trust weight" that
+  shifts toward personal data as check-ins accumulate
 - Native C++ risk scoring kernel, including a WebAssembly build that
   cross-checks the TypeScript risk model in production
 - Cross-instance rate limiting backed by Postgres

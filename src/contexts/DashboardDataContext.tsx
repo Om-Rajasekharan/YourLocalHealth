@@ -8,6 +8,7 @@ import {
   useState,
   type ReactNode,
 } from "react";
+import { useRouter } from "next/navigation";
 import type { User } from "@supabase/supabase-js";
 import {
   getAirQualityLabel,
@@ -54,6 +55,15 @@ import {
   type CheckinStreak,
   type SavedHealthSnapshot,
 } from "../services/mlTrainingData";
+import {
+  emptySymptomEnvironmentCorrelation,
+  getSymptomEnvironmentCorrelation,
+  type SymptomEnvironmentCorrelation,
+} from "../services/symptomEnvironmentCorrelation";
+import {
+  computeUserFactorSlope,
+  type PersonalRiskCalibration,
+} from "../services/personalRiskCalibration";
 import { supabase } from "../lib/supabaseClient";
 
 const unknownCovidData: CovidActivityData = {
@@ -122,6 +132,8 @@ type DashboardDataContextValue = {
   user: User | null;
   userProfile: UserProfile | null;
   checkinStreak: CheckinStreak;
+  symptomEnvironmentCorrelation: SymptomEnvironmentCorrelation;
+  personalRiskCalibration: PersonalRiskCalibration | null;
 
   // raw signal state
   aqi: number | null;
@@ -194,6 +206,8 @@ export function useDashboardData() {
 
 export function DashboardDataProvider({ children }: { children: ReactNode }) {
   const loadedZipRef = useRef("");
+  const hasRedirectedForMissingProfileRef = useRef(false);
+  const router = useRouter();
   const [user, setUser] = useState<User | null>(null);
   const [zipCode, setZipCode] = useState("");
   const [searched, setSearched] = useState(false);
@@ -227,6 +241,10 @@ export function DashboardDataProvider({ children }: { children: ReactNode }) {
   const [checkinStreak, setCheckinStreak] = useState<CheckinStreak>(
     emptyCheckinStreak
   );
+  const [symptomEnvironmentCorrelation, setSymptomEnvironmentCorrelation] =
+    useState<SymptomEnvironmentCorrelation>(emptySymptomEnvironmentCorrelation);
+  const [personalRiskCalibration, setPersonalRiskCalibration] =
+    useState<PersonalRiskCalibration | null>(null);
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [dataStatus, setDataStatus] = useState<DataStatus>({
     airQuality: false,
@@ -605,6 +623,16 @@ export function DashboardDataProvider({ children }: { children: ReactNode }) {
     try {
       const profile = await getUserProfile(userId);
       setUserProfile(profile);
+
+      // Email/password sign-up collects these fields before the account is
+      // ever created, so the only way to land here authenticated with no
+      // profile is a first-time Google sign-in/sign-up, which skips that
+      // form entirely. Send them to finish it once per session rather than
+      // silently dropping them on the generic ZIP-level dashboard.
+      if (!profile && !hasRedirectedForMissingProfileRef.current) {
+        hasRedirectedForMissingProfileRef.current = true;
+        router.push("/account");
+      }
     } catch (profileError) {
       console.error(profileError);
     }
@@ -618,6 +646,81 @@ export function DashboardDataProvider({ children }: { children: ReactNode }) {
       console.error(streakError);
       setCheckinStreak(emptyCheckinStreak());
     }
+  };
+
+  // Downstream of the correlation feature, not parallel to it -- reuses
+  // whichever factor the correlation feature already identified as
+  // strongest for this user, rather than re-deriving a separate one.
+  const loadPersonalRiskCalibration = async (
+    userId: string,
+    correlation: SymptomEnvironmentCorrelation
+  ) => {
+    if (correlation.status !== "ready" || !correlation.topFactor) {
+      setPersonalRiskCalibration(null);
+      return;
+    }
+
+    const { topFactor } = correlation;
+
+    try {
+      const slope = await computeUserFactorSlope(userId, topFactor.factor);
+
+      if (!slope) {
+        setPersonalRiskCalibration({
+          status: "insufficient_variation",
+          factorLabel: topFactor.label,
+          posteriorMean: null,
+          posteriorSE: null,
+          trustWeightPct: null,
+          populationSource: "neutral_fallback",
+          populationN: 0,
+        });
+        return;
+      }
+
+      const response = await fetch("/api/personal-risk-calibration", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          factor: topFactor.factor,
+          userSlope: slope.beta,
+          userSE: slope.se,
+          userN: slope.n,
+        }),
+      });
+
+      if (!response.ok) {
+        setPersonalRiskCalibration(null);
+        return;
+      }
+
+      const data = await response.json();
+      setPersonalRiskCalibration({ ...data, factorLabel: topFactor.label });
+    } catch (calibrationError) {
+      console.error(calibrationError);
+      setPersonalRiskCalibration(null);
+    }
+  };
+
+  const loadSymptomEnvironmentCorrelation = async (userId: string) => {
+    try {
+      const correlation = await getSymptomEnvironmentCorrelation(userId);
+      setSymptomEnvironmentCorrelation(correlation);
+      await loadPersonalRiskCalibration(userId, correlation);
+    } catch (correlationError) {
+      console.error(correlationError);
+      setSymptomEnvironmentCorrelation(emptySymptomEnvironmentCorrelation());
+      setPersonalRiskCalibration(null);
+    }
+  };
+
+  // A freshly logged check-in is a new data point for both -- refresh
+  // together so the correlation card doesn't lag behind the streak.
+  const refreshCheckinDerivedData = async (userId: string) => {
+    await Promise.all([
+      loadCheckinStreak(userId),
+      loadSymptomEnvironmentCorrelation(userId),
+    ]);
   };
 
   useEffect(() => {
@@ -660,6 +763,7 @@ export function DashboardDataProvider({ children }: { children: ReactNode }) {
       if (data.user) {
         void loadUserProfile(data.user.id);
         void loadCheckinStreak(data.user.id);
+        void loadSymptomEnvironmentCorrelation(data.user.id);
       } else {
         setCheckinStreak(emptyCheckinStreak());
       }
@@ -672,15 +776,20 @@ export function DashboardDataProvider({ children }: { children: ReactNode }) {
       if (nextUser) {
         void loadUserProfile(nextUser.id);
         void loadCheckinStreak(nextUser.id);
+        void loadSymptomEnvironmentCorrelation(nextUser.id);
       } else {
         setUserProfile(null);
         setCheckinStreak(emptyCheckinStreak());
+        setSymptomEnvironmentCorrelation(emptySymptomEnvironmentCorrelation());
+        setPersonalRiskCalibration(null);
+        hasRedirectedForMissingProfileRef.current = false;
       }
     });
 
     return () => {
       data.subscription.unsubscribe();
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const value: DashboardDataContextValue = {
@@ -695,6 +804,8 @@ export function DashboardDataProvider({ children }: { children: ReactNode }) {
     user,
     userProfile,
     checkinStreak,
+    symptomEnvironmentCorrelation,
+    personalRiskCalibration,
     aqi,
     fluActivity,
     covidData,
@@ -737,7 +848,7 @@ export function DashboardDataProvider({ children }: { children: ReactNode }) {
     searchZipCode,
     resetSearch,
     setZipCode,
-    refreshCheckinStreak: loadCheckinStreak,
+    refreshCheckinStreak: refreshCheckinDerivedData,
   };
 
   return (
