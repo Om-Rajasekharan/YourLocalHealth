@@ -81,4 +81,20 @@ describe("conjugateNormalUpdate", () => {
     expect(result.trustWeightPct).toBeGreaterThan(50);
     expect(result.posteriorMean).toBeGreaterThan(4);
   });
+
+  it("stays finite when priorVariance is degenerate (near zero)", () => {
+    const result = conjugateNormalUpdate(0, 0, 5, 2);
+
+    expect(Number.isFinite(result.posteriorMean)).toBe(true);
+    expect(Number.isFinite(result.posteriorVariance)).toBe(true);
+    expect(Number.isFinite(result.trustWeightPct)).toBe(true);
+  });
+
+  it("stays finite when userSE is degenerate (near zero)", () => {
+    const result = conjugateNormalUpdate(0, 4, 5, 0);
+
+    expect(Number.isFinite(result.posteriorMean)).toBe(true);
+    expect(Number.isFinite(result.posteriorVariance)).toBe(true);
+    expect(Number.isFinite(result.trustWeightPct)).toBe(true);
+  });
 });

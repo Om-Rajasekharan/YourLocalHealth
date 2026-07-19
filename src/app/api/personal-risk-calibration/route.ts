@@ -38,6 +38,17 @@ type RequestBody = {
 
 type CalibrationResponse = Omit<PersonalRiskCalibration, "factorLabel">;
 
+// Supabase/PostgREST caps rows per request (1000 by default) if a query has
+// no explicit limit -- without this, a pooled cross-user query would
+// silently truncate once real check-in volume grows past that cap, biasing
+// the population estimate toward whichever rows happen to sort first
+// rather than erroring. This limit makes that ceiling explicit rather than
+// an invisible platform default. Revisit with a proper SQL-side aggregate
+// (sums computed in Postgres, not row-by-row transfer) once real volume
+// approaches it -- fetching every row just to sum them stops scaling well
+// well before this cap does.
+const MAX_POOLED_ROWS = 5000;
+
 async function fetchPooledSlope(
   factor: EnvironmentFactorKey
 ): Promise<OlsSlope | null> {
@@ -49,7 +60,8 @@ async function fetchPooledSlope(
   const { data, error } = await supabaseServiceRole
     .from("ml_feature_snapshots")
     .select(FEATURE_SNAPSHOT_COLUMNS)
-    .not("checkin_created_at", "is", null);
+    .not("checkin_created_at", "is", null)
+    .limit(MAX_POOLED_ROWS);
 
   if (error) {
     console.error("personal-risk-calibration pooled query failed", error);

@@ -694,7 +694,10 @@ export function DashboardDataProvider({ children }: { children: ReactNode }) {
         return;
       }
 
-      const data = await response.json();
+      const data = (await response.json()) as Omit<
+        PersonalRiskCalibration,
+        "factorLabel"
+      >;
       setPersonalRiskCalibration({ ...data, factorLabel: topFactor.label });
     } catch (calibrationError) {
       console.error(calibrationError);

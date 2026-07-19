@@ -58,7 +58,10 @@ export function ordinaryLeastSquaresSlope(
     sse += residual * residual;
   }
 
-  const residualVariance = sse / (n - 2);
+  // sse is a sum of squares and mathematically always >= 0, but a
+  // near-perfect fit can leave it at a tiny negative value from floating
+  // point cancellation -- clamped so sqrt() never sees a negative input.
+  const residualVariance = Math.max(sse, 0) / (n - 2);
   const se = Math.sqrt(residualVariance / sxx);
 
   return { beta, se, n };
@@ -121,8 +124,13 @@ export function conjugateNormalUpdate(
   userSlope: number,
   userSE: number
 ): { posteriorMean: number; posteriorVariance: number; trustWeightPct: number } {
-  const priorPrecision = 1 / priorVariance;
-  const userPrecision = 1 / (userSE * userSE);
+  // Floored well away from zero: a caller passing in a near-zero variance
+  // (e.g. a pooled fit with near-zero residual variance -- essentially
+  // never happens with real noisy human data, but shouldn't be assumed)
+  // would otherwise send precision toward Infinity and the posterior
+  // toward NaN.
+  const priorPrecision = 1 / Math.max(priorVariance, 1e-6);
+  const userPrecision = 1 / Math.max(userSE * userSE, 1e-6);
   const posteriorPrecision = priorPrecision + userPrecision;
   const posteriorMean =
     (priorMean * priorPrecision + userSlope * userPrecision) /
