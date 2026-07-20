@@ -277,7 +277,11 @@ export function DashboardDataProvider({ children }: { children: ReactNode }) {
     fluActivity,
     covidActivity,
     covidCoverage: covidData?.coverage ?? "Unknown",
-    dataStatus,
+    // Derived from the actual article list, not just the separately-managed
+    // dataStatus.news flag -- if real articles are showing, "did not load"
+    // must never say otherwise, regardless of exactly how those two pieces
+    // of state got out of sync.
+    dataStatus: { ...dataStatus, news: dataStatus.news || localNews.length > 0 },
     profile: userProfile,
   });
   const healthRisk = riskModel.healthRisk;
