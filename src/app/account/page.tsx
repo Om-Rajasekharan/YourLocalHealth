@@ -7,6 +7,7 @@ import type { User } from "@supabase/supabase-js";
 import {
   deleteSavedLocation,
   getSavedLocations,
+  setLocationAlerts,
   type SavedLocation,
 } from "../../services/savedLocations";
 import {
@@ -458,10 +459,12 @@ function ProfilePanel({
 function SavedLocationsPanel({
   locations,
   onDelete,
+  onToggleAlerts,
   message,
 }: {
   locations: SavedLocation[];
   onDelete: (id: string) => void;
+  onToggleAlerts: (id: string, enabled: boolean) => void;
   message: string;
 }) {
   return (
@@ -514,6 +517,16 @@ function SavedLocationsPanel({
                   Remove
                 </button>
               </div>
+              <label className="mt-3 flex items-center gap-2 text-xs font-medium text-[var(--foreground-muted)]">
+                <input
+                  type="checkbox"
+                  checked={location.alerts_enabled}
+                  onChange={(event) =>
+                    onToggleAlerts(location.id, event.target.checked)
+                  }
+                />
+                Email me if risk reaches High here
+              </label>
             </div>
           ))}
         </div>
@@ -575,6 +588,24 @@ export default function AccountPage() {
         setSavedLocationMessage(error.message);
       } else {
         setSavedLocationMessage("Unable to remove this location.");
+      }
+    }
+  };
+
+  const handleToggleLocationAlerts = async (id: string, enabled: boolean) => {
+    if (!user) return;
+
+    try {
+      await setLocationAlerts(id, enabled);
+      await loadSavedLocations(user.id);
+      setSavedLocationMessage(
+        enabled ? "Alerts turned on for this location." : "Alerts turned off."
+      );
+    } catch (error) {
+      if (error instanceof Error) {
+        setSavedLocationMessage(error.message);
+      } else {
+        setSavedLocationMessage("Unable to update alerts for this location.");
       }
     }
   };
@@ -725,6 +756,9 @@ export default function AccountPage() {
           locations={savedLocations}
           message={savedLocationMessage}
           onDelete={(id) => void handleDeleteLocation(id)}
+          onToggleAlerts={(id, enabled) =>
+            void handleToggleLocationAlerts(id, enabled)
+          }
         />
       </section>
     </main>

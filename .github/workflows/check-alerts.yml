@@ -1,0 +1,19 @@
+name: Check proactive risk alerts
+
+on:
+  schedule:
+    # Vercel's free tier only allows daily cron jobs, which is too coarse
+    # for a "proactive" alert -- this runs independently of Vercel's own
+    # cron and works on any plan.
+    - cron: "*/30 * * * *"
+  workflow_dispatch: {}
+
+jobs:
+  check-alerts:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Call check-alerts endpoint
+        run: |
+          curl --fail --silent --show-error \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
+            "https://mylocalhealth.org/api/cron/check-alerts"

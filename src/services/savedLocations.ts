@@ -18,6 +18,9 @@ export type SavedLocation = {
   latitude: string;
   longitude: string;
   created_at: string;
+  alerts_enabled: boolean;
+  last_alert_risk_level: string | null;
+  last_alert_sent_at: string | null;
 };
 
 export type NewSavedLocation = {
@@ -78,6 +81,24 @@ export async function saveLocation(
   }
 
   return data;
+}
+
+export async function setLocationAlerts(
+  id: string,
+  enabled: boolean
+): Promise<void> {
+  if (!supabase) {
+    throw new Error("Supabase is not configured.");
+  }
+
+  const { error } = await supabase
+    .from("saved_locations")
+    .update({ alerts_enabled: enabled })
+    .eq("id", id);
+
+  if (error) {
+    throw new Error(error.message);
+  }
 }
 
 export async function deleteSavedLocation(id: string) {

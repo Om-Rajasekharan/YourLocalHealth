@@ -61,3 +61,13 @@ create policy "Users can delete their own saved locations"
 on public.saved_locations
 for delete
 using (auth.uid() = user_id);
+
+-- Proactive email alerts: opt in per saved location, notified once when
+-- that location's risk newly crosses into "High" (not every time it's
+-- still High -- last_alert_risk_level tracks the last observed level so
+-- the crossing can be detected; last_alert_sent_at is a daily-cap safety
+-- net against a noisy/flapping signal).
+alter table public.saved_locations
+add column if not exists alerts_enabled boolean not null default false,
+add column if not exists last_alert_risk_level text,
+add column if not exists last_alert_sent_at timestamptz;
