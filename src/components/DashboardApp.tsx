@@ -384,7 +384,7 @@ function LandingHero({
             <div className="landing-video-card border border-white/24 bg-white/12 p-5 text-white shadow-2xl backdrop-blur-md md:p-6">
               <div className="flex items-start justify-between gap-4">
                 <div>
-                  <p className="register-mono text-[10px] text-white/62">Sample live read</p>
+                  <p className="register-mono text-[10px] text-white/62">Example preview</p>
                   <h2 className="mt-2 font-editorial text-2xl font-semibold italic leading-tight">
                     Moderate day. Ozone climbs by Friday.
                   </h2>
@@ -401,12 +401,12 @@ function LandingHero({
               </div>
 
               <div className="mt-6">
-                <div className="register-mono text-[10px] text-white/62">Seven-day exposure index</div>
+                <div className="register-mono text-[10px] text-white/62">Example 7-day exposure index</div>
                 <LandingMiniForecast />
               </div>
 
               <p className="mt-5 border-t border-dashed border-white/25 pt-3 font-editorial text-sm italic text-white/84">
-                &quot;Risk climbs late week — driven by ozone and pollen. Morning outdoor windows look best.&quot;
+                &quot;Example only: risk climbs late week — driven by ozone and pollen. Morning outdoor windows look best.&quot;
               </p>
             </div>
           </div>
@@ -819,7 +819,6 @@ function iconForView(view: DashboardView): IconName {
 function SummaryRow({
   zipCode,
   healthRisk,
-  aqi,
   airQualityLabel,
   heatRisk,
   covidActivity,
@@ -827,7 +826,6 @@ function SummaryRow({
 }: {
   zipCode: string;
   healthRisk: string;
-  aqi: number | null;
   airQualityLabel: string;
   heatRisk: string;
   covidActivity: string;
@@ -845,9 +843,9 @@ function SummaryRow({
     {
       icon: "wind" as IconName,
       label: "Air quality",
-      sub: airQualityLabel,
+      sub: "Current pollutant levels",
       tone: airQualityLabel,
-      value: aqi != null ? `${aqi}` : "—",
+      value: airQualityLabel,
       href: detailHref("air-quality"),
     },
     {
@@ -1160,9 +1158,9 @@ function DashboardTwinPanel({
       </div>
       <div className="register-inset-panel mt-6 p-4">
         <div className="text-[11px] font-semibold uppercase tracking-widest text-[var(--muted-foreground)]">Today&apos;s timeline</div>
-        <div className="mt-2 flex h-20 items-end gap-1.5">
+        <div className="mt-2 flex h-20 gap-1.5">
           {[20, 42, 55, 68, 74, 62, 48, 30].map((height, index) => (
-            <div className="flex flex-1 flex-col items-center gap-1" key={index}>
+            <div className="flex flex-1 flex-col justify-end items-center gap-1" key={index}>
               <div className="w-full rounded-t bg-[var(--primary)]/80" style={{ height: `${height}%` }} />
             </div>
           ))}
@@ -1717,7 +1715,6 @@ function NewsPanel({ localNews }: { localNews: ReturnType<typeof useDashboardDat
 }
 
 function SignalsView({
-  aqi,
   airQualityLabel,
   alertRisk,
   covidActivity,
@@ -1727,8 +1724,8 @@ function SignalsView({
   pollutantRisk,
   respiratoryRisk,
   uvRisk,
+  detailHref,
 }: {
-  aqi: number | null;
   airQualityLabel: string;
   alertRisk: string;
   covidActivity: string;
@@ -1738,54 +1735,63 @@ function SignalsView({
   pollutantRisk: string;
   respiratoryRisk: string;
   uvRisk: string;
+  detailHref: (topic: string) => string;
 }) {
   const signals = [
     {
       icon: "activity" as IconName,
       label: "Respiratory risk",
       detail: "Combines flu, COVID wastewater, and air conditions.",
+      href: detailHref("respiratory-risk"),
       value: respiratoryRisk,
     },
     {
       icon: "wind" as IconName,
       label: "Air quality",
-      detail: aqi === null ? "AQI unavailable" : `AQI ${aqi}`,
+      detail: "Current pollutant levels.",
+      href: detailHref("air-quality"),
       value: airQualityLabel,
     },
     {
       icon: "thermo" as IconName,
       label: "Heat risk",
       detail: "Outdoor heat stress signal.",
+      href: detailHref("heat-risk"),
       value: heatRisk,
     },
     {
       icon: "spark" as IconName,
       label: "UV risk",
       detail: "Sun exposure risk from forecast data.",
+      href: detailHref("uv-risk"),
       value: uvRisk,
     },
     {
       icon: "droplet" as IconName,
       label: "COVID wastewater",
       detail: "CDC wastewater viral activity.",
+      href: detailHref("covid-wastewater"),
       value: covidActivity,
     },
     {
       icon: "activity" as IconName,
       label: "Flu activity",
       detail: "CDC respiratory illness activity.",
+      href: detailHref("flu-activity"),
       value: fluActivity,
     },
     {
       icon: "alert" as IconName,
       label: "Weather alerts",
       detail: "National Weather Service alert context.",
+      href: detailHref("weather-alerts"),
       value: alertRisk,
     },
     {
       icon: "wind" as IconName,
       label: dominantPollutant || "Dominant pollutant",
       detail: "Pollutant-specific burden.",
+      href: detailHref("air-quality"),
       value: pollutantRisk,
     },
   ];
@@ -1808,8 +1814,9 @@ function SignalsView({
 
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         {signals.map((signal) => (
-          <article
-            className="register-small-panel p-5"
+          <Link
+            className="register-small-panel group p-5"
+            href={signal.href}
             key={signal.label}
           >
             <div className="flex items-start justify-between gap-4">
@@ -1826,7 +1833,10 @@ function SignalsView({
             <p className="mt-2 text-sm leading-6 text-[var(--muted-foreground)]">
               {signal.detail}
             </p>
-          </article>
+            <div className="mt-4 text-xs font-semibold text-[var(--primary)] opacity-0 transition group-hover:opacity-100">
+              Open details →
+            </div>
+          </Link>
         ))}
       </div>
     </section>
@@ -2058,11 +2068,6 @@ export default function Home() {
 
   const dashboardTitle = city && state ? `${city}, ${state}` : "Local dashboard";
 
-  const contextLine = useMemo(() => {
-    const pieces = [airQualityLabel, heatRisk, uvRisk, dominantPollutant].filter(Boolean);
-    return pieces.join(" · ");
-  }, [airQualityLabel, heatRisk, uvRisk, dominantPollutant]);
-
   if (!searched) {
     return (
       <LandingHero
@@ -2099,11 +2104,6 @@ export default function Home() {
               MyLocalHealth
             </span>
           </button>
-          <button className="register-menu-button hidden sm:inline-flex" type="button" aria-label="Menu">
-            <span />
-            <span />
-            <span />
-          </button>
           <div className="hidden sm:block">
             <div className="register-mono text-[var(--muted-foreground)]">
               Updated live
@@ -2113,7 +2113,9 @@ export default function Home() {
             className="register-zip-form ml-auto hidden md:flex"
             onSubmit={(event) => {
               event.preventDefault();
-              void searchZipCode(zipCode);
+              const nextZip = zipCode.trim();
+              if (!/^\d{5}$/.test(nextZip)) return;
+              void searchZipCode(nextZip);
             }}
           >
             <Icon name="search" className="h-4 w-4 text-[var(--muted-foreground)]" />
@@ -2248,7 +2250,6 @@ export default function Home() {
               </div>
               <SummaryRow
                 airQualityLabel={airQualityLabel}
-                aqi={aqi}
                 covidActivity={covidActivity}
                 detailHref={detailHref}
                 healthRisk={healthRisk}
@@ -2292,10 +2293,10 @@ export default function Home() {
 
           {dashboardView === "signals" && (
             <SignalsView
-              aqi={aqi}
               airQualityLabel={airQualityLabel}
               alertRisk={alertRisk}
               covidActivity={covidActivity}
+              detailHref={detailHref}
               dominantPollutant={dominantPollutant}
               fluActivity={fluActivity}
               heatRisk={heatRisk}
@@ -2370,7 +2371,7 @@ export default function Home() {
 
           <p className="text-xs leading-5 text-[var(--muted-foreground)]">
             MyLocalHealth is informational only and does not provide medical advice,
-            diagnosis, or treatment. {contextLine}
+            diagnosis, or treatment.
           </p>
         </main>
       </div>

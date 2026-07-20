@@ -1,6 +1,7 @@
 "use client";
 
 import { Suspense, useEffect, useMemo, useState } from "react";
+import Image from "next/image";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { stateRegionMap } from "../../../lib/regions";
 import { supabase } from "../../../lib/supabaseClient";
@@ -1045,11 +1046,12 @@ function DetailsContent() {
       title: titleFromTopic(topic),
       eyebrow: "Health signal",
       value: "Unknown",
-      summary: "No detail page has been configured for this reading yet.",
+      summary:
+        "This signal is available in the main dashboard, but a full detail view is not available for this specific reading yet.",
       source: "MyLocalHealth",
       rows: [{ label: "Overall health risk", value: healthRisk }],
       interpretation:
-        "Return to the dashboard and choose one of the available health signals.",
+        "Return to the dashboard and choose one of the listed health signals for a full visual breakdown.",
     };
 
   return (
@@ -1061,9 +1063,14 @@ function DetailsContent() {
             onClick={() => router.push(summaryHref)}
             className="flex w-fit items-center gap-3 text-[var(--primary-ink)]"
           >
-            <span className="grid h-10 w-10 place-items-center rounded-xl bg-[var(--primary)] text-white">
-              +
-            </span>
+            <Image
+              src="/mylocalhealth-icon-white.png"
+              alt=""
+              width={154}
+              height={123}
+              priority
+              className="h-auto w-10 shrink-0 invert"
+            />
             <span className="font-heading text-xl font-semibold">
               MyLocalHealth
             </span>
