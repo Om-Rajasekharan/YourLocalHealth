@@ -619,17 +619,20 @@ export function DashboardDataProvider({ children }: { children: ReactNode }) {
     loadedZipRef.current = "";
   };
 
-  const loadUserProfile = async (userId: string) => {
+  const loadUserProfile = async (userId: string, redirectIfMissing: boolean) => {
     try {
       const profile = await getUserProfile(userId);
       setUserProfile(profile);
 
       // Email/password sign-up collects these fields before the account is
-      // ever created, so the only way to land here authenticated with no
-      // profile is a first-time Google sign-in/sign-up, which skips that
-      // form entirely. Send them to finish it once per session rather than
-      // silently dropping them on the generic ZIP-level dashboard.
-      if (!profile && !hasRedirectedForMissingProfileRef.current) {
+      // ever created, so the only way to be authenticated with no profile is
+      // a first-time Google sign-in/sign-up, which skips that form entirely.
+      // Only nudge them to finish it at the moment they actually sign in
+      // (redirectIfMissing=true, passed only for a genuine SIGNED_IN auth
+      // event) -- never on a routine page load/refresh restoring an existing
+      // session (INITIAL_SESSION), or every visit would bounce a user who's
+      // deliberately browsing without a profile straight back to /account.
+      if (!profile && redirectIfMissing && !hasRedirectedForMissingProfileRef.current) {
         hasRedirectedForMissingProfileRef.current = true;
         router.push("/account");
       }
@@ -764,7 +767,7 @@ export function DashboardDataProvider({ children }: { children: ReactNode }) {
     void supabase.auth.getUser().then(({ data }) => {
       setUser(data.user);
       if (data.user) {
-        void loadUserProfile(data.user.id);
+        void loadUserProfile(data.user.id, false);
         void loadCheckinStreak(data.user.id);
         void loadSymptomEnvironmentCorrelation(data.user.id);
       } else {
@@ -772,12 +775,12 @@ export function DashboardDataProvider({ children }: { children: ReactNode }) {
       }
     });
 
-    const { data } = supabase.auth.onAuthStateChange((_event, session) => {
+    const { data } = supabase.auth.onAuthStateChange((event, session) => {
       const nextUser = session?.user ?? null;
       setUser(nextUser);
 
       if (nextUser) {
-        void loadUserProfile(nextUser.id);
+        void loadUserProfile(nextUser.id, event === "SIGNED_IN");
         void loadCheckinStreak(nextUser.id);
         void loadSymptomEnvironmentCorrelation(nextUser.id);
       } else {
