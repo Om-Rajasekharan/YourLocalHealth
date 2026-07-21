@@ -3926,7 +3926,7 @@ export function ForecastPanel({
             </div>
 
             <div className="-mx-2 mt-8 overflow-x-auto px-2 pb-2">
-              <div className="grid min-w-[48rem] gap-2 [grid-template-columns:repeat(24,minmax(0,1fr))] xl:min-w-0">
+              <div className="grid min-w-[48rem] max-sm:min-w-[96rem] gap-2 [grid-template-columns:repeat(24,minmax(0,1fr))] xl:min-w-0">
                 {displayHours.map((hour, index) => {
                   const isSelected = index === normalizedSelectedIndex;
 
