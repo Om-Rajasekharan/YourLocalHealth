@@ -5,9 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import {
-  type CSSProperties,
   FormEvent,
-  type KeyboardEvent,
   type PointerEvent,
   useEffect,
   useRef,
@@ -52,6 +50,12 @@ import {
 import type { SymptomEnvironmentCorrelation } from "../services/symptomEnvironmentCorrelation";
 import type { PersonalRiskCalibration } from "../services/personalRiskCalibration";
 import type { TwinNode3D } from "./Twin3D";
+import {
+  computeScenarioProjection,
+  profileModifier,
+  scenarioLabel,
+  type TwinScenario,
+} from "../lib/twinScenario";
 
 const Twin3D = dynamic(
   () => import("./Twin3D").then((module) => module.Twin3D),
@@ -2820,77 +2824,6 @@ function clampScore(score: number) {
   return Math.max(0, Math.min(100, Math.round(score)));
 }
 
-function profileModifier(profile: UserProfile | null) {
-  if (!profile) return 0;
-
-  const exposure =
-    profile.outdoor_exposure === "High"
-      ? 8
-      : profile.outdoor_exposure === "Moderate"
-      ? 4
-      : 0;
-  const commute =
-    profile.commute_exposure === "High"
-      ? 6
-      : profile.commute_exposure === "Moderate"
-      ? 3
-      : 0;
-  const sensitivity =
-    profile.respiratory_sensitivity === "High"
-      ? 10
-      : profile.respiratory_sensitivity === "Mild"
-      ? 5
-      : 0;
-  const activity =
-    profile.activity_level === "High"
-      ? 4
-      : profile.activity_level === "Moderate"
-      ? 2
-      : 0;
-
-  return exposure + commute + sensitivity + activity;
-}
-
-type TwinLayer = {
-  id: "environment" | "respiratory" | "profile" | "learning";
-  label: string;
-  value: string;
-  intensity: number;
-  detail: string;
-};
-
-type TwinScenario = "current" | "shift" | "reduce" | "protect";
-
-function scenarioAdjustment(scenario: TwinScenario) {
-  switch (scenario) {
-    case "shift":
-      return -10;
-    case "reduce":
-      return -14;
-    case "protect":
-      return -8;
-    default:
-      return 0;
-  }
-}
-
-function scenarioLabel(scenario: TwinScenario) {
-  switch (scenario) {
-    case "shift":
-      return "Shift outdoor time";
-    case "reduce":
-      return "Shorten exposure";
-    case "protect":
-      return "Add protection";
-    default:
-      return "Current routine";
-  }
-}
-
-function twinLayerTone(layerId: TwinLayer["id"]): "accent" | "secondary" {
-  return layerId === "respiratory" ? "accent" : "secondary";
-}
-
 function useAnimatedNumber(target: number, durationMs = 600) {
   const [displayValue, setDisplayValue] = useState(target);
   const displayValueRef = useRef(target);
@@ -2994,379 +2927,6 @@ function TwinScoreGauge({
   );
 }
 
-// Kept temporarily as a fallback for the previous non-Three.js scan.
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-function ExposureTwinPersonScan({
-  rotation,
-  onRotationChange,
-  autoRotate,
-  onAutoRotateChange,
-  twinScore,
-  layers,
-  selectedLayerId,
-  onSelectLayer,
-}: {
-  rotation: number;
-  onRotationChange: (rotation: number) => void;
-  autoRotate: boolean;
-  onAutoRotateChange: (autoRotate: boolean) => void;
-  twinScore: number;
-  layers: TwinLayer[];
-  selectedLayerId: TwinLayer["id"];
-  onSelectLayer: (layerId: TwinLayer["id"]) => void;
-}) {
-  const [isDragging, setIsDragging] = useState(false);
-  const dragRef = useRef<{
-    pointerId: number;
-    startX: number;
-    startRotation: number;
-  } | null>(null);
-  const selectedLayer =
-    layers.find((layer) => layer.id === selectedLayerId) ?? layers[0];
-  const selectedIndex = Math.max(
-    0,
-    layers.findIndex((layer) => layer.id === selectedLayer.id)
-  );
-  const scanRows = [21, 38, 56, 75];
-  const scanBandY = [118, 210, 334, 472][selectedIndex] ?? 210;
-
-  const clampRotation = (value: number) => Math.max(-180, Math.min(180, value));
-
-  const handlePointerDown = (event: PointerEvent<HTMLDivElement>) => {
-    event.currentTarget.setPointerCapture(event.pointerId);
-    dragRef.current = {
-      pointerId: event.pointerId,
-      startX: event.clientX,
-      startRotation: rotation,
-    };
-    setIsDragging(true);
-    onAutoRotateChange(false);
-  };
-
-  const handlePointerMove = (event: PointerEvent<HTMLDivElement>) => {
-    const drag = dragRef.current;
-
-    if (!drag || drag.pointerId !== event.pointerId) return;
-
-    const delta = event.clientX - drag.startX;
-    onRotationChange(clampRotation(drag.startRotation + delta * 0.6));
-  };
-
-  const endDrag = (event: PointerEvent<HTMLDivElement>) => {
-    if (dragRef.current?.pointerId === event.pointerId) {
-      dragRef.current = null;
-      setIsDragging(false);
-    }
-  };
-
-  const handleKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
-    if (event.key === "ArrowLeft") {
-      event.preventDefault();
-      onAutoRotateChange(false);
-      onRotationChange(clampRotation(rotation - 5));
-    } else if (event.key === "ArrowRight") {
-      event.preventDefault();
-      onAutoRotateChange(false);
-      onRotationChange(clampRotation(rotation + 5));
-    }
-  };
-
-  return (
-    <div className="twin-scan-shell">
-      <div
-        className={`twin-scan-stage ${autoRotate ? "is-breathing" : ""} ${
-          isDragging ? "is-dragging cursor-grabbing" : "cursor-grab"
-        } touch-none`}
-        style={{ "--scan-rotation": `${rotation / 10}deg` } as CSSProperties}
-        role="slider"
-        tabIndex={0}
-        aria-label="Interactive medical-style exposure twin scan. Drag or use arrow keys to rotate."
-        aria-valuemin={-180}
-        aria-valuemax={180}
-        aria-valuenow={Math.round(rotation)}
-        onPointerDown={handlePointerDown}
-        onPointerMove={handlePointerMove}
-        onPointerUp={endDrag}
-        onPointerCancel={endDrag}
-        onKeyDown={handleKeyDown}
-      >
-        <div className="twin-scan-grid" aria-hidden="true" />
-        <div className="twin-scan-person" aria-hidden="true">
-          <svg
-            viewBox="0 0 260 620"
-            role="img"
-            data-selected-layer={selectedLayerId}
-          >
-            <defs>
-              <filter id="scanGlow" x="-40%" y="-40%" width="180%" height="180%">
-                <feGaussianBlur stdDeviation="3.5" result="blur" />
-                <feMerge>
-                  <feMergeNode in="blur" />
-                  <feMergeNode in="SourceGraphic" />
-                </feMerge>
-              </filter>
-              <filter id="scanSoftGlow" x="-70%" y="-70%" width="240%" height="240%">
-                <feGaussianBlur stdDeviation="15" result="blur" />
-                <feColorMatrix
-                  in="blur"
-                  result="blueGlow"
-                  values="0 0 0 0 0.05  0 0 0 0 0.62  0 0 0 0 0.95  0 0 0 0.9 0"
-                />
-                <feMerge>
-                  <feMergeNode in="blueGlow" />
-                  <feMergeNode in="SourceGraphic" />
-                </feMerge>
-              </filter>
-              <linearGradient id="scanBody" x1="0" x2="1" y1="0" y2="1">
-                <stop offset="0" stopColor="#E0F2FE" stopOpacity="0.95" />
-                <stop offset="0.45" stopColor="#38BDF8" stopOpacity="0.8" />
-                <stop offset="1" stopColor="#0C4A6E" stopOpacity="0.88" />
-              </linearGradient>
-              <radialGradient id="scanChestGlow" cx="50%" cy="33%" r="55%">
-                <stop offset="0" stopColor="#F0F9FF" stopOpacity="0.95" />
-                <stop offset="0.55" stopColor="#7DD3FC" stopOpacity="0.4" />
-                <stop offset="1" stopColor="#0C4A6E" stopOpacity="0" />
-              </radialGradient>
-              <radialGradient id="limbHighlight" cx="35%" cy="30%" r="65%">
-                <stop offset="0" stopColor="#F0F9FF" stopOpacity="0.85" />
-                <stop offset="0.6" stopColor="#7DD3FC" stopOpacity="0.2" />
-                <stop offset="1" stopColor="#7DD3FC" stopOpacity="0" />
-              </radialGradient>
-              <filter
-                id="scanSpecular"
-                x="-60%"
-                y="-60%"
-                width="220%"
-                height="220%"
-              >
-                <feGaussianBlur in="SourceAlpha" stdDeviation="7" result="blur" />
-                <feSpecularLighting
-                  in="blur"
-                  surfaceScale="7"
-                  specularConstant="0.85"
-                  specularExponent="16"
-                  lightingColor="#F0F9FF"
-                  result="specular"
-                >
-                  <fePointLight x="70" y="-60" z="220" />
-                </feSpecularLighting>
-                <feComposite
-                  in="specular"
-                  in2="SourceAlpha"
-                  operator="in"
-                  result="specularClipped"
-                />
-              </filter>
-            </defs>
-
-            <g className="twin-scan-region-band" aria-hidden="true">
-              <rect
-                x="23"
-                y={String(scanBandY - 22)}
-                width="214"
-                height="44"
-                rx="22"
-              />
-              <line
-                x1="16"
-                x2="244"
-                y1={String(scanBandY)}
-                y2={String(scanBandY)}
-              />
-            </g>
-
-            <g filter="url(#scanSoftGlow)">
-              <path
-                className="twin-scan-body-fill"
-                d="M130 19
-                C149 19 163 36 163 60
-                C163 80 152 96 139 102
-                L139 121
-                C154 124 169 132 181 147
-                C195 166 200 197 203 235
-                C206 276 220 330 228 382
-                C231 402 219 409 208 392
-                C195 370 185 322 178 275
-                C173 314 170 355 172 401
-                C175 466 181 522 189 565
-                C192 583 178 592 163 578
-                C148 526 139 455 136 387
-                C134 349 126 349 124 387
-                C121 455 112 526 97 578
-                C82 592 68 583 71 565
-                C79 522 85 466 88 401
-                C90 355 87 314 82 275
-                C75 322 65 370 52 392
-                C41 409 29 402 32 382
-                C40 330 54 276 57 235
-                C60 197 65 166 79 147
-                C91 132 106 124 121 121
-                L121 102
-                C108 96 97 80 97 60
-                C97 36 111 19 130 19 Z"
-                fill="url(#scanBody)"
-              />
-              <ellipse
-                cx="130"
-                cy="213"
-                rx="76"
-                ry="145"
-                fill="url(#scanChestGlow)"
-                opacity="0.86"
-              />
-            </g>
-
-            <g className="twin-scan-volume" aria-hidden="true">
-              <ellipse cx="118" cy="52" rx="20" ry="28" fill="url(#limbHighlight)" />
-              <ellipse
-                cx="168"
-                cy="270"
-                rx="15"
-                ry="95"
-                fill="url(#limbHighlight)"
-                transform="rotate(8 168 270)"
-              />
-              <ellipse
-                cx="92"
-                cy="270"
-                rx="15"
-                ry="95"
-                fill="url(#limbHighlight)"
-                transform="rotate(-8 92 270)"
-              />
-              <ellipse cx="150" cy="470" rx="16" ry="105" fill="url(#limbHighlight)" />
-              <ellipse cx="110" cy="470" rx="16" ry="105" fill="url(#limbHighlight)" />
-            </g>
-
-            <path
-              className="twin-scan-body-specular"
-              d="M130 19
-                C149 19 163 36 163 60
-                C163 80 152 96 139 102
-                L139 121
-                C154 124 169 132 181 147
-                C195 166 200 197 203 235
-                C206 276 220 330 228 382
-                C231 402 219 409 208 392
-                C195 370 185 322 178 275
-                C173 314 170 355 172 401
-                C175 466 181 522 189 565
-                C192 583 178 592 163 578
-                C148 526 139 455 136 387
-                C134 349 126 349 124 387
-                C121 455 112 526 97 578
-                C82 592 68 583 71 565
-                C79 522 85 466 88 401
-                C90 355 87 314 82 275
-                C75 322 65 370 52 392
-                C41 409 29 402 32 382
-                C40 330 54 276 57 235
-                C60 197 65 166 79 147
-                C91 132 106 124 121 121
-                L121 102
-                C108 96 97 80 97 60
-                C97 36 111 19 130 19 Z"
-              fill="#0c4a6e"
-              filter="url(#scanSpecular)"
-            />
-
-            <g filter="url(#scanGlow)" className="twin-scan-anatomy">
-              <path d="M130 103 L130 287" />
-              <path d="M104 146 C122 153 126 190 118 225 C98 219 91 181 104 146 Z" />
-              <path d="M156 146 C138 153 134 190 142 225 C162 219 169 181 156 146 Z" />
-              <path d="M103 244 C116 255 144 255 157 244" />
-              <path d="M107 278 C118 287 142 287 153 278" />
-              <path d="M130 129 C122 150 122 173 130 193 C138 173 138 150 130 129 Z" />
-              <circle cx="130" cy="309" r="8" />
-            </g>
-
-            <g className="twin-scan-outline" filter="url(#scanGlow)">
-              <ellipse cx="130" cy="60" rx="31" ry="41" />
-              <path d="M104 96 C113 111 147 111 156 96" />
-              <path d="M121 121 C101 124 86 133 75 151 C62 173 59 209 56 246 C53 292 39 340 32 382" />
-              <path d="M139 121 C159 124 174 133 185 151 C198 173 201 209 204 246 C207 292 221 340 228 382" />
-              <path d="M84 254 C92 310 91 360 88 406 C84 467 78 523 71 565" />
-              <path d="M176 254 C168 310 169 360 172 406 C176 467 182 523 189 565" />
-              <path d="M111 302 C121 316 139 316 149 302" />
-              <path d="M108 304 C98 366 95 492 96 578" />
-              <path d="M152 304 C162 366 165 492 164 578" />
-              <path d="M73 565 C83 579 99 581 111 568" />
-              <path d="M149 568 C161 581 177 579 187 565" />
-            </g>
-
-            <g className="twin-scan-hotspots" aria-hidden="true">
-              <circle cx="130" cy="60" r="4" />
-              <circle cx="130" cy="196" r="5" />
-              <circle cx="130" cy="309" r="5" />
-              <circle cx="130" cy="469" r="5" />
-            </g>
-          </svg>
-        </div>
-
-        <div className="twin-scan-score">
-          <span>Twin score</span>
-          <TwinScoreGauge
-            value={twinScore}
-            size="sm"
-            tone={twinScore >= 34 ? "accent" : "secondary"}
-          />
-        </div>
-
-        {layers.map((layer, index) => {
-          const isActive = layer.id === selectedLayerId;
-          const tone = twinLayerTone(layer.id);
-
-          return (
-            <button
-              type="button"
-              className={`twin-scan-callout twin-scan-callout-${tone} ${
-                isActive ? "is-active" : ""
-              }`}
-              style={{ "--callout-top": `${scanRows[index] ?? 50}%` } as CSSProperties}
-              key={layer.id}
-              onClick={() => onSelectLayer(layer.id)}
-              aria-pressed={isActive}
-            >
-              <svg
-                className="twin-scan-connector"
-                viewBox="0 0 64 24"
-                preserveAspectRatio="none"
-                aria-hidden="true"
-              >
-                <path d="M64 12 C 40 12, 28 21, 0 21" fill="none" />
-              </svg>
-              <span>{layer.label}</span>
-              <strong>{layer.value}</strong>
-              <em>{layer.detail}</em>
-            </button>
-          );
-        })}
-
-        <div className="twin-scanline" aria-hidden="true" />
-      </div>
-
-      <div className="twin-layer-controls">
-        {layers.map((layer) => (
-          <button
-            type="button"
-            className={`twin-layer-button ${
-              selectedLayerId === layer.id ? "is-active" : ""
-            }`}
-            key={layer.id}
-            onClick={() => onSelectLayer(layer.id)}
-          >
-            <span>{layer.label}</span>
-            <strong>{layer.value}</strong>
-            <i aria-hidden="true">
-              <b style={{ width: `${layer.intensity}%` }} />
-            </i>
-          </button>
-        ))}
-      </div>
-    </div>
-  );
-}
-
 export function ExposureTwinPanel({
   user,
   zipCode,
@@ -3404,80 +2964,56 @@ export function ExposureTwinPanel({
   onOpenCheckin: () => void;
   onOpenForecast?: () => void;
 }) {
-  const [selectedLayerId, setSelectedLayerId] =
-    useState<TwinLayer["id"]>("environment");
   const [scenario, setScenario] = useState<TwinScenario>("current");
   const modifier = profileModifier(profile);
   const peakForecastScore = forecastData?.peakScore ?? baseScore;
-  const twinScore = clampScore(
-    baseScore * 0.68 + peakForecastScore * 0.22 + modifier
-  );
-  const projectedTwinScore = clampScore(
-    twinScore + scenarioAdjustment(scenario)
-  );
+  const forecastLoaded = Boolean(forecastData);
+  const profileLoaded = Boolean(profile);
+
+  // "current" is computed separately from the live scenario selection so the
+  // headline always reflects today's real number -- only the "Try a change"
+  // card and the "Projected" 3D node move when a what-if scenario is picked.
+  const twinScore = computeScenarioProjection({
+    scenario: "current",
+    baseScore,
+    peakForecastScore,
+    forecastData,
+    profile,
+  }).projectedScore;
+  const projection = computeScenarioProjection({
+    scenario,
+    baseScore,
+    peakForecastScore,
+    forecastData,
+    profile,
+  });
+  const projectedTwinScore = projection.projectedScore;
   const projectedChange = twinScore - projectedTwinScore;
+  const deltaFromBaseline = twinScore - baseScore;
+  const hasPersonalization =
+    profileLoaded || symptomEnvironmentCorrelation.status === "ready";
+  const correlationUnlockRemaining = Math.max(
+    0,
+    symptomEnvironmentCorrelation.minRequired -
+      symptomEnvironmentCorrelation.totalCheckins
+  );
+
   const bestWindow =
     forecastData?.bestWindow?.displayTime ?? "a lower-risk morning window";
   const worstWindow =
     forecastData?.worstWindow?.displayTime ?? "the highest forecast window";
   const mainDriver = topDrivers[0];
-  const forecastLoaded = Boolean(forecastData);
-  const profileLoaded = Boolean(profile);
-  const twinLayers: TwinLayer[] = [
-    {
-      id: "environment",
-      label: "Environment",
-      value: `${baseScore}/100`,
-      intensity: baseScore,
-      detail:
-        "Current local signals such as air quality, heat, UV, alerts, and public-health context.",
-    },
-    {
-      id: "respiratory",
-      label: "Respiratory",
-      value: respiratoryRisk,
-      intensity:
-        respiratoryRisk === "High"
-          ? 82
-          : respiratoryRisk === "Moderate"
-          ? 52
-          : respiratoryRisk === "Low"
-          ? 24
-          : 34,
-      detail:
-        "Respiratory layer from flu activity, COVID wastewater signal, air quality, and pollutant context.",
-    },
-    {
-      id: "profile",
-      label: "Profile",
-      value: profileLoaded ? `+${modifier}` : "Not set",
-      intensity: profileLoaded ? clampScore(modifier * 5) : 18,
-      detail: profileLoaded
-        ? "Personal context from outdoor time, traffic exposure, activity level, and breathing sensitivity."
-        : "Create a profile to let the Twin adjust to your routine and sensitivity.",
-    },
-    {
-      id: "learning",
-      label: "Learning",
-      value: `${checkinStreak.currentStreak}d`,
-      intensity: Math.min(100, checkinStreak.currentStreak * 14),
-      detail:
-        "Check-ins become outcome labels that can improve future symptom-risk models.",
-    },
-  ];
-  const selectedLayer =
-    twinLayers.find((layer) => layer.id === selectedLayerId) ??
-    twinLayers[0];
   const peakUvIndex =
     forecastData?.hours.reduce((max, hour) => {
       if (hour.uvIndex === null) return max;
       return Math.max(max, hour.uvIndex);
     }, 0) ?? 0;
-  const peakFeelsLike =
-    forecastData?.hours.reduce((max, hour) => {
-      if (hour.apparentTemperature === null) return max;
-      return Math.max(max, hour.apparentTemperature);
-    }, 0) ?? 0;
+
+  // Every node below is a genuinely distinct signal -- none of these just
+  // restate the same Overall Risk / Respiratory numbers already shown on
+  // Today/Signals. "Projected" is the one that reacts live to whichever
+  // what-if scenario is selected, so the visual actually contributes to the
+  // simulator instead of sitting there as decoration.
   const twin3dNodes: TwinNode3D[] = [
     {
       id: "uv",
@@ -3489,45 +3025,58 @@ export function ExposureTwinPanel({
         "Estimated from the highest UV forecast for the next 24 hours. Higher values mean more skin and eye exposure risk outdoors.",
     },
     {
-      id: "resp",
-      label: "Respiratory",
-      value: twinLayers[1]?.intensity ?? 34,
-      tone:
-        respiratoryRisk === "High"
-          ? "warn"
-          : respiratoryRisk === "Moderate"
-          ? "info"
-          : "ok",
+      id: "baseline",
+      label: "General baseline",
+      value: baseScore,
+      tone: baseScore >= 67 ? "warn" : baseScore >= 34 ? "info" : "ok",
       pos: [0.05, 1.1, 0.25],
-      info:
-        "Built from respiratory risk, flu and COVID wastewater context, and air-quality conditions that may affect breathing.",
+      info: `The general ${healthRisk.toLowerCase()}-risk estimate for ZIP ${zipCode} -- what anyone searching this ZIP sees, before any personalization. Respiratory risk here is currently ${respiratoryRisk}.`,
     },
     {
-      id: "cardio",
-      label: "Cardio / Heat",
-      value: clampScore(peakFeelsLike > 0 ? (peakFeelsLike - 60) * 2 : baseScore),
-      tone: peakFeelsLike >= 90 || baseScore >= 67 ? "warn" : "info",
+      id: "profile",
+      label: "Your profile lift",
+      value: profileLoaded ? modifier : 0,
+      tone: profileLoaded ? (modifier >= 15 ? "warn" : "info") : "info",
       pos: [-0.12, 0.95, 0.25],
-      info:
-        "Uses feels-like temperature and the baseline local score to represent heat stress and exertion burden.",
+      info: profileLoaded
+        ? `Your profile answers (outdoor time, commute, activity, breathing sensitivity) add ${modifier} points versus someone with no reported sensitivity.`
+        : "Set up a profile to see how your own routine and sensitivity change this estimate.",
     },
     {
-      id: "immune",
-      label: "Immune Load",
-      value: clampScore(baseScore * 0.5 + twinLayers[1].intensity * 0.5),
-      tone: respiratoryRisk === "Low" ? "ok" : "warn",
+      id: "pattern",
+      label: "Your pattern",
+      value:
+        symptomEnvironmentCorrelation.status === "ready" &&
+        symptomEnvironmentCorrelation.topFactor
+          ? clampScore(
+              Math.abs(symptomEnvironmentCorrelation.topFactor.rho) * 100
+            )
+          : clampScore(
+              (symptomEnvironmentCorrelation.totalCheckins /
+                Math.max(symptomEnvironmentCorrelation.minRequired, 1)) *
+                100
+            ),
+      tone:
+        symptomEnvironmentCorrelation.status === "ready" ? "ok" : "info",
       pos: [0.1, 0.65, 0.25],
       info:
-        "A combined illness-context marker that rises when respiratory and environmental signals stack together.",
+        symptomEnvironmentCorrelation.status === "ready" &&
+        symptomEnvironmentCorrelation.topFactor
+          ? `Your own check-ins show ${symptomEnvironmentCorrelation.topFactor.label} is the strongest match to your symptom severity (rho = ${symptomEnvironmentCorrelation.topFactor.rho.toFixed(2)}).`
+          : `Locked -- log ${correlationUnlockRemaining} more check-in${correlationUnlockRemaining === 1 ? "" : "s"} to unlock which factor actually affects you.`,
     },
     {
-      id: "learning",
-      label: "Learning Loop",
-      value: twinLayers[3]?.intensity ?? 0,
-      tone: checkinStreak.currentStreak > 0 ? "ok" : "info",
+      id: "projected",
+      label: "Projected",
+      value: projectedTwinScore,
+      tone:
+        projectedTwinScore >= 67
+          ? "warn"
+          : projectedTwinScore >= 34
+          ? "info"
+          : "ok",
       pos: [0, 0.35, 0.25],
-      info:
-        "Reflects symptom check-in streaks. More check-ins create better outcome labels for future model training.",
+      info: `${scenarioLabel(scenario)}: ${projection.explanation}`,
     },
   ];
   const inputCards = [
@@ -3554,14 +3103,6 @@ export function ExposureTwinPanel({
   const recommendedAction = forecastLoaded
     ? `If your schedule is flexible, move outdoor activity toward ${bestWindow} and avoid stacking heavy activity during ${worstWindow}.`
     : "Add forecast data by retrying the search, then compare your best and worst exposure windows.";
-  const scenarioDetail =
-    scenario === "shift"
-      ? `Moves flexible outdoor time toward ${bestWindow}.`
-      : scenario === "reduce"
-      ? "Models a shorter high-exposure block or fewer outdoor errands."
-      : scenario === "protect"
-      ? "Models added protection such as indoor breaks, filtered air, or lower exertion."
-      : "Uses the current profile, location, and forecast without behavior changes.";
   const streakProgress = Math.min(
     100,
     Math.round(
@@ -3589,6 +3130,13 @@ export function ExposureTwinPanel({
             conditions, respiratory context, profile factors, and check-ins
             into one personal exposure estimate.
           </p>
+          {!hasPersonalization && (
+            <p className="mt-4 max-w-2xl rounded-2xl border border-[var(--border)] bg-[var(--primary-soft)]/45 p-3 text-sm leading-6 text-[var(--foreground)]">
+              This is currently the general ZIP-level estimate -- it isn&apos;t
+              personalized yet. Sign in, set up a profile, and check in over a
+              few days to start seeing your own number diverge from it.
+            </p>
+          )}
           <div className="mt-4 flex flex-wrap gap-2 text-xs font-semibold text-[var(--primary-ink)]">
             <span className="rounded-full bg-[var(--primary-soft)] px-3 py-1">
               {dataConfidence.availableCount}/{dataConfidence.totalCount} data
@@ -3612,160 +3160,24 @@ export function ExposureTwinPanel({
         </div>
 
         <div className="exposure-twin-score">
-          <span className="exposure-twin-score-label">Twin score</span>
+          <span className="exposure-twin-score-label">Your estimate today</span>
           <TwinScoreGauge
-            value={projectedTwinScore}
+            value={twinScore}
             size="lg"
-            tone={projectedTwinScore >= 34 ? "accent" : "secondary"}
+            tone={twinScore >= 34 ? "accent" : "secondary"}
           />
           <p className="exposure-twin-score-detail">
-            {exposureLabel(projectedTwinScore)} projected exposure
+            {exposureLabel(twinScore)} exposure
+          </p>
+          <p className="mt-2 max-w-[14rem] text-xs leading-5 text-[var(--foreground-muted)]">
+            {deltaFromBaseline === 0
+              ? `Same as the general ZIP ${zipCode} estimate.`
+              : `${Math.abs(deltaFromBaseline)} pt${
+                  Math.abs(deltaFromBaseline) === 1 ? "" : "s"
+                } ${deltaFromBaseline > 0 ? "higher" : "lower"} than the general ZIP ${zipCode} estimate (${baseScore}).`}
           </p>
         </div>
       </article>
-
-      <section className="grid gap-5 lg:grid-cols-[0.9fr_1.1fr]">
-        <article className="rounded-[1.5rem] border border-[var(--border)] bg-white p-5 shadow-[0_12px_34px_-26px_rgba(19,41,75,0.45)]">
-          <p className="eyebrow-text">Inspect layers</p>
-          <h3 className="display-heading mt-2 text-3xl leading-tight text-[var(--foreground)]">
-            Click a layer to see what it means.
-          </h3>
-          <p className="mt-3 text-sm leading-6 text-[var(--foreground-muted)]">
-            This is not a clinical body model. It is a visual way to show which
-            local signals are contributing to the exposure estimate.
-          </p>
-
-          <div className="mt-5 rounded-2xl border border-[var(--border)] bg-[var(--primary-soft)]/45 p-4">
-            <p className="text-xs font-bold uppercase tracking-wide text-[var(--foreground-muted)]">
-              Selected layer
-            </p>
-            <h4 className="mt-2 text-xl font-bold text-[var(--foreground)]">
-              {selectedLayer.label}: {selectedLayer.value}
-            </h4>
-            <p className="mt-2 text-sm leading-6 text-[var(--foreground)]">
-              {selectedLayer.detail}
-            </p>
-          </div>
-
-          <div className="mt-5 grid gap-3 sm:grid-cols-2">
-            {twinLayers.map((layer) => (
-              <button
-                type="button"
-                key={layer.id}
-                onClick={() => setSelectedLayerId(layer.id)}
-                className={`rounded-2xl border px-3 py-3 text-left transition ${
-                  selectedLayerId === layer.id
-                    ? "border-[var(--primary)] bg-[var(--primary)] text-white"
-                    : "border-[var(--border)] bg-white text-[var(--primary-ink)] hover:border-[var(--primary)] hover:bg-[var(--primary-soft)]"
-                }`}
-              >
-                <span className="text-xs font-semibold uppercase tracking-wide">
-                  {layer.label}
-                </span>
-                <strong className="mt-1 block text-lg">{layer.value}</strong>
-              </button>
-            ))}
-          </div>
-        </article>
-
-        <Twin3D
-          className="min-h-[32rem]"
-          nodes={twin3dNodes}
-          scanLabel={`SCAN · ${projectedTwinScore} / 100`}
-        />
-      </section>
-
-      <section className="grid gap-5 lg:grid-cols-[1fr_0.9fr]">
-        <article className="rounded-[1.5rem] border border-[var(--border)] bg-white p-5 shadow-[0_12px_34px_-26px_rgba(19,41,75,0.45)]">
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-            <div>
-              <p className="eyebrow-text">Try a change</p>
-              <h3 className="display-heading mt-2 text-3xl text-[var(--foreground)]">
-                What lowers today&apos;s score?
-              </h3>
-            </div>
-            {onOpenForecast && (
-              <button
-                type="button"
-                onClick={onOpenForecast}
-                className="w-fit rounded-full border border-[var(--border)] px-4 py-2 text-sm font-semibold text-[var(--primary-ink)] hover:bg-[var(--primary-soft)]"
-              >
-                View forecast
-              </button>
-            )}
-          </div>
-          <div className="mt-5 flex flex-wrap gap-2">
-            {(["current", "shift", "reduce", "protect"] as TwinScenario[]).map(
-              (item) => (
-                <button
-                  type="button"
-                  key={item}
-                  onClick={() => setScenario(item)}
-                  className={`twin-scenario-button ${
-                    scenario === item ? "is-active" : ""
-                  }`}
-                >
-                  {scenarioLabel(item)}
-                </button>
-              )
-            )}
-          </div>
-          <div className="mt-5 rounded-2xl border border-[var(--border)] bg-[var(--primary-soft)]/45 p-4">
-            <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
-              <TwinScoreGauge
-                value={projectedTwinScore}
-                size="md"
-                tone={projectedTwinScore >= 34 ? "accent" : "secondary"}
-              />
-              <div>
-                <p className="text-sm font-semibold text-[var(--primary-ink)]">
-                  {projectedChange > 0
-                    ? `${projectedChange} point reduction`
-                    : "Current routine"}
-                </p>
-                <p className="mt-2 text-sm leading-6 text-[var(--foreground-muted)]">
-                  {scenarioDetail}
-                </p>
-              </div>
-            </div>
-          </div>
-          <p className="mt-4 text-sm leading-6 text-[var(--foreground-muted)]">
-            {recommendedAction}
-          </p>
-        </article>
-
-        <div className="grid gap-5">
-          <SymptomProbabilityPanel compact prediction={symptomPrediction} />
-          <article className="rounded-[1.5rem] border border-[var(--border)] bg-white p-5 shadow-[0_12px_34px_-26px_rgba(19,41,75,0.45)]">
-            <p className="eyebrow-text">Keep it learning</p>
-            <h3 className="display-heading mt-2 text-3xl text-[var(--foreground)]">
-              {checkinStreak.currentStreak} day
-              {checkinStreak.currentStreak === 1 ? "" : "s"}
-            </h3>
-            <p className="mt-3 text-sm leading-6 text-[var(--foreground-muted)]">
-              {streakPrompt}
-            </p>
-            <div className="mt-5">
-              <div className="exposure-twin-streak-track">
-                <span style={{ width: `${streakProgress}%` }} />
-              </div>
-              <div className="mt-2 flex justify-between text-xs font-semibold uppercase tracking-wide text-[var(--foreground-faint)]">
-                <span>Current</span>
-                <span>Best: {checkinStreak.bestStreak} days</span>
-              </div>
-            </div>
-            <button
-              type="button"
-              onClick={onOpenCheckin}
-              className="exposure-twin-streak-button mt-5"
-            >
-              {checkinStreak.checkedInToday
-                ? "Review today's check-in"
-                : "Log today's check-in"}
-            </button>
-          </article>
-        </div>
-      </section>
 
       <article className="rounded-[1.5rem] border border-[var(--border)] bg-white p-5 shadow-[0_12px_34px_-26px_rgba(19,41,75,0.45)]">
         <p className="eyebrow-text">Your personal pattern</p>
@@ -3830,6 +3242,137 @@ export function ExposureTwinPanel({
           </div>
         )}
       </article>
+
+      <section className="grid gap-5 lg:grid-cols-[0.9fr_1.1fr]">
+        <article className="rounded-[1.5rem] border border-[var(--border)] bg-white p-5 shadow-[0_12px_34px_-26px_rgba(19,41,75,0.45)]">
+          <p className="eyebrow-text">Inspect the twin</p>
+          <h3 className="display-heading mt-2 text-3xl leading-tight text-[var(--foreground)]">
+            Hover or tap a marker to see what it means.
+          </h3>
+          <p className="mt-3 text-sm leading-6 text-[var(--foreground-muted)]">
+            This is not a clinical body model. Each marker is one distinct
+            signal feeding your estimate -- not the same number shown twice.
+          </p>
+
+          <ul className="mt-5 grid gap-3 sm:grid-cols-2">
+            {twin3dNodes.map((node) => (
+              <li
+                className="rounded-2xl border border-[var(--border)] bg-white px-3 py-3 text-left"
+                key={node.id}
+              >
+                <span className="text-xs font-semibold uppercase tracking-wide text-[var(--foreground-muted)]">
+                  {node.label}
+                </span>
+                <strong className="mt-1 block text-lg text-[var(--foreground)]">
+                  {node.value}
+                </strong>
+              </li>
+            ))}
+          </ul>
+        </article>
+
+        <Twin3D
+          className="min-h-[32rem]"
+          nodes={twin3dNodes}
+          scanLabel={`SCAN · ${twinScore} / 100`}
+        />
+      </section>
+
+      <section className="grid gap-5 lg:grid-cols-[1fr_0.9fr]">
+        <article className="rounded-[1.5rem] border border-[var(--border)] bg-white p-5 shadow-[0_12px_34px_-26px_rgba(19,41,75,0.45)]">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+            <div>
+              <p className="eyebrow-text">Try a change</p>
+              <h3 className="display-heading mt-2 text-3xl text-[var(--foreground)]">
+                What lowers today&apos;s score?
+              </h3>
+            </div>
+            {onOpenForecast && (
+              <button
+                type="button"
+                onClick={onOpenForecast}
+                className="w-fit rounded-full border border-[var(--border)] px-4 py-2 text-sm font-semibold text-[var(--primary-ink)] hover:bg-[var(--primary-soft)]"
+              >
+                View forecast
+              </button>
+            )}
+          </div>
+          <div className="mt-5 flex flex-wrap gap-2">
+            {(["current", "shift", "reduce", "protect"] as TwinScenario[]).map(
+              (item) => (
+                <button
+                  type="button"
+                  key={item}
+                  onClick={() => setScenario(item)}
+                  className={`twin-scenario-button ${
+                    scenario === item ? "is-active" : ""
+                  }`}
+                >
+                  {scenarioLabel(item)}
+                </button>
+              )
+            )}
+          </div>
+          <div className="mt-5 rounded-2xl border border-[var(--border)] bg-[var(--primary-soft)]/45 p-4">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
+              <TwinScoreGauge
+                value={projectedTwinScore}
+                size="md"
+                tone={projectedTwinScore >= 34 ? "accent" : "secondary"}
+              />
+              <div>
+                <p className="text-sm font-semibold text-[var(--primary-ink)]">
+                  {!projection.available
+                    ? "Not enough data to simulate this yet"
+                    : projectedChange > 0
+                    ? `${projectedChange} point reduction from today`
+                    : projectedChange < 0
+                    ? `${Math.abs(projectedChange)} point increase from today`
+                    : "Same as today"}
+                </p>
+                <p className="mt-2 text-sm leading-6 text-[var(--foreground-muted)]">
+                  {projection.explanation}
+                </p>
+              </div>
+            </div>
+          </div>
+          <p className="mt-4 text-sm leading-6 text-[var(--foreground-muted)]">
+            {recommendedAction}
+          </p>
+        </article>
+
+        <div className="grid gap-5">
+          <SymptomProbabilityPanel compact prediction={symptomPrediction} />
+          <article className="rounded-[1.5rem] border border-[var(--border)] bg-white p-5 shadow-[0_12px_34px_-26px_rgba(19,41,75,0.45)]">
+            <p className="eyebrow-text">Keep it learning</p>
+            <h3 className="display-heading mt-2 text-3xl text-[var(--foreground)]">
+              {checkinStreak.currentStreak} day
+              {checkinStreak.currentStreak === 1 ? "" : "s"}
+            </h3>
+            <p className="mt-3 text-sm leading-6 text-[var(--foreground-muted)]">
+              {streakPrompt}
+            </p>
+            <div className="mt-5">
+              <div className="exposure-twin-streak-track">
+                <span style={{ width: `${streakProgress}%` }} />
+              </div>
+              <div className="mt-2 flex justify-between text-xs font-semibold uppercase tracking-wide text-[var(--foreground-faint)]">
+                <span>Current</span>
+                <span>Best: {checkinStreak.bestStreak} days</span>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={onOpenCheckin}
+              className="exposure-twin-streak-button mt-5"
+            >
+              {checkinStreak.checkedInToday
+                ? "Review today's check-in"
+                : "Log today's check-in"}
+            </button>
+          </article>
+        </div>
+      </section>
 
       <p className="rounded-2xl border border-[var(--border)] bg-white p-4 text-xs leading-5 text-[var(--foreground-muted)]">
         Informational only. The Twin estimates self-reported exposure context,
