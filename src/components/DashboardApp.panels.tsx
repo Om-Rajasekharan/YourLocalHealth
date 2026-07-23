@@ -49,6 +49,7 @@ import {
 } from "../services/mlTrainingData";
 import type { SymptomEnvironmentCorrelation } from "../services/symptomEnvironmentCorrelation";
 import type { PersonalRiskCalibration } from "../services/personalRiskCalibration";
+import { describeForecastStability } from "../lib/forecastStatsCopy";
 import type { TwinNode3D } from "./Twin3D";
 import {
   computeScenarioProjection,
@@ -3407,6 +3408,9 @@ export function ForecastPanel({
       ? 0
       : selectedHourIndex;
   const displayHours = forecastData?.hours.slice(0, 24) ?? [];
+  const stabilityCopy = forecastData
+    ? describeForecastStability(forecastData.statistics)
+    : null;
 
   return (
     <section className="grid gap-5">
@@ -3585,18 +3589,30 @@ export function ForecastPanel({
             </div>
           </div>
 
+          {stabilityCopy && (
+            <p className="mt-4 rounded-2xl border border-[var(--border)] bg-[var(--primary-soft)]/45 p-4 text-sm leading-6 text-[var(--primary-ink)]">
+              <span className="font-semibold">
+                {stabilityCopy.variabilityLabel}.
+              </span>{" "}
+              {stabilityCopy.headline}
+            </p>
+          )}
+
           <div className="mt-5 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
             <ForecastMetric
               label="Mean / median"
               value={`${forecastData.statistics.mean} / ${forecastData.statistics.median}`}
+              caption={stabilityCopy?.meanMedianCaption}
             />
             <ForecastMetric
               label="Std. deviation"
               value={`${forecastData.statistics.standardDeviation} points`}
+              caption={stabilityCopy?.stdDeviationCaption}
             />
             <ForecastMetric
               label="Typical band"
               value={`${forecastData.statistics.variabilityBand.low}-${forecastData.statistics.variabilityBand.high}`}
+              caption={stabilityCopy?.typicalBandCaption}
             />
             <ForecastMetric
               label="Peak z-score"
@@ -3605,6 +3621,7 @@ export function ForecastPanel({
                   ? "Stable"
                   : `${forecastData.statistics.peakZScore} SD`
               }
+              caption={stabilityCopy?.peakZScoreCaption}
             />
           </div>
 
@@ -3634,6 +3651,11 @@ export function ForecastPanel({
               <p className="text-xs font-semibold uppercase tracking-wide text-[var(--muted-foreground)]">
                 Signal correlations
               </p>
+              {stabilityCopy && (
+                <p className="mt-2 text-xs leading-5 text-[var(--muted-foreground)]">
+                  {stabilityCopy.correlationExplainer}
+                </p>
+              )}
               <div className="mt-3 grid gap-2">
                 {forecastData.statistics.driverCorrelations
                   .slice()
@@ -3715,13 +3737,26 @@ function ForecastInsightCard({
   );
 }
 
-function ForecastMetric({ label, value }: { label: string; value: string }) {
+function ForecastMetric({
+  label,
+  value,
+  caption,
+}: {
+  label: string;
+  value: string;
+  caption?: string;
+}) {
   return (
     <div className="rounded-xl bg-slate-50 px-3 py-2">
       <p className="text-[10px] font-semibold uppercase tracking-wide text-[var(--muted-foreground)]">
         {label}
       </p>
       <p className="mt-1 font-semibold text-[var(--primary-ink)]">{value}</p>
+      {caption && (
+        <p className="mt-1 text-[11px] leading-4 text-[var(--muted-foreground)]">
+          {caption}
+        </p>
+      )}
     </div>
   );
 }
