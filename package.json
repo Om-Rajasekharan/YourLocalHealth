@@ -22,7 +22,7 @@
     "@react-three/fiber": "^9.6.1",
     "@supabase/supabase-js": "^2.108.1",
     "@vercel/analytics": "^2.0.1",
-    "next": "15.5.19",
+    "next": "15.5.22",
     "react": "19.1.0",
     "react-dom": "19.1.0",
     "resend": "^6.17.2",
@@ -37,7 +37,7 @@
     "@types/react-dom": "^19",
     "autocannon": "^8.0.0",
     "eslint": "^9",
-    "eslint-config-next": "15.5.19",
+    "eslint-config-next": "15.5.22",
     "tailwindcss": "^4",
     "typescript": "^5",
     "vitest": "^4.1.10"
